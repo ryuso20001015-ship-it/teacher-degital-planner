@@ -308,8 +308,8 @@
                         <div class="flex justify-between items-center px-4 py-2 border-b border-gray-100 text-sm">
                             <span class="text-gray-800 font-medium">開始</span>
                             <div class="flex gap-2">
-                                <input type="date" id="add-modal-start-date" class="bg-gray-100 rounded-md px-2 py-1.5 outline-none text-gray-700 font-medium">
-                                <input type="time" id="add-modal-start-time" class="bg-gray-100 rounded-md px-2 py-1.5 outline-none text-gray-700 font-medium">
+                                <input type="date" id="add-modal-start-date" class="bg-gray-100 rounded-md px-2 py-1.5 outline-none text-gray-700 font-medium" onchange="window.handleStartTimeChange()">
+                                <input type="time" id="add-modal-start-time" class="bg-gray-100 rounded-md px-2 py-1.5 outline-none text-gray-700 font-medium" onchange="window.handleStartTimeChange()">
                             </div>
                         </div>
                         <div class="flex justify-between items-center px-4 py-2 text-sm">
@@ -1908,6 +1908,25 @@
             else if (currentView === 'memo') renderMemoList();
         };
 
+        // ★ 開始日時変更時に終了日時を+1時間にする処理
+        window.handleStartTimeChange = () => {
+            const startDateStr = document.getElementById('add-modal-start-date').value;
+            const startTimeStr = document.getElementById('add-modal-start-time').value;
+            if (!startDateStr || !startTimeStr) return;
+
+            const startObj = new Date(`${startDateStr}T${startTimeStr}`);
+            if (isNaN(startObj.getTime())) return;
+
+            startObj.setHours(startObj.getHours() + 1); // 1時間追加
+
+            const endDateStr = getFormatDateStr(startObj);
+            const endHH = String(startObj.getHours()).padStart(2, '0');
+            const endMM = String(startObj.getMinutes()).padStart(2, '0');
+
+            document.getElementById('add-modal-end-date').value = endDateStr;
+            document.getElementById('add-modal-end-time').value = `${endHH}:${endMM}`;
+        };
+
         // --- その他必要な基盤関数・イベントリスナ ---
         window.clearCellSelection = () => { 
             let changed = false;
@@ -1926,6 +1945,16 @@
             const searchResults = document.getElementById('month-search-results');
             if (searchResults && !searchResults.classList.contains('hidden') && !e.target.closest('#month-search-input') && !e.target.closest('#month-search-results')) {
                 searchResults.classList.add('hidden');
+            }
+
+            // ★ ポップアップ外クリックでメニューを閉じる処理
+            const scanPopup = document.getElementById('scan-popup');
+            if (scanPopup && !scanPopup.classList.contains('hidden') && !e.target.closest('#scan-popup') && !e.target.closest('#nav-btn-scan')) {
+                scanPopup.classList.add('hidden');
+            }
+            const gcalPopup = document.getElementById('gcal-popup');
+            if (gcalPopup && !gcalPopup.classList.contains('hidden') && !e.target.closest('#gcal-popup') && !e.target.closest('#nav-btn-gcal')) {
+                gcalPopup.classList.add('hidden');
             }
         });
 
