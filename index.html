@@ -73,10 +73,10 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
 
-        /* ★ 週カレンダーの高さを縮小 (1時間=45px) */
+        /* ★ 週カレンダーの高さを画面にフィット (5時〜23時の19時間分) */
         .timeline-bg {
             background-image: linear-gradient(to bottom, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #f3f4f6 1px, transparent 1px);
-            background-size: 100% 45px, 100% 22.5px;
+            background-size: 100% calc(100% / 19), 100% calc(100% / 38);
         }
         
         .cat-jugyo { background-color: #d1fae5; border-left: 3px solid #10b981; color: #065f46; }
@@ -134,6 +134,14 @@
             width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important;
             border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
             padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important;
+        }
+
+        /* メモのリッチテキストエディタ用プレースホルダー表示 */
+        #memo-edit-content:empty::before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block;
         }
 
         /* 印刷用のスタイル */
@@ -228,7 +236,7 @@
                 <div id="view-schedule-task" class="space-y-2">
                     <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-                            <div class="w-2 h-2 rounded-full bg-[#4a5f73] shrink-0"></div>
+                            <div id="add-modal-color-indicator" class="w-2 h-2 rounded-full bg-[#4a5f73] shrink-0 transition-colors duration-200"></div>
                             <input type="text" id="add-modal-title" class="flex-1 text-sm outline-none placeholder-gray-400 text-gray-800 font-bold" placeholder="タイトル">
                         </div>
                         <div id="fields-location" class="flex items-center gap-2 px-3 py-2">
@@ -242,7 +250,7 @@
                             <div class="flex items-center gap-2 text-xs text-gray-700 font-medium"><i class="far fa-clock text-gray-400 w-3 text-center"></i> 終日</div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="add-modal-allday" class="sr-only peer" onchange="window.toggleAllDay()">
-                                <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#4a5f73]"></div>
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4a5f73]"></div>
                             </label>
                         </div>
                         <div class="flex justify-between items-center px-3 py-1.5 border-b border-gray-100 text-xs">
@@ -273,7 +281,7 @@
                     <div id="fields-schedule-options" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
-                            <select id="add-modal-category-sched" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
+                            <select id="add-modal-category-sched" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
                                 <option value="work">仕事</option><option value="club">部活</option><option value="private">プライベート</option>
                             </select>
                         </div>
@@ -283,7 +291,7 @@
                     <div id="fields-task-options" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hidden">
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
-                            <select id="add-modal-category-task" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
+                            <select id="add-modal-category-task" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
                                 <option value="work">仕事</option><option value="club">部活</option><option value="private">プライベート</option>
                             </select>
                         </div>
@@ -417,10 +425,10 @@
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto relative bg-white custom-scrollbar" id="week-scroll-area">
-                    <div class="flex absolute inset-0 min-w-max w-full">
-                        <div id="week-time-labels" class="w-[2.5rem] shrink-0 border-r border-gray-300 bg-gray-50 relative z-10 h-[720px]"></div>
-                        <div class="flex-1 relative timeline-bg h-[720px] w-full grid grid-cols-7" id="week-view-grid"></div>
+                <div class="flex-1 relative bg-white overflow-hidden" id="week-scroll-area">
+                    <div class="flex absolute inset-0 min-w-max w-full h-full">
+                        <div id="week-time-labels" class="w-[2.5rem] shrink-0 border-r border-gray-300 bg-gray-50 relative z-10 h-full"></div>
+                        <div class="flex-1 relative timeline-bg h-full w-full grid grid-cols-7" id="week-view-grid"></div>
                     </div>
                 </div>
             </div>
@@ -449,9 +457,9 @@
 
         <!-- View 5: 一覧カレンダー -->
         <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col bg-gray-100 shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex items-center justify-between">
+            <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex items-center">
                 <h2 class="text-base sm:text-lg font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> 予定・タスクの一覧</h2>
-                <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
+                <button onclick="window.goToToday()" class="ml-4 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
                     <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
                     <div class="flex items-baseline leading-none">
                         <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
@@ -565,26 +573,6 @@
                 <button onclick="window.saveSettings()" class="px-4 py-1.5 bg-[#4a5f73] text-white rounded text-sm font-bold hover:bg-[#3b4c5c] shadow-sm transition">設定を保存</button>
             </div>
             <div class="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-50 custom-scrollbar">
-                
-                <!-- ★ 表示レイアウトの設定 -->
-                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
-                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-desktop text-purple-500 mr-1.5"></i> 表示レイアウトの設定</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">使用する端末に合わせて画面レイアウトを切り替えます。<br>（「スマホ用」ではメニューが下部に配置され、タップしやすいサイズに変更されます）</p>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
-                            <input type="radio" name="set-display-mode" value="auto" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-magic text-yellow-500 mr-1"></i>自動</span>
-                        </label>
-                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
-                            <input type="radio" name="set-display-mode" value="desktop" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-laptop text-gray-500 mr-1"></i>PC・タブレット用</span>
-                        </label>
-                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
-                            <input type="radio" name="set-display-mode" value="mobile" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-mobile-alt text-gray-500 mr-1"></i>スマホ用</span>
-                        </label>
-                    </div>
-                </div>
 
                 <!-- My時間割の設定 -->
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
@@ -670,7 +658,7 @@
                         <i class="fas fa-print"></i> <span class="hidden sm:inline">メモを印刷</span>
                     </button>
                     <button onclick="window.deleteMemo()" class="text-red-500 font-bold px-2 py-1.5 hover:bg-red-50 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-red-200 bg-white ml-0.5 sm:ml-1">
-                        <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">削除</span>
+                        <i id="memo-delete-btn-icon" class="fas fa-trash-alt"></i> <span id="memo-delete-btn-text" class="hidden sm:inline">削除</span>
                     </button>
                 </div>
             </div>
@@ -679,42 +667,58 @@
             <div class="flex-1 overflow-y-auto p-1 sm:p-4 bg-gray-100 flex justify-center custom-scrollbar">
                 <div class="bg-white w-full max-w-4xl min-h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
                     <!-- 印刷用ヘッダー -->
-                    <div class="p-3 sm:p-5 pb-1.5 flex justify-between items-start border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
-                        <div class="flex-1 min-w-0">
-                            <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-lg sm:text-xl font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-1 mb-2">
-                            <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs px-1">
-                                <div class="text-gray-400 font-bold flex items-center gap-1 shrink-0">
-                                    <i class="far fa-clock"></i> 
-                                    <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-1 py-0.5">
-                                    <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[9px] sm:text-[10px]"></span>
-                                </div>
-                                <div class="flex items-center gap-1 shrink-0">
-                                    <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">カテゴリ:</span>
-                                    <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
-                                        <option value="meeting">会議</option>
-                                        <option value="guidance">生徒指導</option>
-                                        <option value="other">その他</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-center gap-1 shrink-0">
-                                    <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">保存先:</span>
-                                    <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
-                                        <option value="">(ルート)</option>
-                                    </select>
+                    <div class="p-3 sm:p-5 pb-1.5 flex flex-col border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
+                        <div class="flex justify-between items-start w-full">
+                            <div class="flex-1 min-w-0">
+                                <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-lg sm:text-xl font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-1 mb-2">
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs px-1">
+                                    <div class="text-gray-400 font-bold flex items-center gap-1 shrink-0">
+                                        <i class="far fa-clock"></i> 
+                                        <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-1 py-0.5">
+                                        <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[9px] sm:text-[10px]"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">カテゴリ:</span>
+                                        <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
+                                            <option value="meeting">会議</option>
+                                            <option value="guidance">生徒指導</option>
+                                            <option value="other">その他</option>
+                                            <option value="trash" hidden>ごみ箱</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">保存先:</span>
+                                        <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
+                                            <option value="">(ルート)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="shrink-0 ml-3 sm:ml-4 no-print flex flex-col items-center sm:items-end">
+                                <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl transition-colors hover:bg-gray-100 text-gray-300">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <span class="text-[9px] text-gray-400 font-bold mt-1 text-center w-full">お気に入り</span>
+                            </div>
                         </div>
-                        <div class="shrink-0 ml-3 sm:ml-4 no-print flex flex-col items-center sm:items-end">
-                            <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl transition-colors hover:bg-gray-100 text-gray-300">
-                                <i class="fas fa-star"></i>
-                            </button>
-                            <span class="text-[9px] text-gray-400 font-bold mt-1 text-center w-full">お気に入り</span>
+
+                        <!-- ★ メモテキスト編集ツールバー -->
+                        <div id="memo-text-toolbar" class="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar">
+                            <button onclick="document.execCommand('bold',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="太字"><i class="fas fa-bold"></i></button>
+                            <button onclick="document.execCommand('underline',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="下線"><i class="fas fa-underline"></i></button>
+                            <button onclick="document.execCommand('strikeThrough',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="取り消し線"><i class="fas fa-strikethrough"></i></button>
+                            <div class="w-px h-4 bg-gray-300 mx-1"></div>
+                            <button onclick="document.execCommand('insertUnorderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="箇条書き"><i class="fas fa-list-ul"></i></button>
+                            <button onclick="document.execCommand('insertOrderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="段落番号"><i class="fas fa-list-ol"></i></button>
+                            <div class="w-px h-4 bg-gray-300 mx-1"></div>
+                            <button onclick="document.execCommand('indent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="インデントを増やす"><i class="fas fa-indent"></i></button>
+                            <button onclick="document.execCommand('outdent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="インデントを減らす"><i class="fas fa-outdent"></i></button>
                         </div>
                     </div>
                     
                     <div class="flex-1 flex flex-col relative w-full h-full min-h-[300px]">
-                        <!-- メモテキストエリア -->
-                        <textarea id="memo-edit-content" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full resize-none outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0"></textarea>
+                        <!-- メモテキストエリア (リッチテキスト用にdivへ変更) -->
+                        <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0 overflow-y-auto break-words"></div>
                         <!-- ★ メモ用手書きキャンバス -->
                         <canvas id="memo-drawing-canvas" class="absolute inset-0 z-10 touch-none pointer-events-none"></canvas>
                     </div>
@@ -764,7 +768,7 @@
 
         let allPlanners = {}; 
         let globalSettings = JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES };
-        if (!globalSettings.displayMode) globalSettings.displayMode = 'auto';
+        globalSettings.displayMode = 'auto'; // 強制的に自動モードにする
         
         if (!globalSettings.baseTimetablePatterns || globalSettings.baseTimetablePatterns.length === 0) {
             const oldBaseTt = globalSettings.baseTimetable || {1:{},2:{},3:{},4:{},5:{}};
@@ -781,7 +785,7 @@
             { id: 'guidance', name: '生徒指導', icon: 'fas fa-user-graduate', color: 'text-green-500' },
             { id: 'other', name: 'その他', icon: 'fas fa-folder', color: 'text-gray-500' }
         ];
-        let currentMemoFilter = 'all'; // 'all', 'favorite', 'meeting', 'guidance', 'other'
+        let currentMemoFilter = 'all'; // 'all', 'favorite', 'meeting', 'guidance', 'other', 'trash'
         let currentMemoFolderId = null; // フォルダ階層の現在地 (nullならカテゴリーのルート)
         let editingMemoId = null;
         window.currentMemoSort = 'updatedAt_desc'; // メモのソート順の初期値
@@ -809,18 +813,15 @@
         // ★ 表示モード（レスポンシブ切り替え）
         // ==========================================
         window.updateDisplayMode = () => {
-            let mode = globalSettings.displayMode || 'auto';
-            if (mode === 'auto') {
-                mode = window.innerWidth <= 768 ? 'mobile' : 'desktop';
-            }
-            if (mode === 'mobile') {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
                 document.body.classList.add('mode-mobile'); document.body.classList.remove('mode-desktop');
             } else {
                 document.body.classList.add('mode-desktop'); document.body.classList.remove('mode-mobile');
             }
             if (typeof window.resizeMemoCanvas === 'function') setTimeout(window.resizeMemoCanvas, 100);
         };
-        window.addEventListener('resize', () => { if ((globalSettings.displayMode || 'auto') === 'auto') window.updateDisplayMode(); });
+        window.addEventListener('resize', window.updateDisplayMode);
 
         // ==========================================
         // ★ Firebase リアルタイム同期関連
@@ -991,37 +992,39 @@
             return "bg-gray-50 text-gray-800 border-gray-300 hover:bg-gray-100";
         };
 
-        const timeToPx = (timeStr) => {
+        const timeToPct = (timeStr) => {
             if (!timeStr) return 0;
             const [h, m] = timeStr.split(':').map(Number);
-            if (h < 6) return 0;
-            if (h >= 22) return 16 * 45; // ★ 上限を22時にクリップ
-            return (h - 6) * 45 + m * 0.75;
+            if (h < 5) return 0;
+            if (h >= 24) return 100;
+            const totalMinutes = 19 * 60;
+            const minutes = (h - 5) * 60 + m;
+            return (minutes / totalMinutes) * 100;
         };
 
         const packTimeEvents = (events) => {
             if (!events || events.length === 0) return;
             events.forEach(ev => {
-                ev.startPx = timeToPx(ev.drawStart);
-                let endPx = timeToPx(ev.drawEnd);
-                if (endPx <= ev.startPx) endPx = ev.startPx + 15; // 最小高さを調整
-                ev.endPx = endPx;
+                ev.startPos = timeToPct(ev.drawStart);
+                let endPos = timeToPct(ev.drawEnd);
+                if (endPos <= ev.startPos) endPos = ev.startPos + (15 / (19 * 60)) * 100; // 15分相当を最小高さに
+                ev.endPos = endPos;
             });
-            events.sort((a, b) => a.startPx - b.startPx || b.endPx - a.endPx);
+            events.sort((a, b) => a.startPos - b.startPos || b.endPos - a.endPos);
 
             let columns = [];
             let lastEventEnding = null;
             events.forEach(ev => {
-                if (lastEventEnding !== null && ev.startPx >= lastEventEnding) {
+                if (lastEventEnding !== null && ev.startPos >= lastEventEnding) {
                     packGroup(columns); columns = []; lastEventEnding = null;
                 }
                 let placed = false;
                 for (let c = 0; c < columns.length; c++) {
                     let col = columns[c];
-                    if (col[col.length - 1].endPx <= ev.startPx) { col.push(ev); placed = true; break; }
+                    if (col[col.length - 1].endPos <= ev.startPos) { col.push(ev); placed = true; break; }
                 }
                 if (!placed) columns.push([ev]);
-                if (lastEventEnding === null || ev.endPx > lastEventEnding) lastEventEnding = ev.endPx;
+                if (lastEventEnding === null || ev.endPos > lastEventEnding) lastEventEnding = ev.endPos;
             });
             if (columns.length > 0) packGroup(columns);
 
@@ -1065,6 +1068,22 @@
             if (localMemos) { try { allMemos = JSON.parse(localMemos); } catch(e){} }
             const localFolders = safeGetItem('teacher_planner_folders');
             if (localFolders) { try { allFolders = JSON.parse(localFolders); } catch(e){} }
+
+            // ★ 30日経過したごみ箱のメモを自動削除するロジック
+            const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            let memoChanged = false;
+            allMemos = allMemos.filter(m => {
+                if (m.categoryId === 'trash' && m.deletedAt && (now - m.deletedAt) > thirtyDays) {
+                    memoChanged = true;
+                    return false;
+                }
+                return true;
+            });
+            if (memoChanged) {
+                safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                window.saveToFirebase();
+            }
 
             initTodayButtons(); window.updateUndoRedoButtons(); window.renderCurrentView(); 
         };
@@ -1128,6 +1147,13 @@
                     </button>
                 `;
             });
+            // ごみ箱の追加
+            html += `
+                <div class="px-3 mt-4 mb-1"><span class="text-[10px] font-bold text-gray-400">システム</span></div>
+                <button onclick="window.selectMemoFilter('trash')" class="w-full text-left px-3 py-1.5 hover:bg-gray-200 flex items-center gap-2 transition" id="memo-filter-trash">
+                    <i class="fas fa-trash-alt w-4 text-center text-red-500 text-xs"></i> <span class="font-bold text-xs text-gray-700">ごみ箱</span>
+                </button>
+            `;
             list.innerHTML = html;
         };
 
@@ -1137,7 +1163,7 @@
             window.renderMemoList();
             
             // ハイライト更新
-            ['all', 'favorite', ...MEMO_CATEGORIES.map(c=>c.id)].forEach(id => {
+            ['all', 'favorite', 'trash', ...MEMO_CATEGORIES.map(c=>c.id)].forEach(id => {
                 const btn = document.getElementById(`memo-filter-${id}`);
                 if(btn) {
                     if(id === filter) btn.classList.add('bg-blue-50');
@@ -1190,16 +1216,21 @@
             let currentFolders = [];
 
             if (currentMemoFilter === 'favorite') {
-                filteredMemos = allMemos.filter(m => m.isFavorite);
+                filteredMemos = allMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
                 addFolderBtnPc?.classList.add('hidden');
                 addFolderBtnSp?.classList.add('hidden');
             } else if (currentMemoFilter === 'all') {
                 // 最後に開いたのが１週間以内のもの
                 const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
                 filteredMemos = allMemos.filter(m => {
+                    if (m.categoryId === 'trash') return false;
                     const targetTime = m.lastOpenedAt || m.updatedAt || 0;
                     return targetTime >= oneWeekAgo;
                 });
+                addFolderBtnPc?.classList.add('hidden');
+                addFolderBtnSp?.classList.add('hidden');
+            } else if (currentMemoFilter === 'trash') {
+                filteredMemos = allMemos.filter(m => m.categoryId === 'trash');
                 addFolderBtnPc?.classList.add('hidden');
                 addFolderBtnSp?.classList.add('hidden');
             } else {
@@ -1230,6 +1261,7 @@
             let title = "";
             if (currentMemoFilter === 'favorite') title = "お気に入り";
             else if (currentMemoFilter === 'all') title = "最近使ったメモ";
+            else if (currentMemoFilter === 'trash') title = "ごみ箱";
             else {
                 const cat = MEMO_CATEGORIES.find(c => c.id === currentMemoFilter);
                 title = cat ? cat.name : "メモ";
@@ -1273,9 +1305,15 @@
 
             // メモの描画
             filteredMemos.forEach(memo => {
-                const cat = MEMO_CATEGORIES.find(c => c.id === memo.categoryId) || MEMO_CATEGORIES[2];
+                const cat = MEMO_CATEGORIES.find(c => c.id === memo.categoryId) || { icon: 'fas fa-trash-alt', color: 'text-red-500' };
                 const dateStr = formatDateForMemo(memo.updatedAt);
-                const preview = memo.content.replace(/\n/g, ' ').substring(0, 60) || '本文なし';
+                
+                // HTMLタグを除去してプレビューテキストを作成
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = memo.content || '';
+                const plainText = tempDiv.innerText || tempDiv.textContent || '';
+                const preview = plainText.replace(/\n/g, ' ').substring(0, 60) || '本文なし';
+                
                 const favIcon = memo.isFavorite ? '<i class="fas fa-star text-yellow-400"></i>' : '';
                 const hasDrawing = memo.canvasData ? '<i class="fas fa-pen-nib text-blue-400 ml-1.5 text-[10px]" title="手書きメモあり"></i>' : '';
 
@@ -1373,6 +1411,21 @@
             }, 800);
         };
 
+        window.updateDeleteMemoButtonText = () => {
+            const btnText = document.getElementById('memo-delete-btn-text');
+            const btnIcon = document.getElementById('memo-delete-btn-icon');
+            if (editingMemoId) {
+                const memo = allMemos.find(m => m.id === editingMemoId);
+                if (memo && memo.categoryId === 'trash') {
+                    if (btnText) btnText.textContent = '完全に削除';
+                    if (btnIcon) btnIcon.className = 'fas fa-eraser';
+                    return;
+                }
+            }
+            if (btnText) btnText.textContent = '削除';
+            if (btnIcon) btnIcon.className = 'fas fa-trash-alt';
+        };
+
         window.openMemoEdit = (memoId = null) => {
             editingMemoId = memoId;
             const modal = document.getElementById('memo-edit-modal');
@@ -1383,13 +1436,15 @@
             const dateInput = document.getElementById('memo-edit-date');
             const favBtn = document.getElementById('memo-edit-fav-btn');
 
+            window.updateDeleteMemoButtonText();
+
             if (memoId) {
                 const memo = allMemos.find(m => m.id === memoId);
                 if (memo) {
                     memo.lastOpenedAt = Date.now(); // 最後に開いた日時を記録
 
                     titleInput.value = memo.title;
-                    contentInput.value = memo.content;
+                    contentInput.innerHTML = memo.content || ''; // リッチテキスト用にinnerHTMLを使用
                     catSelect.value = memo.categoryId || 'other';
                     
                     window.updateMemoFolderOptions(); 
@@ -1418,8 +1473,8 @@
                 }
             } else {
                 // 新規作成
-                titleInput.value = ''; contentInput.value = '';
-                const defaultCat = (currentMemoFilter !== 'all' && currentMemoFilter !== 'favorite') ? currentMemoFilter : 'meeting';
+                titleInput.value = ''; contentInput.innerHTML = ''; // リッチテキスト用にinnerHTMLを使用
+                const defaultCat = (currentMemoFilter !== 'all' && currentMemoFilter !== 'favorite' && currentMemoFilter !== 'trash') ? currentMemoFilter : 'meeting';
                 catSelect.value = defaultCat;
                 
                 window.updateMemoFolderOptions();
@@ -1463,7 +1518,7 @@
         window.saveMemoLocally = () => {
             if (!editingMemoId) return;
             const title = document.getElementById('memo-edit-title').value.trim();
-            const content = document.getElementById('memo-edit-content').value;
+            const content = document.getElementById('memo-edit-content').innerHTML; // リッチテキストのHTMLを保存
             const categoryId = document.getElementById('memo-edit-category').value;
             const folderId = document.getElementById('memo-edit-folder').value || null;
             const isFavorite = document.getElementById('memo-edit-fav-btn').classList.contains('text-yellow-400');
@@ -1485,7 +1540,10 @@
             if (memo) {
                 memo.title = title; 
                 memo.content = content; 
+                // ごみ箱のメモのカテゴリを変更したらごみ箱から復元する
                 memo.categoryId = categoryId; 
+                if(categoryId !== 'trash') memo.deletedAt = null; 
+                
                 memo.folderId = folderId;
                 memo.isFavorite = isFavorite; 
                 memo.createdAt = createTimeVal; // 作成日として記録
@@ -1527,20 +1585,40 @@
 
         window.deleteMemo = () => {
             if (!editingMemoId) { window.saveAndCloseMemo(); return; }
-            if (confirm("このメモを削除してもよろしいですか？")) {
-                allMemos = allMemos.filter(m => m.id !== editingMemoId);
-                safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
-                window.saveToFirebase(); window.renderMemoList();
-                document.getElementById('memo-edit-modal').classList.add('hidden');
-                document.getElementById('memo-edit-modal').classList.remove('flex');
-                editingMemoId = null;
+            
+            const memo = allMemos.find(m => m.id === editingMemoId);
+            if (!memo) return;
+
+            if (memo.categoryId === 'trash') {
+                if (confirm("このメモを完全に削除してもよろしいですか？（復元できません）")) {
+                    allMemos = allMemos.filter(m => m.id !== editingMemoId);
+                    safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                    window.saveToFirebase(); window.renderMemoList();
+                    document.getElementById('memo-edit-modal').classList.add('hidden');
+                    document.getElementById('memo-edit-modal').classList.remove('flex');
+                    editingMemoId = null;
+                }
+            } else {
+                if (confirm("このメモをごみ箱に移動しますか？（1ヶ月後に完全に削除されます）")) {
+                    memo.categoryId = 'trash';
+                    memo.folderId = null; // フォルダからは外す
+                    memo.deletedAt = Date.now();
+                    memo.isFavorite = false;
+                    safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                    window.saveToFirebase(); window.renderMemoList();
+                    document.getElementById('memo-edit-modal').classList.add('hidden');
+                    document.getElementById('memo-edit-modal').classList.remove('flex');
+                    editingMemoId = null;
+                }
             }
         };
 
         window.copyMemoText = () => {
             const title = document.getElementById('memo-edit-title').value;
-            const content = document.getElementById('memo-edit-content').value;
-            const text = `【${title}】\n${content}`;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = document.getElementById('memo-edit-content').innerHTML;
+            const contentPlain = tempDiv.innerText || tempDiv.textContent;
+            const text = `【${title}】\n${contentPlain}`;
             
             try {
                 navigator.clipboard.writeText(text).then(() => alert("テキストをコピーしました")).catch(() => fallbackCopyTextToClipboard(text));
@@ -1635,9 +1713,20 @@
         window.setMemoLineWidth = (w, btn) => { memoCurrentLineWidth = w; ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); btn.classList.replace('opacity-50', 'opacity-100'); };
         window.clearMemoCanvas = () => { memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); window.triggerAutoSaveMemo(); };
 
-        // ページ読み込み時にメモキャンバスを初期化
+        // ページ読み込み時にメモキャンバスとTabキー処理を初期化
         document.addEventListener('DOMContentLoaded', () => {
             window.initMemoCanvas();
+
+            // Tabキーでインデント用のスペースを挿入する処理
+            const memoEditor = document.getElementById('memo-edit-content');
+            if (memoEditor) {
+                memoEditor.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+                    }
+                });
+            }
         });
 
 
@@ -1647,9 +1736,6 @@
         const initSettingsView = () => {
             tempSettings = JSON.parse(JSON.stringify(globalSettings));
             tempSettings.activePatternIndex = 0;
-            const mode = tempSettings.displayMode || 'auto';
-            const radio = document.querySelector(`input[name="set-display-mode"][value="${mode}"]`);
-            if (radio) radio.checked = true;
             renderSettingsView();
         };
 
@@ -1902,6 +1988,8 @@
             document.querySelector('input[name="add-type"][value="schedule"]').checked = true;
             window.toggleAddModalType(); window.toggleAllDay();
 
+            window.updateModalColor(); // ★ カテゴリー色の初期反映
+
             document.getElementById('add-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('add-modal-title').focus(), 100);
         };
@@ -1949,6 +2037,9 @@
                     document.getElementById('add-modal-memo-task').value = task.memo || '';
                 }
             }
+            
+            window.updateModalColor(); // ★ カテゴリー色の反映
+
             document.getElementById('add-modal').classList.remove('hidden');
         };
 
@@ -1980,6 +2071,22 @@
             document.getElementById('fields-task-datetime').style.display = isSched ? 'none' : 'block';
             document.getElementById('fields-schedule-options').style.display = isSched ? 'block' : 'none';
             document.getElementById('fields-task-options').style.display = isSched ? 'none' : 'block';
+            
+            window.updateModalColor(); // ★ モード切り替え時にカテゴリー色を更新
+        };
+
+        // ★ ポップアップのカテゴリー連動カラー変更
+        window.updateModalColor = () => {
+            const mode = document.querySelector('input[name="add-type"]:checked').value;
+            const cat = document.getElementById(`add-modal-category-${mode === 'schedule' ? 'sched' : 'task'}`).value;
+            const indicator = document.getElementById('add-modal-color-indicator');
+            if(!indicator) return;
+            
+            indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
+            if (cat === 'work') indicator.classList.add('bg-red-500');
+            else if (cat === 'club') indicator.classList.add('bg-blue-500');
+            else if (cat === 'private') indicator.classList.add('bg-orange-500');
+            else indicator.classList.add('bg-[#4a5f73]');
         };
 
         window.deleteFromMenu = () => {
@@ -2182,7 +2289,7 @@
                 
                 html += `
                     <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
-                        <div class="absolute top-0.5 right-0.5 z-30 pointer-events-auto text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass} cursor-pointer hover:underline hover:text-blue-600 transition" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">${dObj.getDate()}</span></div>
+                        <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
                         <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                         ${overflowHtml}
                     </div>`;
@@ -2198,10 +2305,12 @@
             const startOfWeek = new Date(d.setDate(diff));
             document.getElementById('week-view-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
 
-            document.getElementById('week-time-labels').style.height = '720px'; document.getElementById('week-view-grid').style.height = '720px';
-
+            // ★ 時間ラベルを5時から23時（19時間分）に変更、高さをパーセンテージで配置
             let timeLabelsHtml = '';
-            for(let i = 6; i <= 22; i++) timeLabelsHtml += `<div class="absolute w-full text-right pr-2 text-[9px] text-gray-500 -mt-1.5" style="top: ${(i-6)*45}px;">${i}:00</div>`;
+            for(let i = 5; i <= 23; i++) {
+                const topPct = ((i - 5) / 19) * 100;
+                timeLabelsHtml += `<div class="absolute w-full text-right pr-2 text-[9px] text-gray-500 -mt-1.5" style="top: ${topPct}%;">${i}:00</div>`;
+            }
             document.getElementById('week-time-labels').innerHTML = timeLabelsHtml;
 
             const weekDates = []; const weekDateObjs = [];
@@ -2226,8 +2335,8 @@
                                 for (let i = 0; i < 7; i++) {
                                     const curDateStr = weekDates[i];
                                     if (curDateStr >= sDate && curDateStr <= eDate) {
-                                        let drawStart = (curDateStr === sDate) ? ev.start.split('T')[1] : "06:00"; 
-                                        let drawEnd = (curDateStr === eDate) ? ev.end.split('T')[1] : "22:00";   
+                                        let drawStart = (curDateStr === sDate) ? ev.start.split('T')[1] : "05:00"; 
+                                        let drawEnd = (curDateStr === eDate) ? ev.end.split('T')[1] : "23:00";   
                                         timeEventsByDay[i].push({ ...ev, drawStart, drawEnd, originalDateKey: dateKey });
                                     }
                                 }
@@ -2323,12 +2432,13 @@
                 const color = cur.getDay()===0 ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
                 const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white');
 
-                headerHtml += `<div class="calendar-cell border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}" onclick="window.changeDate('${curStr}')"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="date-link text-xs font-bold cursor-pointer hover:underline ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}" onclick="event.stopPropagation(); window.changeDate('${curStr}')">${cur.getDate()}</span></div>`;
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}">${cur.getDate()}</span></div>`;
 
                 let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
-                for (let h = 6; h < 22; h++) {
+                for (let h = 5; h < 24; h++) {
                     const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
-                    colContent += `<div class="timeline-cell h-[45px] w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
+                    // ★ 1時間あたりの高さをパーセンテージ(1/19)に変更
+                    colContent += `<div class="timeline-cell w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" style="height: calc(100% / 19);" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
                 }
                 colContent += `</div>`;
 
@@ -2348,18 +2458,18 @@
 
                 combinedEvents.forEach(item => {
                     const leftStr = `calc(${(item.colIndex / item.numCols) * 100}% + 2px)`; const widthStr = `calc(${(1 / item.numCols) * 100}% - 4px)`;
-                    let heightPx = Math.max(16, item.endPx - item.startPx);
+                    let heightPct = Math.max(1, item.endPos - item.startPos); // 最小高さを1%に設定
 
                     if (item.isClass) {
                         const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                         let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="text-[8px] opacity-70 truncate px-0.5 pb-0.5 w-full pointer-events-none">${cData.memo}</div>` : '';
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPx}px; left: ${leftStr}; width: ${widthStr}; height: ${heightPx}px; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div>${memoHtml}</div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div>${memoHtml}</div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         const memoHtml = ev.memo ? `<div class="truncate text-[8px] opacity-80 mt-0.5 pointer-events-none">${ev.memo}</div>` : '';
                         const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPx}px; left: ${leftStr}; width: ${widthStr}; height: ${heightPx}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span>${memoHtml}</div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span>${memoHtml}</div>`;
                     }
                 });
                 colsHtml[i] = colContent;
@@ -2372,7 +2482,6 @@
                 gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${(cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
             }
             document.getElementById('week-view-grid').innerHTML = gridHtml;
-            setTimeout(() => { const scrollArea = document.getElementById('week-scroll-area'); if(scrollArea && scrollArea.scrollTop === 0) scrollArea.scrollTop = 100; }, 10);
         };
 
         const renderAgendaView = () => {
@@ -2418,7 +2527,7 @@
 
                 if (!schedHtml && !taskHtml) return;
                 count++;
-                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5 cursor-pointer group" onclick="window.changeDate('${dStr}')"><div class="text-sm font-bold group-hover:text-blue-500 transition text-gray-700">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal text-gray-500">(${DAYS_STR[dObj.getDay()]})</span></div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold text-gray-700">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal text-gray-500">(${DAYS_STR[dObj.getDay()]})</span></div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
             document.getElementById('agenda-view-list').innerHTML = html;
@@ -2787,12 +2896,6 @@
                 });
             });
 
-            // 表示モードの同期
-            const modeRadio = document.querySelector('input[name="set-display-mode"]:checked');
-            if (modeRadio) {
-                tempSettings.displayMode = modeRadio.value;
-            }
-
             if (tempSettings.baseTimetablePatterns) {
                 const activeIdx = tempSettings.activePatternIndex || 0;
                 const activePat = tempSettings.baseTimetablePatterns[activeIdx];
@@ -3023,11 +3126,6 @@
                 tempSettings.timetables[key].periods.splice(idx, 1);
                 renderSettingsView();
             }
-        };
-
-        window.changeDisplayModeSetting = (mode) => {
-            // 一時設定へ反映
-            tempSettings.displayMode = mode;
         };
 
         window.saveSettings = () => {
