@@ -2594,23 +2594,23 @@
             for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
             const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-            let html = '<table class="w-full h-full border-collapse min-w-[600px] bg-white rounded shadow-sm border border-gray-300 table-fixed">';
-            html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-8 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
+            let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
+            html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
             workDays.forEach(day => {
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
             });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const ttType = getTtType(dStr);
                 const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-orange-100 text-orange-800 border-orange-300');
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0.5 text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')"><option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>${Object.keys(globalSettings.timetables).map(k => `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`).join('')}</select></td>`;
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')"><option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>${Object.keys(globalSettings.timetables).map(k => `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`).join('')}</select></td>`;
             });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
                 let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0.5 text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
                     <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
                     ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
                 </select></td>`;
@@ -2626,7 +2626,7 @@
             if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
 
             for (let pIdx = 0; pIdx < maxPeriodsInWeek; pIdx++) {
-                html += `<tr style="height: 1%;"><td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-8 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
+                html += `<tr style="height: 1%;"><td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
                 for (let dIdx = 0; dIdx < 5; dIdx++) {
                     const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
                     const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
@@ -2655,7 +2655,7 @@
 
                     const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                     const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
-                    const labelHtml = `<div class="absolute top-0 left-0 px-0.5 py-0.5 text-[8px] font-bold rounded-br border-r border-b ${labelColorClass} z-10">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
+                    const labelHtml = `<div class="absolute top-0 left-0 px-0.5 py-0.5 text-[7px] sm:text-[8px] font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
 
                     if (isExcluded) {
                         btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
@@ -2663,18 +2663,18 @@
                         const colorClass = getClassColorClass(displayCls, displaySub);
                         bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                         const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
-                        let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
+                        let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[7px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
                         let mainContent = '', techCountHtml = '';
 
                         if (displayCls || displaySub) {
-                            mainContent = `<div class="font-bold text-[10px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[10px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
+                            mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
                             if (displaySub.trim() === '技術') {
                                 const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                                 let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                                techCountHtml = `<div class="absolute bottom-0 right-0 px-1 py-0.5 text-[8px] font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10">${currentCount}/${denominator}</div>`;
+                                techCountHtml = `<div class="absolute bottom-0 right-0 px-1 py-0.5 text-[7px] sm:text-[8px] font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                             }
                         } else if (displayMemo) {
-                            mainContent = `<div class="font-bold text-[10px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
+                            mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
                         } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
 
                         btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
@@ -3244,6 +3244,154 @@
                 }
             }, 100);
         };
+
+        // ==========================================
+        // 11. スワイプによるページ移動（月・週・週案簿）
+        // ==========================================
+        let swipeStartX = 0;
+        let swipeStartY = 0;
+        let swipeTargetElem = null;
+        let swipeStartScrollLeft = 0;
+        let swipeStartScrollWidth = 0;
+        let swipeStartClientWidth = 0;
+        
+        let isSwiping = false;
+        let swipeDirectionDetermined = false;
+        let activeViewElem = null;
+
+        document.addEventListener('touchstart', (e) => {
+            if (isMemoDrawingMode) return;
+            
+            if (!document.getElementById('add-modal').classList.contains('hidden') ||
+                !document.getElementById('weekly-plan-modal').classList.contains('hidden') ||
+                !document.getElementById('memo-edit-modal').classList.contains('hidden')) {
+                return;
+            }
+
+            if (currentView !== 'month' && currentView !== 'week' && currentView !== 'weekly-plan') {
+                return;
+            }
+
+            swipeStartX = e.touches[0].screenX;
+            swipeStartY = e.touches[0].screenY;
+            swipeTargetElem = null;
+            isSwiping = false;
+            swipeDirectionDetermined = false;
+            
+            activeViewElem = document.getElementById(`${currentView}-animation-area`);
+
+            let target = e.target;
+            while (target && target !== document.body) {
+                if (target.scrollWidth > target.clientWidth) {
+                    const style = window.getComputedStyle(target);
+                    if (style.overflowX === 'auto' || style.overflowX === 'scroll' || target.classList.contains('overflow-x-auto') || target.classList.contains('custom-scrollbar')) {
+                        swipeTargetElem = target;
+                        swipeStartScrollLeft = target.scrollLeft;
+                        swipeStartScrollWidth = target.scrollWidth;
+                        swipeStartClientWidth = target.clientWidth;
+                        break;
+                    }
+                }
+                target = target.parentNode;
+            }
+            
+            if (activeViewElem) {
+                activeViewElem.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!swipeStartX || !activeViewElem) return;
+
+            const touchX = e.touches[0].screenX;
+            const touchY = e.touches[0].screenY;
+            const diffX = touchX - swipeStartX;
+            const diffY = touchY - swipeStartY;
+
+            if (!swipeDirectionDetermined) {
+                if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+                    swipeDirectionDetermined = true;
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        isSwiping = true;
+                    } else {
+                        swipeStartX = null; 
+                        return;
+                    }
+                } else {
+                    return; 
+                }
+            }
+
+            if (isSwiping) {
+                if (swipeTargetElem) {
+                    if (diffX < 0) { 
+                        if (Math.ceil(swipeStartScrollLeft + swipeStartClientWidth) < swipeStartScrollWidth - 5) return; 
+                    } else { 
+                        if (swipeStartScrollLeft > 5) return; 
+                    }
+                }
+
+                const translateX = diffX * 0.5; 
+                activeViewElem.style.transform = `translateX(${translateX}px)`;
+                activeViewElem.style.opacity = Math.max(0.3, 1 - Math.abs(translateX) / window.innerWidth * 1.5);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!activeViewElem || !swipeDirectionDetermined || !isSwiping) {
+                if (activeViewElem) {
+                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+                    activeViewElem.style.transform = 'translateX(0)';
+                    activeViewElem.style.opacity = '1';
+                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+                }
+                swipeStartX = null;
+                return;
+            }
+
+            const swipeEndX = e.changedTouches[0].screenX;
+            const diffX = swipeEndX - swipeStartX;
+
+            activeViewElem.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+
+            if (Math.abs(diffX) > 60) {
+                const sign = diffX > 0 ? 1 : -1;
+                activeViewElem.style.transform = `translateX(${sign * 30}px)`; 
+                activeViewElem.style.opacity = '0';
+
+                setTimeout(() => {
+                    if (diffX < 0) {
+                        if (currentView === 'month') window.changeMonthView(1);
+                        else if (currentView === 'week') window.changeWeekView(1);
+                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(1);
+                    } else {
+                        if (currentView === 'month') window.changeMonthView(-1);
+                        else if (currentView === 'week') window.changeWeekView(-1);
+                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(-1);
+                    }
+
+                    activeViewElem.style.transition = 'none';
+                    activeViewElem.style.transform = `translateX(${-sign * 20}px)`;
+                    
+                    void activeViewElem.offsetWidth;
+
+                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+                    activeViewElem.style.transform = 'translateX(0)';
+                    activeViewElem.style.opacity = '1';
+
+                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+
+                }, 100); 
+
+            } else {
+                activeViewElem.style.transform = 'translateX(0)';
+                activeViewElem.style.opacity = '1';
+                setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 100);
+            }
+
+            swipeStartX = null;
+            isSwiping = false;
+        });
 
         // 初期化処理の呼び出し
         initDataSync();
