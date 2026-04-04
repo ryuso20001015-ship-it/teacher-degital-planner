@@ -48,10 +48,10 @@
         }
         .toolbar-visible { max-width: 400px !important; opacity: 1 !important; margin-left: 0.25rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; border-width: 1px !important; pointer-events: auto !important; }
 
-        /* ★ 余白と文字を小さく調整 */
-        .nav-btn { padding: 0.2rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500; color: #94a3b8; transition: all 0.2s; white-space: nowrap; }
-        .nav-btn:hover { color: #fff; }
-        .nav-btn.active { background-color: #4a5f73; color: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        /* ★ タブボタンの区切りと白背景・黒文字を明確化 */
+        .nav-btn { padding: 0.35rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #1f2937; background-color: #ffffff; border: 1px solid #d1d5db; transition: all 0.2s; white-space: nowrap; }
+        .nav-btn:hover { background-color: #f3f4f6; color: #000000; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .nav-btn.active { background-color: #4a5f73; color: #ffffff; border-color: #3b4c5c; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
         .calendar-cell { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; transition: all 0.1s; cursor: pointer; }
         .calendar-cell:hover { background-color: #f8fafc; }
@@ -73,9 +73,10 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
 
+        /* ★ 週カレンダーの高さを縮小 (1時間=45px) */
         .timeline-bg {
             background-image: linear-gradient(to bottom, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #f3f4f6 1px, transparent 1px);
-            background-size: 100% 60px, 100% 30px;
+            background-size: 100% 45px, 100% 22.5px;
         }
         
         .cat-jugyo { background-color: #d1fae5; border-left: 3px solid #10b981; color: #065f46; }
@@ -94,7 +95,7 @@
         .mode-mobile .mode-mobile-icon { display: block !important; }
 
         .mode-mobile main {
-            padding-bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important;
+            padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)) !important;
         }
 
         .mode-mobile #main-nav-group {
@@ -105,24 +106,23 @@
             width: 100%;
             z-index: 9999;
             border-radius: 0;
-            padding: 0.25rem 0;
-            padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
+            padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom)) 0.5rem;
             justify-content: space-around;
-            background-color: #1a1a2e;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
+            background-color: #1a1a2e; /* スマホフッターも紺色ベース */
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
             flex-wrap: nowrap;
+            gap: 0.5rem; /* スマホ時もボタン間隔を空ける */
         }
 
         .mode-mobile #main-nav-group .nav-btn {
             flex: 1;
-            font-size: 0.6rem;
-            padding: 0.15rem 0;
-            border-radius: 0.25rem;
-            gap: 0;
+            font-size: 0.65rem;
+            padding: 0.35rem 0;
+            border-radius: 0.5rem;
         }
 
-        .mode-mobile header { padding: 0.15rem 0.25rem; }
-        .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.2rem 0.4rem; }
+        .mode-mobile header { padding: 0.25rem 0.5rem; }
+        .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
 
         .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.65rem; padding: 0.2rem 0.3rem; margin-bottom: 0.15rem; line-height: 1.2; }
         .mode-mobile #month-view-grid .date-link { width: 22px; height: 22px; font-size: 0.8rem; }
@@ -158,15 +158,15 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
-    <header class="h-10 bg-[#2c2c2e] text-white flex justify-between items-center px-2 shadow-md z-50 relative shrink-0 gap-2">
-        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0">
-            <div class="font-bold flex items-center gap-1 shrink-0 text-sm">
+    <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-4 shadow-md z-50 relative shrink-0 gap-3 border-b border-gray-800">
+        <div class="flex items-center gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0">
+            <div class="font-bold flex items-center gap-1.5 shrink-0 text-sm">
                 <i class="fas fa-book-open text-blue-400"></i>
-                <span class="hidden sm:inline mr-1">デジタル教師手帳</span>
+                <span class="hidden sm:inline mr-2">デジタル教師手帳</span>
             </div>
             
             <!-- ★ メインナビゲーション -->
-            <div id="main-nav-group" class="flex gap-0.5 bg-[#1a1a2e] p-0.5 rounded-lg shadow-inner shrink-0">
+            <div id="main-nav-group" class="flex gap-2 shrink-0">
                 <button id="nav-btn-month" class="nav-btn active flex flex-col justify-center items-center" onclick="window.switchView('month')">
                     <i class="far fa-calendar-alt mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">月</span>
                 </button>
@@ -174,7 +174,7 @@
                     <i class="fas fa-calendar-week mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週</span>
                 </button>
                 <button id="nav-btn-weekly-plan" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('weekly-plan')">
-                    <i class="fas fa-chalkboard-teacher mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週授業</span>
+                    <i class="fas fa-chalkboard-teacher mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週案簿</span>
                 </button>
                 <button id="nav-btn-agenda" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('agenda')">
                     <i class="fas fa-list-ul mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">一覧</span>
@@ -184,18 +184,18 @@
                 </button>
             </div>
             
-            <div class="w-px bg-gray-600 h-4 shrink-0 mx-0.5"></div>
-            <div class="flex gap-0.5 bg-[#1a1a2e] p-0.5 rounded-lg shadow-inner shrink-0">
-                <button id="btn-undo" class="nav-btn text-gray-400 hover:text-white transition-opacity" onclick="window.undo()" title="一つ戻る"><i class="fas fa-undo text-xs"></i></button>
-                <button id="btn-redo" class="nav-btn text-gray-400 hover:text-white transition-opacity" onclick="window.redo()" title="一つ進む"><i class="fas fa-redo text-xs"></i></button>
+            <div class="w-px bg-gray-600 h-6 shrink-0 mx-1"></div>
+            <div class="flex gap-2 shrink-0">
+                <button id="btn-undo" class="nav-btn flex items-center justify-center transition-opacity" onclick="window.undo()" title="一つ戻る"><i class="fas fa-undo"></i></button>
+                <button id="btn-redo" class="nav-btn flex items-center justify-center transition-opacity" onclick="window.redo()" title="一つ進む"><i class="fas fa-redo"></i></button>
             </div>
             <div id="sync-status" class="hidden shrink-0 items-center text-[10px] ml-1 text-green-400 opacity-70">
                 <i class="fas fa-cloud-upload-alt mr-0.5"></i>同期中
             </div>
         </div>
-        <div class="flex items-center gap-1 shrink-0">
-            <div class="flex gap-0.5 bg-[#1a1a2e] p-0.5 rounded-lg shadow-inner shrink-0">
-                <button id="nav-btn-settings" class="nav-btn" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
+        <div class="flex items-center gap-2 shrink-0">
+            <div class="flex gap-2 shrink-0">
+                <button id="nav-btn-settings" class="nav-btn flex items-center justify-center" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
             </div>
         </div>
     </header>
@@ -281,6 +281,12 @@
                     </div>
 
                     <div id="fields-task-options" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hidden">
+                        <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
+                            <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
+                            <select id="add-modal-category-task" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
+                                <option value="work">仕事</option><option value="club">部活</option><option value="private">プライベート</option>
+                            </select>
+                        </div>
                         <div class="px-3 py-2"><textarea id="add-modal-memo-task" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
                     </div>
                 </div>
@@ -313,11 +319,11 @@
             <div class="mb-4">
                 <div class="flex items-center gap-1 mb-2">
                     <span class="text-[10px] font-bold text-gray-500 w-6">曜日</span>
-                    <div class="flex gap-1" id="wp-modal-days"></div>
+                    <div class="flex gap-1 flex-wrap" id="wp-modal-days"></div>
                 </div>
                 <div class="flex items-center gap-1 mb-2">
                     <span class="text-[10px] font-bold text-gray-500 w-6">時間</span>
-                    <div class="flex gap-0.5" id="wp-modal-periods"></div>
+                    <div class="flex gap-0.5 flex-wrap" id="wp-modal-periods"></div>
                 </div>
                 <div id="wp-modal-base-status" class="bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all"></div>
             </div>
@@ -337,299 +343,278 @@
                 <textarea id="wp-modal-memo" rows="2" class="w-full bg-transparent px-0.5 py-0.5 text-xs outline-none resize-none font-bold text-gray-700 placeholder-gray-400" placeholder="単元名や連絡事項など..."></textarea>
             </div>
             <div class="flex gap-1.5">
-                <button onclick="window.saveWeeklyPlanModal()" class="flex-1 bg-[#4a5f73] text-white font-bold py-1.5 rounded hover:bg-[#3b4c5c] transition shadow-sm text-xs">予定に組み込む</button>
-                <button onclick="window.deleteWeeklyPlanModal()" class="bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-3 rounded hover:bg-gray-50 transition shadow-sm text-xs">なしにする</button>
+                <button onclick="window.saveWeeklyPlanModal()" class="flex-1 bg-[#4a5f73] text-white font-bold py-1.5 rounded hover:bg-[#3b4c5c] transition shadow-sm text-xs">確定する</button>
+                <button onclick="window.deleteWeeklyPlanModal()" class="bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs">空きコマ</button>
+                <button onclick="window.resetWeeklyPlanModal()" class="bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-2 rounded hover:bg-gray-50 transition shadow-sm text-xs">元に戻す</button>
             </div>
             <button onclick="window.closeWeeklyPlanModal()" class="absolute top-2 left-2 w-6 h-6 flex justify-center items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-times text-xs"></i></button>
         </div>
     </div>
 
 
-    <main class="flex-1 relative overflow-hidden flex justify-center items-center p-0 bg-[#1a1a2e]">
+    <!-- ★ 外枠の余白をなくす構成 -->
+    <main class="flex-1 relative overflow-hidden flex justify-center items-center bg-[#1a1a2e]">
         
         <!-- View 1: 月カレンダー -->
-        <div id="view-month" class="view-container w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative">
-                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative">
-                    <div class="bg-white p-1.5 flex flex-wrap justify-between items-center border-b border-gray-300 gap-1 shrink-0">
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="window.changeMonthView(-1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs"></i></button>
-                            <h2 id="month-view-title" class="text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
-                            <button onclick="window.changeMonthView(1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs"></i></button>
-                            <button onclick="window.goToToday()" class="ml-1 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
-                                <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
-                                <div class="flex items-baseline leading-none">
-                                    <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
-                                </div>
-                            </button>
+        <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="month-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
+                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
+                        <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
+                        <div class="flex items-baseline leading-none">
+                            <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <div class="relative">
-                                <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]"></i>
-                                <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-6 pr-2 py-1 rounded border border-gray-300 text-xs outline-none focus:border-[#4a5f73] w-[100px] sm:w-[150px]">
-                                <!-- ★ 検索結果ポップアップ -->
-                                <div id="month-search-results" class="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[220px] sm:w-[280px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
-                            </div>
-                            <select id="month-category-filter" onchange="this.blur(); window.renderCurrentView()" onclick="event.stopPropagation()" class="bg-white border border-gray-300 rounded px-1 py-1 text-xs outline-none font-medium text-[#4a5f73]">
-                                <option value="all">すべて表示</option>
-                                <option value="work_club">仕事のみ表示</option>
-                                <option value="jugyo">授業のみ表示</option>
-                                <option value="private">プライベートのみ表示</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
-                        <div class="grid grid-cols-7 bg-gray-50 text-center text-[10px] font-bold text-[#4a5f73] py-1 border-b border-gray-200 shrink-0">
-                            <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-500">土</span><span class="text-red-500">日</span>
-                        </div>
-                        <div id="month-view-grid" class="flex-1 grid grid-cols-7 grid-rows-6 gap-[1px] bg-gray-200 min-h-0"></div>
-                    </div>
+                    </button>
                 </div>
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[120px] sm:w-[180px]">
+                        <!-- ★ 検索結果ポップアップ -->
+                        <div id="month-search-results" class="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
+                    </div>
+                    <select id="month-category-filter" onchange="this.blur(); window.renderCurrentView()" onclick="event.stopPropagation()" class="bg-white border border-gray-300 rounded px-2 py-1.5 text-xs sm:text-sm outline-none font-medium text-[#4a5f73]">
+                        <option value="all">すべて表示</option>
+                        <option value="work_club">仕事のみ表示</option>
+                        <option value="jugyo">授業のみ表示</option>
+                        <option value="private">プライベートのみ表示</option>
+                    </select>
+                </div>
+            </div>
+            <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
+                <div class="grid grid-cols-7 bg-gray-50 text-center text-xs font-bold text-[#4a5f73] py-1.5 border-b border-gray-200 shrink-0">
+                    <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-500">土</span><span class="text-red-500">日</span>
+                </div>
+                <div id="month-view-grid" class="flex-1 grid grid-cols-7 grid-rows-6 gap-[1px] bg-gray-200 min-h-0"></div>
             </div>
         </div>
 
         <!-- View 2: 週カレンダー -->
-        <div id="view-week" class="view-container hidden w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative">
-                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative">
-                    <div class="bg-white p-1.5 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="window.changeWeekView(-1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs"></i></button>
-                            <h2 id="week-view-title" class="text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
-                            <button onclick="window.changeWeekView(1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs"></i></button>
-                            <button onclick="window.goToToday()" class="ml-1 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
-                                <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
-                                <div class="flex items-baseline leading-none">
-                                    <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
-                                </div>
-                            </button>
+        <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="week-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
+                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
+                        <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
+                        <div class="flex items-baseline leading-none">
+                            <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
                         </div>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="week-animation-area" class="flex flex-col flex-1 min-h-0 w-full bg-white relative">
+                <div class="flex flex-col bg-gray-50 border-b border-gray-300 shadow-sm z-10 shrink-0">
+                    <div id="week-view-header" class="grid grid-cols-[2.5rem_repeat(7,1fr)] text-center border-b border-gray-200 py-1 shrink-0"></div>
+                    <div class="flex border-t border-gray-200 min-h-[30px] max-h-[80px] shrink-0 overflow-y-auto custom-scrollbar">
+                        <div class="w-[2.5rem] border-r border-gray-300 flex items-center justify-center text-[9px] sm:text-[10px] text-gray-400 font-bold bg-gray-100 shrink-0 sticky left-0 z-20">終日</div>
+                        <div id="week-view-allday" class="flex-1 relative bg-white" style="min-height: 30px;"></div>
                     </div>
-                    
-                    <div id="week-animation-area" class="flex flex-col flex-1 min-h-0 w-full bg-white relative">
-                        <div class="flex flex-col bg-gray-50 border-b border-gray-300 shadow-sm z-10 shrink-0">
-                            <div id="week-view-header" class="grid grid-cols-[2.5rem_repeat(7,1fr)] text-center border-b border-gray-200 py-0.5 shrink-0"></div>
-                            <div class="flex border-t border-gray-200 min-h-[30px] max-h-[80px] shrink-0 overflow-y-auto custom-scrollbar">
-                                <div class="w-[2.5rem] border-r border-gray-300 flex items-center justify-center text-[9px] text-gray-400 font-bold bg-gray-100 shrink-0 sticky left-0 z-20">終日</div>
-                                <div id="week-view-allday" class="flex-1 relative bg-white" style="min-height: 30px;"></div>
-                            </div>
-                        </div>
+                </div>
 
-                        <div class="flex-1 overflow-y-auto relative bg-white custom-scrollbar" id="week-scroll-area">
-                            <div class="flex absolute inset-0 min-w-max w-full">
-                                <div id="week-time-labels" class="w-[2.5rem] shrink-0 border-r border-gray-300 bg-gray-50 relative z-10 h-[1080px]"></div>
-                                <div class="flex-1 relative timeline-bg h-[1080px] w-full grid grid-cols-7" id="week-view-grid"></div>
-                            </div>
-                        </div>
+                <div class="flex-1 overflow-y-auto relative bg-white custom-scrollbar" id="week-scroll-area">
+                    <div class="flex absolute inset-0 min-w-max w-full">
+                        <div id="week-time-labels" class="w-[2.5rem] shrink-0 border-r border-gray-300 bg-gray-50 relative z-10 h-[720px]"></div>
+                        <div class="flex-1 relative timeline-bg h-[720px] w-full grid grid-cols-7" id="week-view-grid"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- View 4: 週授業計画 (マトリックス形式) -->
-        <div id="view-weekly-plan" class="view-container hidden w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative">
-                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative">
-                    <div class="bg-white p-1.5 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="window.changeWeeklyPlanView(-1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs"></i></button>
-                            <h2 id="weekly-plan-title" class="text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
-                            <button onclick="window.changeWeeklyPlanView(1)" class="w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs"></i></button>
-                            <button onclick="window.goToToday()" class="ml-1 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
-                                <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
-                                <div class="flex items-baseline leading-none">
-                                    <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
-                                </div>
-                            </button>
+        <div id="view-weekly-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button onclick="window.changeWeeklyPlanView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="weekly-plan-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
+                    <button onclick="window.changeWeeklyPlanView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
+                        <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
+                        <div class="flex items-baseline leading-none">
+                            <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
                         </div>
-                    </div>
-                    
-                    <div id="weekly-plan-animation-area" class="flex-1 flex flex-col min-h-0 w-full bg-gray-50 relative">
-                        <div class="flex-1 overflow-auto p-0.5 sm:p-1 custom-scrollbar flex flex-col w-full h-full" id="weekly-plan-container"></div>
-                    </div>
+                    </button>
                 </div>
+            </div>
+            
+            <div id="weekly-plan-animation-area" class="flex-1 flex flex-col min-h-0 w-full bg-gray-50 relative">
+                <div class="flex-1 overflow-auto p-1.5 sm:p-3 custom-scrollbar flex flex-col w-full h-full" id="weekly-plan-container"></div>
             </div>
         </div>
 
         <!-- View 5: 一覧カレンダー -->
-        <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative overflow-hidden">
-                <div class="flex-1 flex flex-col bg-gray-100 rounded overflow-hidden shadow-inner relative">
-                    <div class="bg-white p-2 border-b border-gray-300 shrink-0 flex items-center">
-                        <h2 class="text-base font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> すべての予定一覧</h2>
-                        <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
-                            <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
-                            <div class="flex items-baseline leading-none">
-                                <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
-                            </div>
-                        </button>
+        <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col bg-gray-100 shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex items-center justify-between">
+                <h2 class="text-base sm:text-lg font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> 予定・タスクの一覧</h2>
+                <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
+                    <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
+                    <div class="flex items-baseline leading-none">
+                        <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
                     </div>
-                    <div class="flex-1 flex flex-col sm:flex-row overflow-hidden p-1 gap-1">
-                        <div class="flex-1 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
-                            <div class="bg-gray-50 px-2 py-1.5 border-b border-gray-200 font-bold text-[#4a5f73] text-xs"><i class="far fa-calendar-alt"></i> 今後のスケジュール</div>
-                            <div id="agenda-view-list" class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"></div>
-                        </div>
-                        <div class="w-full sm:w-1/3 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm h-48 sm:h-auto shrink-0">
-                            <div class="bg-red-50 px-2 py-1.5 border-b border-red-100 font-bold text-red-600 text-xs"><i class="fas fa-exclamation-circle"></i> 未完了タスク (本日迄)</div>
-                            <div id="agenda-incomplete-tasks" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar bg-gray-50/50"></div>
-                        </div>
-                    </div>
+                </button>
+            </div>
+            <div class="flex-1 flex flex-col sm:flex-row overflow-hidden p-2 gap-2">
+                <div class="flex-1 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
+                    <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 font-bold text-[#4a5f73] text-sm"><i class="far fa-calendar-alt"></i> 今後のスケジュール</div>
+                    <div id="agenda-view-list" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
+                </div>
+                <div class="w-full sm:w-1/3 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm h-64 sm:h-auto shrink-0">
+                    <div class="bg-red-50 px-3 py-2 border-b border-red-100 font-bold text-red-600 text-sm"><i class="fas fa-exclamation-circle"></i> 未完了タスク (本日迄)</div>
+                    <div id="agenda-incomplete-tasks" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-gray-50/50"></div>
                 </div>
             </div>
         </div>
 
         <!-- ★ View 8: メモ管理 -->
-        <div id="view-memo" class="view-container hidden w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative overflow-hidden">
-                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative">
-                    <!-- スマホ用ヘッダー (サイドバー開閉) -->
-                    <div class="h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-3 shrink-0 sm:hidden">
-                        <button onclick="window.toggleMemoSidebar()" class="text-[#4a5f73] text-sm"><i class="fas fa-bars"></i> フォルダ</button>
-                        <button onclick="window.openMemoEdit()" class="text-blue-500 font-bold text-sm"><i class="fas fa-edit"></i> 新規作成</button>
+        <div id="view-memo" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <!-- スマホ用ヘッダー (サイドバー開閉) -->
+            <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-3 shrink-0 sm:hidden">
+                <button onclick="window.toggleMemoSidebar()" class="text-[#4a5f73] text-sm font-bold"><i class="fas fa-bars mr-1"></i> フォルダ</button>
+                <button onclick="window.openMemoEdit()" class="text-blue-500 font-bold text-sm"><i class="fas fa-edit mr-1"></i> 新規作成</button>
+            </div>
+            
+            <div class="flex-1 flex overflow-hidden relative">
+                <!-- サイドバー (iOSファイルアプリ風) -->
+                <div id="memo-sidebar" class="w-48 bg-gray-50 border-r border-gray-200 flex-col h-full absolute sm:relative z-20 sm:z-0 transition-all duration-300 flex shrink-0 -ml-48 sm:ml-0 shadow-lg sm:shadow-none">
+                    <div class="p-3 border-b border-gray-200 flex justify-between items-center shrink-0">
+                        <h2 class="font-bold text-[#4a5f73] text-base">フォルダ</h2>
+                        <button onclick="window.toggleMemoSidebar()" class="text-gray-400 hover:text-gray-600 transition p-1 rounded hover:bg-gray-200" title="フォルダを閉じる"><i class="fas fa-chevron-left"></i></button>
                     </div>
-                    
-                    <div class="flex-1 flex overflow-hidden relative">
-                        <!-- サイドバー (iOSファイルアプリ風) -->
-                        <div id="memo-sidebar" class="w-48 bg-gray-50 border-r border-gray-200 flex-col h-full absolute sm:relative z-20 sm:z-0 transform -translate-x-full sm:translate-x-0 transition-transform flex shrink-0">
-                            <div class="p-3 border-b border-gray-200">
-                                <h2 class="font-bold text-[#4a5f73] text-base">フォルダ</h2>
-                            </div>
-                            <div class="flex-1 overflow-y-auto py-1 custom-scrollbar">
-                                <div class="px-2 mb-0.5"><span class="text-[10px] font-bold text-gray-400">基本</span></div>
-                                <button onclick="window.selectMemoFilter('all')" class="w-full text-left px-3 py-1.5 hover:bg-gray-200 flex items-center gap-2 transition bg-blue-50" id="memo-filter-all">
-                                    <i class="far fa-clock w-4 text-center text-blue-500 text-xs"></i> <span class="font-bold text-xs text-gray-700">最近使ったメモ</span>
-                                </button>
-                                <button onclick="window.selectMemoFilter('favorite')" class="w-full text-left px-3 py-1.5 hover:bg-gray-200 flex items-center gap-2 transition" id="memo-filter-favorite">
-                                    <i class="fas fa-star w-4 text-center text-yellow-400 text-xs"></i> <span class="font-bold text-xs text-gray-700">お気に入り</span>
-                                </button>
-                                
-                                <div class="px-2 mt-3 mb-0.5"><span class="text-[10px] font-bold text-gray-400">カテゴリー</span></div>
-                                <div id="memo-category-list"></div>
-                            </div>
+                    <div class="flex-1 overflow-y-auto py-2 custom-scrollbar">
+                        <div class="px-3 mb-1"><span class="text-[10px] font-bold text-gray-400">基本</span></div>
+                        <button onclick="window.selectMemoFilter('all')" class="w-full text-left px-4 py-2 hover:bg-gray-200 flex items-center gap-2.5 transition bg-blue-50" id="memo-filter-all">
+                            <i class="far fa-clock w-4 text-center text-blue-500 text-sm"></i> <span class="font-bold text-xs text-gray-700">最近使ったメモ</span>
+                        </button>
+                        <button onclick="window.selectMemoFilter('favorite')" class="w-full text-left px-4 py-2 hover:bg-gray-200 flex items-center gap-2.5 transition" id="memo-filter-favorite">
+                            <i class="fas fa-star w-4 text-center text-yellow-400 text-sm"></i> <span class="font-bold text-xs text-gray-700">お気に入り</span>
+                        </button>
+                        
+                        <div class="px-3 mt-4 mb-1"><span class="text-[10px] font-bold text-gray-400">カテゴリー</span></div>
+                        <div id="memo-category-list"></div>
+                    </div>
+                </div>
+
+                <!-- サイドバーのオーバーレイ（スマホ用） -->
+                <div id="memo-sidebar-overlay" class="absolute inset-0 bg-black/20 z-10 hidden sm:hidden" onclick="window.toggleMemoSidebar()"></div>
+
+                <!-- メインリスト -->
+                <div class="flex-1 flex flex-col h-full bg-white relative min-w-0">
+                    <!-- PC用リストヘッダー -->
+                    <div class="h-12 border-b border-gray-200 flex justify-between items-center px-4 shrink-0 hidden sm:flex bg-white">
+                        <div class="flex items-center gap-2">
+                            <button id="memo-sidebar-open-btn-pc" onclick="window.toggleMemoSidebar()" class="text-gray-500 hover:text-blue-500 mr-2 hidden p-1.5 rounded hover:bg-gray-100 transition" title="フォルダを開く"><i class="fas fa-folder text-lg"></i></button>
+                            
+                            <button id="memo-back-btn" class="hidden text-gray-500 hover:text-blue-500 mr-1"><i class="fas fa-chevron-left text-lg"></i></button>
+                            <h2 id="memo-list-title" class="font-bold text-base text-[#4a5f73] truncate">最近使ったメモ</h2>
                         </div>
-
-                        <!-- サイドバーのオーバーレイ（スマホ用） -->
-                        <div id="memo-sidebar-overlay" class="absolute inset-0 bg-black/20 z-10 hidden sm:hidden" onclick="window.toggleMemoSidebar()"></div>
-
-                        <!-- メインリスト -->
-                        <div class="flex-1 flex flex-col h-full bg-white relative">
-                            <!-- PC用リストヘッダー -->
-                            <div class="h-10 border-b border-gray-200 flex justify-between items-center px-3 shrink-0 hidden sm:flex">
-                                <div class="flex items-center gap-1.5">
-                                    <button id="memo-back-btn" class="hidden text-gray-500 hover:text-blue-500 mr-1"><i class="fas fa-chevron-left text-lg"></i></button>
-                                    <h2 id="memo-list-title" class="font-bold text-base text-[#4a5f73]">最近使ったメモ</h2>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <!-- ★ ソートUI (PC) -->
-                                    <div class="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 shadow-sm">
-                                        <i class="fas fa-sort-amount-down text-gray-400 text-[10px]"></i>
-                                        <select id="memo-sort-select-pc" onchange="window.changeMemoSort(this.value)" class="bg-transparent text-[#4a5f73] text-[10px] outline-none font-bold cursor-pointer">
-                                            <option value="updatedAt_desc">最終更新日 (新しい順)</option>
-                                            <option value="updatedAt_asc">最終更新日 (古い順)</option>
-                                            <option value="createdAt_desc">作成日 (新しい順)</option>
-                                            <option value="createdAt_asc">作成日 (古い順)</option>
-                                            <option value="title_asc">名前 (昇順)</option>
-                                            <option value="title_desc">名前 (降順)</option>
-                                        </select>
-                                    </div>
-
-                                    <button onclick="window.createNewFolder()" id="memo-add-folder-btn" class="hidden bg-gray-50 text-gray-600 border border-gray-300 px-2 py-1 rounded text-xs font-bold hover:bg-gray-200 transition shadow-sm"><i class="fas fa-folder-plus mr-1"></i> フォルダ作成</button>
-                                    <button onclick="window.openMemoEdit()" class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-600 transition shadow-sm"><i class="fas fa-edit mr-1"></i> 新規作成</button>
-                                </div>
-                            </div>
-                            <!-- スマホ用リストヘッダー -->
-                            <div class="p-2 border-b border-gray-100 sm:hidden shrink-0 flex flex-col gap-1.5 bg-white z-10 sticky top-0">
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <button id="memo-back-btn-mobile" class="hidden text-gray-500 hover:text-blue-500 mr-1 shrink-0"><i class="fas fa-chevron-left text-base"></i></button>
-                                        <h2 id="memo-list-title-mobile" class="font-bold text-base text-[#4a5f73] truncate">最近使ったメモ</h2>
-                                    </div>
-                                    <button onclick="window.createNewFolder()" id="memo-add-folder-btn-mobile" class="hidden shrink-0 text-blue-500 p-1"><i class="fas fa-folder-plus text-lg"></i></button>
-                                </div>
-                                <!-- ★ ソートUI (スマホ) -->
-                                <div class="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 shadow-sm w-full">
-                                    <i class="fas fa-sort-amount-down text-gray-400 text-[10px]"></i>
-                                    <select id="memo-sort-select-mobile" onchange="window.changeMemoSort(this.value)" class="bg-transparent text-[#4a5f73] text-[10px] outline-none font-bold cursor-pointer w-full">
-                                        <option value="updatedAt_desc">最終更新日 (新しい順)</option>
-                                        <option value="updatedAt_asc">最終更新日 (古い順)</option>
-                                        <option value="createdAt_desc">作成日 (新しい順)</option>
-                                        <option value="createdAt_asc">作成日 (古い順)</option>
-                                        <option value="title_asc">名前 (昇順)</option>
-                                        <option value="title_desc">名前 (降順)</option>
-                                    </select>
-                                </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2 py-1 shadow-sm">
+                                <i class="fas fa-sort-amount-down text-gray-400 text-xs"></i>
+                                <select id="memo-sort-select-pc" onchange="window.changeMemoSort(this.value)" class="bg-transparent text-[#4a5f73] text-[10px] outline-none font-bold cursor-pointer">
+                                    <option value="updatedAt_desc">最終更新日 (新しい順)</option>
+                                    <option value="updatedAt_asc">最終更新日 (古い順)</option>
+                                    <option value="createdAt_desc">作成日 (新しい順)</option>
+                                    <option value="createdAt_asc">作成日 (古い順)</option>
+                                    <option value="title_asc">名前 (昇順)</option>
+                                    <option value="title_desc">名前 (降順)</option>
+                                </select>
                             </div>
 
-                            <div class="flex-1 overflow-y-auto p-2 custom-scrollbar bg-gray-50/30" id="memo-list-container">
-                                <!-- メモのリスト描画 -->
-                            </div>
+                            <button onclick="window.createNewFolder()" id="memo-add-folder-btn" class="hidden bg-gray-50 text-gray-600 border border-gray-300 px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-200 transition shadow-sm"><i class="fas fa-folder-plus mr-1"></i> フォルダ作成</button>
+                            <button onclick="window.openMemoEdit()" class="bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-600 transition shadow-sm"><i class="fas fa-edit mr-1"></i> 新規作成</button>
                         </div>
+                    </div>
+                    <!-- スマホ用リストヘッダー -->
+                    <div class="p-2 border-b border-gray-100 sm:hidden shrink-0 flex flex-col gap-1.5 bg-white z-10 sticky top-0">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <button id="memo-back-btn-mobile" class="hidden text-gray-500 hover:text-blue-500 mr-1 shrink-0"><i class="fas fa-chevron-left text-base"></i></button>
+                                <h2 id="memo-list-title-mobile" class="font-bold text-sm text-[#4a5f73] truncate">最近使ったメモ</h2>
+                            </div>
+                            <button onclick="window.createNewFolder()" id="memo-add-folder-btn-mobile" class="hidden shrink-0 text-blue-500 p-1"><i class="fas fa-folder-plus text-lg"></i></button>
+                        </div>
+                        <div class="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 shadow-sm w-full">
+                            <i class="fas fa-sort-amount-down text-gray-400 text-[10px]"></i>
+                            <select id="memo-sort-select-mobile" onchange="window.changeMemoSort(this.value)" class="bg-transparent text-[#4a5f73] text-[10px] outline-none font-bold cursor-pointer w-full">
+                                <option value="updatedAt_desc">最終更新日 (新しい順)</option>
+                                <option value="updatedAt_asc">最終更新日 (古い順)</option>
+                                <option value="createdAt_desc">作成日 (新しい順)</option>
+                                <option value="createdAt_asc">作成日 (古い順)</option>
+                                <option value="title_asc">名前 (昇順)</option>
+                                <option value="title_desc">名前 (降順)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-3 custom-scrollbar bg-gray-50/30" id="memo-list-container">
+                        <!-- メモのリスト描画 -->
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- View 6: 設定 -->
-        <div id="view-settings" class="view-container hidden w-full h-full flex flex-col">
-            <div class="flex-1 flex bg-[#4a5f73] p-0.5 sm:p-1 relative overflow-hidden">
-                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative">
-                    <div class="bg-white p-3 border-b border-gray-300 flex justify-between items-center z-10 sticky top-0 shrink-0">
-                        <h2 class="text-base font-bold text-[#4a5f73]"><i class="fas fa-cog mr-1.5 text-[#4a5f73]"></i> 設定</h2>
-                        <button onclick="window.saveSettings()" class="px-4 py-1.5 bg-[#4a5f73] text-white rounded text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition">設定を保存</button>
+        <div id="view-settings" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-3 sm:p-4 border-b border-gray-300 flex justify-between items-center z-10 sticky top-0 shrink-0">
+                <h2 class="text-base sm:text-lg font-bold text-[#4a5f73]"><i class="fas fa-cog mr-1.5 text-[#4a5f73]"></i> 設定</h2>
+                <button onclick="window.saveSettings()" class="px-4 py-1.5 bg-[#4a5f73] text-white rounded text-sm font-bold hover:bg-[#3b4c5c] shadow-sm transition">設定を保存</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-50 custom-scrollbar">
+                
+                <!-- ★ 表示レイアウトの設定 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-desktop text-purple-500 mr-1.5"></i> 表示レイアウトの設定</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">使用する端末に合わせて画面レイアウトを切り替えます。<br>（「スマホ用」ではメニューが下部に配置され、タップしやすいサイズに変更されます）</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
+                            <input type="radio" name="set-display-mode" value="auto" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
+                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-magic text-yellow-500 mr-1"></i>自動</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
+                            <input type="radio" name="set-display-mode" value="desktop" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
+                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-laptop text-gray-500 mr-1"></i>PC・タブレット用</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition border-gray-200">
+                            <input type="radio" name="set-display-mode" value="mobile" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
+                            <span class="text-xs font-bold text-gray-700"><i class="fas fa-mobile-alt text-gray-500 mr-1"></i>スマホ用</span>
+                        </label>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-3 sm:p-4 bg-gray-50 custom-scrollbar">
-                        
-                        <!-- ★ 表示レイアウトの設定 -->
-                        <div class="bg-white p-4 rounded border border-gray-200 shadow-sm mb-4">
-                            <h3 class="font-bold text-sm text-[#4a5f73] mb-2 border-b pb-1.5"><i class="fas fa-desktop text-purple-500 mr-1.5"></i> 表示レイアウトの設定</h3>
-                            <p class="text-[10px] text-gray-500 mb-3">使用する端末に合わせて画面レイアウトを切り替えます。<br>（「スマホ用」ではメニューが下部に配置され、タップしやすいサイズに変更されます）</p>
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <label class="flex items-center gap-1.5 cursor-pointer p-2 border rounded hover:bg-gray-50 flex-1 transition border-gray-200">
-                                    <input type="radio" name="set-display-mode" value="auto" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                                    <span class="text-xs font-bold text-gray-700"><i class="fas fa-magic text-yellow-500 mr-1"></i>自動</span>
-                                </label>
-                                <label class="flex items-center gap-1.5 cursor-pointer p-2 border rounded hover:bg-gray-50 flex-1 transition border-gray-200">
-                                    <input type="radio" name="set-display-mode" value="desktop" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                                    <span class="text-xs font-bold text-gray-700"><i class="fas fa-laptop text-gray-500 mr-1"></i>PC・タブレット用</span>
-                                </label>
-                                <label class="flex items-center gap-1.5 cursor-pointer p-2 border rounded hover:bg-gray-50 flex-1 transition border-gray-200">
-                                    <input type="radio" name="set-display-mode" value="mobile" class="w-3 h-3 text-[#4a5f73] focus:ring-[#4a5f73]" onchange="window.changeDisplayModeSetting(this.value)">
-                                    <span class="text-xs font-bold text-gray-700"><i class="fas fa-mobile-alt text-gray-500 mr-1"></i>スマホ用</span>
-                                </label>
-                            </div>
-                        </div>
+                </div>
 
-                        <!-- My時間割の設定 -->
-                        <div class="bg-white p-4 rounded border border-gray-200 shadow-sm mb-4">
-                            <h3 class="font-bold text-sm text-[#4a5f73] mb-2 border-b pb-1.5"><i class="fas fa-table text-green-500 mr-1.5"></i> My時間割の設定</h3>
-                            <p class="text-[10px] text-gray-500 mb-3">月〜金曜日の決まった授業を入力・選択しておくと、カレンダーの授業枠に自動表示されます。<br>学期ごとに適用期間を設定して切り替えることができます。</p>
-                            <div id="settings-basetimetable-container"></div>
-                        </div>
+                <!-- My時間割の設定 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-table text-green-500 mr-1.5"></i> My時間割の設定</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">月〜金曜日の決まった授業を入力・選択しておくと、カレンダーの授業枠に自動表示されます。<br>学期ごとに適用期間を設定して切り替えることができます。</p>
+                    <div id="settings-basetimetable-container"></div>
+                </div>
 
-                        <!-- 授業時間（日課）の設定 -->
-                        <div class="bg-white p-4 rounded border border-gray-200 shadow-sm mb-4">
-                            <h3 class="font-bold text-sm text-[#4a5f73] mb-2 border-b pb-1.5"><i class="fas fa-clock text-blue-500 mr-1.5"></i> 授業時間（日課）の設定</h3>
-                            <p class="text-[10px] text-gray-500 mb-3">週カレンダーなどに表示されるコマ（行）を追加・削除・編集できます。</p>
-                            <div class="space-y-4" id="settings-timetables-container"></div>
-                        </div>
+                <!-- 授業時間（日課）の設定 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-clock text-blue-500 mr-1.5"></i> 授業時間（日課）の設定</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">週カレンダーなどに表示されるコマ（行）を追加・削除・編集できます。</p>
+                    <div class="space-y-4" id="settings-timetables-container"></div>
+                </div>
 
-                        <!-- 端末間同期とデータ管理の設定 -->
-                        <div class="bg-white p-4 rounded border border-gray-200 shadow-sm">
-                            <h3 class="font-bold text-sm text-[#4a5f73] mb-2 border-b pb-1.5"><i class="fas fa-sync-alt text-blue-500 mr-1.5"></i> 端末間のデータ同期と管理</h3>
-                            <p class="text-[10px] text-gray-500 mb-3">以下の同期コードを他の端末（スマホやiPadなど）で入力すると、データがリアルタイムで共有されます。</p>
-                            
-                            <div class="flex items-center gap-3 mb-3 bg-blue-50 p-2 rounded border border-blue-100">
-                                <span class="text-xs font-bold text-blue-800">あなたの同期コード:</span>
-                                <span id="display-sync-id" class="text-lg font-bold tracking-widest text-blue-600 bg-white px-2 py-0.5 rounded shadow-sm border border-blue-200 select-all">--------</span>
-                            </div>
+                <!-- 端末間同期とデータ管理の設定 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-sync-alt text-blue-500 mr-1.5"></i> 端末間のデータ同期と管理</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">以下の同期コードを他の端末（スマホやiPadなど）で入力すると、データがリアルタイムで共有されます。</p>
+                    
+                    <div class="flex items-center gap-3 mb-3 bg-blue-50 p-2.5 rounded border border-blue-100">
+                        <span class="text-xs font-bold text-blue-800">あなたの同期コード:</span>
+                        <span id="display-sync-id" class="text-lg font-bold tracking-widest text-blue-600 bg-white px-2 py-0.5 rounded shadow-sm border border-blue-200 select-all">--------</span>
+                    </div>
 
-                            <div class="border-t border-gray-100 pt-3">
-                                <label class="text-[10px] font-bold text-gray-600 mb-1 block">他の端末のデータとリンクする（この端末のデータは上書きされます）</label>
-                                <div class="flex gap-1.5">
-                                    <input type="text" id="input-sync-id" placeholder="8桁の数字コードを入力" class="border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-[#4a5f73] flex-1 font-bold tracking-widest">
-                                    <button onclick="window.linkDevice()" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 shadow-sm transition whitespace-nowrap">リンクする</button>
-                                </div>
-                            </div>
+                    <div class="border-t border-gray-100 pt-3">
+                        <label class="text-[10px] sm:text-xs font-bold text-gray-600 mb-1 block">他の端末のデータとリンクする（この端末のデータは上書きされます）</label>
+                        <div class="flex gap-1.5">
+                            <input type="text" id="input-sync-id" placeholder="8桁の数字コードを入力" class="border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-[#4a5f73] flex-1 font-bold tracking-widest">
+                            <button onclick="window.linkDevice()" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 shadow-sm transition whitespace-nowrap">リンクする</button>
                         </div>
                     </div>
                 </div>
@@ -639,97 +624,97 @@
     </main>
 
     <!-- ★ メモ編集 モーダル -->
-    <div id="memo-edit-modal" class="fixed inset-0 z-[150] hidden bg-[#1a1a2e] flex-col p-0.5 sm:p-1">
+    <div id="memo-edit-modal" class="fixed inset-0 z-[150] hidden bg-[#1a1a2e] flex-col p-1 sm:p-2">
         <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative w-full h-full">
             <!-- ヘッダー (no-print) -->
-            <div class="h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2 sm:px-3 shrink-0 no-print shadow-sm z-20">
-                <div class="flex items-center gap-1">
-                    <button onclick="window.saveAndCloseMemo()" class="text-blue-500 font-bold px-1.5 py-1 hover:bg-blue-50 rounded transition flex items-center gap-1 text-xs sm:text-sm">
+            <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2 sm:px-4 shrink-0 no-print shadow-sm z-20">
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <button onclick="window.saveAndCloseMemo()" class="text-blue-500 font-bold px-2 py-1 hover:bg-blue-50 rounded transition flex items-center gap-1 text-xs sm:text-sm">
                         <i class="fas fa-chevron-left"></i> 戻る
                     </button>
-                    <div class="w-px h-4 bg-gray-300 mx-1 sm:mx-1.5 hidden sm:block"></div>
+                    <div class="w-px h-5 bg-gray-300 mx-1 sm:mx-2 hidden sm:block"></div>
                     
                     <!-- ★ メモ手書きツールバー -->
                     <div class="flex items-center">
-                        <button id="memo-draw-toggle-btn" class="px-1.5 py-1 bg-gray-200 hover:bg-gray-300 rounded text-[10px] font-bold text-gray-600 transition flex items-center gap-1 shadow-sm shrink-0" onclick="window.toggleMemoDrawMode()">
+                        <button id="memo-draw-toggle-btn" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold text-gray-600 transition flex items-center gap-1 shadow-sm shrink-0" onclick="window.toggleMemoDrawMode()">
                             <i class="fas fa-pencil-alt"></i> <span id="memo-draw-toggle-text" class="hidden sm:inline">手書き: OFF</span><span class="sm:hidden">手書き</span>
                         </button>
-                        <div id="memo-drawing-toolbar" class="draw-toolbar-base flex items-center gap-0.5 bg-[#4a5f73] text-white py-0.5 rounded shadow-inner border border-gray-500 h-[24px]">
-                            <button id="memo-tool-pen" class="w-5 h-5 rounded bg-gray-600 flex justify-center items-center hover:bg-gray-500 transition" onclick="window.setMemoTool('pen')" title="ペン"><i class="fas fa-pen text-[8px]"></i></button>
-                            <button id="memo-tool-highlighter" class="w-5 h-5 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('highlighter')" title="蛍光ペン"><i class="fas fa-highlighter text-[8px]"></i></button>
-                            <button id="memo-tool-eraser" class="w-5 h-5 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('eraser')" title="消しゴム"><i class="fas fa-eraser text-[8px]"></i></button>
-                            <div class="w-px h-2 bg-gray-400 mx-0.5"></div>
-                            <div class="flex gap-0.5">
-                                <button class="w-3 h-3 rounded-full bg-black border border-white ring-1 ring-offset-0.5 ring-offset-[#4a5f73] ring-blue-300" onclick="window.setMemoColor('#000000', this)"></button>
-                                <button class="w-3 h-3 rounded-full bg-red-600 border border-transparent" onclick="window.setMemoColor('#dc2626', this)"></button>
-                                <button class="w-3 h-3 rounded-full bg-blue-600 border border-transparent" onclick="window.setMemoColor('#2563eb', this)"></button>
+                        <div id="memo-drawing-toolbar" class="draw-toolbar-base flex items-center gap-0.5 bg-[#4a5f73] text-white py-1 rounded shadow-inner border border-gray-500 h-[28px]">
+                            <button id="memo-tool-pen" class="w-6 h-6 rounded bg-gray-600 flex justify-center items-center hover:bg-gray-500 transition" onclick="window.setMemoTool('pen')" title="ペン"><i class="fas fa-pen text-[10px]"></i></button>
+                            <button id="memo-tool-highlighter" class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('highlighter')" title="蛍光ペン"><i class="fas fa-highlighter text-[10px]"></i></button>
+                            <button id="memo-tool-eraser" class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('eraser')" title="消しゴム"><i class="fas fa-eraser text-[10px]"></i></button>
+                            <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
+                            <div class="flex gap-1">
+                                <button class="w-4 h-4 rounded-full bg-black border border-white ring-1 ring-offset-0.5 ring-offset-[#4a5f73] ring-blue-300" onclick="window.setMemoColor('#000000', this)"></button>
+                                <button class="w-4 h-4 rounded-full bg-red-600 border border-transparent" onclick="window.setMemoColor('#dc2626', this)"></button>
+                                <button class="w-4 h-4 rounded-full bg-blue-600 border border-transparent" onclick="window.setMemoColor('#2563eb', this)"></button>
                             </div>
-                            <div class="w-px h-2 bg-gray-400 mx-0.5"></div>
+                            <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
                             <div class="flex gap-0.5 items-center">
-                                <button id="memo-line-thin" class="w-4 h-4 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(2, this)" title="細い"><i class="fas fa-circle text-[3px]"></i></button>
-                                <button id="memo-line-medium" class="w-4 h-4 flex justify-center items-center opacity-100 hover:opacity-100 transition" onclick="window.setMemoLineWidth(5, this)" title="普通"><i class="fas fa-circle text-[6px]"></i></button>
-                                <button id="memo-line-thick" class="w-4 h-4 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(10, this)" title="太い"><i class="fas fa-circle text-[9px]"></i></button>
+                                <button id="memo-line-thin" class="w-5 h-5 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(2, this)" title="細い"><i class="fas fa-circle text-[4px]"></i></button>
+                                <button id="memo-line-medium" class="w-5 h-5 flex justify-center items-center opacity-100 hover:opacity-100 transition" onclick="window.setMemoLineWidth(5, this)" title="普通"><i class="fas fa-circle text-[8px]"></i></button>
+                                <button id="memo-line-thick" class="w-5 h-5 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(10, this)" title="太い"><i class="fas fa-circle text-[12px]"></i></button>
                             </div>
-                            <div class="w-px h-2 bg-gray-400 mx-0.5"></div>
-                            <button class="w-5 h-5 rounded hover:bg-gray-600 flex justify-center items-center transition text-red-300" onclick="window.clearMemoCanvas()" title="全消去"><i class="fas fa-trash-alt text-[8px]"></i></button>
+                            <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
+                            <button class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition text-red-300" onclick="window.clearMemoCanvas()" title="全消去"><i class="fas fa-trash-alt text-[10px]"></i></button>
                         </div>
                     </div>
 
-                    <span class="text-gray-400 text-[9px] sm:text-[10px] hidden md:inline ml-1"><i class="fas fa-check"></i> 自動保存</span>
+                    <span class="text-gray-400 text-[10px] hidden md:inline ml-2"><i class="fas fa-check"></i> 自動保存</span>
                 </div>
-                <div class="flex items-center gap-1 sm:gap-1.5">
-                    <button onclick="window.copyMemoText()" class="text-[#4a5f73] font-bold px-1.5 sm:px-2 py-1 hover:bg-gray-200 rounded transition text-[9px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <button onclick="window.copyMemoText()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
                         <i class="far fa-copy"></i> <span class="hidden sm:inline">テキストをコピー</span>
                     </button>
-                    <button onclick="window.printMemo()" class="text-[#4a5f73] font-bold px-1.5 sm:px-2 py-1 hover:bg-gray-200 rounded transition text-[9px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
+                    <button onclick="window.printMemo()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
                         <i class="fas fa-print"></i> <span class="hidden sm:inline">メモを印刷</span>
                     </button>
-                    <button onclick="window.deleteMemo()" class="text-red-500 font-bold px-1.5 sm:px-2 py-1 hover:bg-red-50 rounded transition text-[9px] sm:text-xs flex items-center gap-1 border border-red-200 bg-white ml-0.5 sm:ml-1">
+                    <button onclick="window.deleteMemo()" class="text-red-500 font-bold px-2 py-1.5 hover:bg-red-50 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-red-200 bg-white ml-0.5 sm:ml-1">
                         <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">削除</span>
                     </button>
                 </div>
             </div>
 
             <!-- コンテンツ (印刷対象) -->
-            <div class="flex-1 overflow-y-auto p-0 sm:p-2 bg-gray-100 flex justify-center custom-scrollbar">
-                <div class="bg-white w-full max-w-4xl min-h-full sm:rounded shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
+            <div class="flex-1 overflow-y-auto p-1 sm:p-4 bg-gray-100 flex justify-center custom-scrollbar">
+                <div class="bg-white w-full max-w-4xl min-h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
                     <!-- 印刷用ヘッダー -->
-                    <div class="p-2 sm:p-4 pb-1 flex justify-between items-start border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t">
+                    <div class="p-3 sm:p-5 pb-1.5 flex justify-between items-start border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
                         <div class="flex-1 min-w-0">
-                            <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-base sm:text-lg font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-0.5 sm:py-1 mb-1.5">
-                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[9px] sm:text-[10px] px-1">
-                                <div class="text-gray-400 font-bold flex items-center gap-0.5 shrink-0">
+                            <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-lg sm:text-xl font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-1 mb-2">
+                            <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs px-1">
+                                <div class="text-gray-400 font-bold flex items-center gap-1 shrink-0">
                                     <i class="far fa-clock"></i> 
-                                    <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-0.5 py-0.5">
-                                    <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[8px] sm:text-[9px]"></span>
+                                    <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-1 py-0.5">
+                                    <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[9px] sm:text-[10px]"></span>
                                 </div>
-                                <div class="flex items-center gap-0.5 shrink-0">
-                                    <span class="text-gray-400 font-bold text-[8px] sm:text-[9px]">カテゴリ:</span>
-                                    <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1 sm:px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[9px] sm:text-[10px]">
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">カテゴリ:</span>
+                                    <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
                                         <option value="meeting">会議</option>
                                         <option value="guidance">生徒指導</option>
                                         <option value="other">その他</option>
                                     </select>
                                 </div>
-                                <div class="flex items-center gap-0.5 shrink-0">
-                                    <span class="text-gray-400 font-bold text-[8px] sm:text-[9px]">保存先:</span>
-                                    <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1 sm:px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[9px] sm:text-[10px]">
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">保存先:</span>
+                                    <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
                                         <option value="">(ルート)</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="shrink-0 ml-2 sm:ml-3 no-print flex flex-col items-center sm:items-end">
-                            <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-lg sm:text-xl transition-colors hover:bg-gray-100 text-gray-300">
+                        <div class="shrink-0 ml-3 sm:ml-4 no-print flex flex-col items-center sm:items-end">
+                            <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl transition-colors hover:bg-gray-100 text-gray-300">
                                 <i class="fas fa-star"></i>
                             </button>
-                            <span class="text-[8px] text-gray-400 font-bold mt-0.5 text-center w-full">お気に入り</span>
+                            <span class="text-[9px] text-gray-400 font-bold mt-1 text-center w-full">お気に入り</span>
                         </div>
                     </div>
                     
                     <div class="flex-1 flex flex-col relative w-full h-full min-h-[300px]">
                         <!-- メモテキストエリア -->
-                        <textarea id="memo-edit-content" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full resize-none outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-sm text-xs p-3 sm:p-4 z-0"></textarea>
+                        <textarea id="memo-edit-content" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full resize-none outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0"></textarea>
                         <!-- ★ メモ用手書きキャンバス -->
                         <canvas id="memo-drawing-canvas" class="absolute inset-0 z-10 touch-none pointer-events-none"></canvas>
                     </div>
@@ -810,7 +795,11 @@
         let addModalTargetDate = null;
         let editTarget = null; 
         let currentModalMode = 'schedule';
-        let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null, targetDayOfWeek: null, targetPeriodNum: null, sourceDay: null, sourcePeriod: null };
+        
+        // ★ 週授業ポップアップ用グローバル変数
+        let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null };
+        let wpSelectedDay = 1;
+        let wpSelectedPeriod = 1;
 
         let undoStack = [];
         let redoStack = [];
@@ -1006,7 +995,8 @@
             if (!timeStr) return 0;
             const [h, m] = timeStr.split(':').map(Number);
             if (h < 6) return 0;
-            return (h - 6) * 60 + m;
+            if (h >= 22) return 16 * 45; // ★ 上限を22時にクリップ
+            return (h - 6) * 45 + m * 0.75;
         };
 
         const packTimeEvents = (events) => {
@@ -1014,7 +1004,7 @@
             events.forEach(ev => {
                 ev.startPx = timeToPx(ev.drawStart);
                 let endPx = timeToPx(ev.drawEnd);
-                if (endPx <= ev.startPx) endPx = ev.startPx + 20; 
+                if (endPx <= ev.startPx) endPx = ev.startPx + 15; // 最小高さを調整
                 ev.endPx = endPx;
             });
             events.sort((a, b) => a.startPx - b.startPx || b.endPx - a.endPx);
@@ -1101,12 +1091,30 @@
         window.toggleMemoSidebar = () => {
             const sidebar = document.getElementById('memo-sidebar');
             const overlay = document.getElementById('memo-sidebar-overlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
+            const openBtnPc = document.getElementById('memo-sidebar-open-btn-pc');
+            const isMobile = window.innerWidth < 640;
+            
+            if (isMobile) {
+                if (sidebar.classList.contains('-ml-48')) {
+                    sidebar.classList.remove('-ml-48');
+                    sidebar.classList.add('ml-0');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.remove('ml-0');
+                    sidebar.classList.add('-ml-48');
+                    overlay.classList.add('hidden');
+                }
             } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
+                // PC時の開閉ロジック
+                if (sidebar.classList.contains('sm:-ml-48')) {
+                    sidebar.classList.remove('sm:-ml-48');
+                    sidebar.classList.add('sm:ml-0');
+                    if (openBtnPc) openBtnPc.classList.add('hidden');
+                } else {
+                    sidebar.classList.remove('sm:ml-0');
+                    sidebar.classList.add('sm:-ml-48');
+                    if (openBtnPc) openBtnPc.classList.remove('hidden');
+                }
             }
         };
 
@@ -1623,7 +1631,7 @@
         };
 
         window.setMemoTool = (t) => { memoCurrentTool = t; ['pen', 'highlighter', 'eraser'].forEach(tool => document.getElementById(`memo-tool-${tool}`).classList.toggle('bg-gray-600', t === tool)); };
-        window.setMemoColor = (c, btn) => { memoCurrentColor = c; window.setMemoTool('pen'); btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-offset-1', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); };
+        window.setMemoColor = (c, btn) => { memoCurrentColor = c; window.setMemoTool('pen'); btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); };
         window.setMemoLineWidth = (w, btn) => { memoCurrentLineWidth = w; ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); btn.classList.replace('opacity-50', 'opacity-100'); };
         window.clearMemoCanvas = () => { memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); window.triggerAutoSaveMemo(); };
 
@@ -1716,7 +1724,7 @@
         
         document.addEventListener('click', (e) => { 
             if (!document.body.contains(e.target)) return;
-            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal')) {
+            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal')) {
                 window.clearCellSelection(); 
             } 
             const searchResults = document.getElementById('month-search-results');
@@ -1726,7 +1734,7 @@
         });
 
         // ==========================================
-        // 既存の月・週・週授業等の描画ロジック
+        // 既存の月・週・一覧描画ロジック
         // ==========================================
         window.changeDate = (dateParam) => {
             const newDate = typeof dateParam === 'string' ? new Date(dateParam) : dateParam;
@@ -1885,6 +1893,10 @@
             document.getElementById('add-modal-start-date').value = dateYMD; document.getElementById('add-modal-start-time').value = startHHMM;
             document.getElementById('add-modal-end-date').value = dateYMD; document.getElementById('add-modal-end-time').value = endHHMM;
             document.getElementById('add-modal-due-date').value = dateYMD; 
+            
+            // ★ カテゴリの初期化
+            document.getElementById('add-modal-category-sched').value = 'work';
+            document.getElementById('add-modal-category-task').value = 'work';
 
             document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
             document.querySelector('input[name="add-type"][value="schedule"]').checked = true;
@@ -1933,6 +1945,7 @@
                 if (task) {
                     document.getElementById('add-modal-title').value = task.title || '';
                     if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
+                    document.getElementById('add-modal-category-task').value = task.category || 'work'; // ★ カテゴリの反映
                     document.getElementById('add-modal-memo-task').value = task.memo || '';
                 }
             }
@@ -2014,9 +2027,10 @@
                     } else { allPlanners[dateStr].events.push(ev); }
                 } else if (currentModalMode === 'task') {
                     const dueStr = document.getElementById('add-modal-due-date').value;
+                    const cat = document.getElementById('add-modal-category-task').value; // ★ カテゴリの保存
                     const tsk = {
                         id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                        title, completed: false, dueDate: dueStr, category: 'task', memo: document.getElementById('add-modal-memo-task').value
+                        title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
                     };
                     if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
                     if (editTarget) {
@@ -2125,14 +2139,18 @@
                     const slot = allDaySlots[i][r]; if (!slot) continue;
                     const ev = slot.event; let shouldSkip = false;
 
-                    if (slot.type !== 'class' && slot.type !== 'task') {
-                        if (filterCat === 'work_club' && ev.category !== 'work' && ev.category !== 'club') shouldSkip = true;
-                        if (filterCat === 'private' && ev.category !== 'private') shouldSkip = true;
-                    }
-                    if (slot.type === 'task' || slot.type === 'time' || slot.type === 'allday' || slot.type === 'multi') {
+                    // ★ タスクもスケジュールと同様にカテゴリーによるフィルタリングの対象とする
+                    if (slot.type === 'class') {
+                        if (filterCat === 'work_club' || filterCat === 'private') shouldSkip = true;
+                    } else {
+                        // type: time, allday, multi, task
+                        const cat = ev.category || 'work'; // タスクで未設定の場合は互換性のため 'work' 扱い
+                        if (filterCat === 'work_club' && cat !== 'work' && cat !== 'club') shouldSkip = true;
+                        if (filterCat === 'private' && cat !== 'private') shouldSkip = true;
                         if (filterCat === 'jugyo') shouldSkip = true;
                         if (searchWord && !ev.title.toLowerCase().includes(searchWord) && !(ev.memo && ev.memo.toLowerCase().includes(searchWord))) shouldSkip = true;
                     }
+
                     if (shouldSkip) continue;
 
                     if (r >= maxRows) { overCount++; continue; }
@@ -2180,10 +2198,10 @@
             const startOfWeek = new Date(d.setDate(diff));
             document.getElementById('week-view-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
 
-            document.getElementById('week-time-labels').style.height = '1080px'; document.getElementById('week-view-grid').style.height = '1080px';
+            document.getElementById('week-time-labels').style.height = '720px'; document.getElementById('week-view-grid').style.height = '720px';
 
             let timeLabelsHtml = '';
-            for(let i = 6; i <= 24; i++) timeLabelsHtml += `<div class="absolute w-full text-right pr-2 text-[9px] text-gray-500 -mt-1.5" style="top: ${(i-6)*60}px;">${i}:00</div>`;
+            for(let i = 6; i <= 22; i++) timeLabelsHtml += `<div class="absolute w-full text-right pr-2 text-[9px] text-gray-500 -mt-1.5" style="top: ${(i-6)*45}px;">${i}:00</div>`;
             document.getElementById('week-time-labels').innerHTML = timeLabelsHtml;
 
             const weekDates = []; const weekDateObjs = [];
@@ -2209,14 +2227,15 @@
                                     const curDateStr = weekDates[i];
                                     if (curDateStr >= sDate && curDateStr <= eDate) {
                                         let drawStart = (curDateStr === sDate) ? ev.start.split('T')[1] : "06:00"; 
-                                        let drawEnd = (curDateStr === eDate) ? ev.end.split('T')[1] : "24:00";   
+                                        let drawEnd = (curDateStr === eDate) ? ev.end.split('T')[1] : "22:00";   
                                         timeEventsByDay[i].push({ ...ev, drawStart, drawEnd, originalDateKey: dateKey });
                                     }
                                 }
                             } else {
                                 const dayIdx = weekDates.indexOf(sDate);
                                 if (dayIdx !== -1) {
-                                    let drawStart = ev.start ? ev.start.split('T')[1] : "09:00"; let drawEnd = ev.end ? ev.end.split('T')[1] : "10:00";
+                                    let drawStart = ev.start ? ev.start.split('T')[1] : "09:00"; 
+                                    let drawEnd = ev.end ? ev.end.split('T')[1] : "10:00";
                                     timeEventsByDay[dayIdx].push({ ...ev, drawStart, drawEnd, originalDateKey: dateKey });
                                 }
                             }
@@ -2307,9 +2326,9 @@
                 headerHtml += `<div class="calendar-cell border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}" onclick="window.changeDate('${curStr}')"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="date-link text-xs font-bold cursor-pointer hover:underline ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}" onclick="event.stopPropagation(); window.changeDate('${curStr}')">${cur.getDate()}</span></div>`;
 
                 let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
-                for (let h = 6; h < 24; h++) {
+                for (let h = 6; h < 22; h++) {
                     const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
-                    colContent += `<div class="timeline-cell h-[60px] w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
+                    colContent += `<div class="timeline-cell h-[45px] w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
                 }
                 colContent += `</div>`;
 
@@ -2340,7 +2359,7 @@
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         const memoHtml = ev.memo ? `<div class="truncate text-[8px] opacity-80 mt-0.5 pointer-events-none">${ev.memo}</div>` : '';
                         const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-sm border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPx}px; left: ${leftStr}; width: ${widthStr}; height: ${heightPx}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span>${memoHtml}</div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPx}px; left: ${leftStr}; width: ${widthStr}; height: ${heightPx}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span>${memoHtml}</div>`;
                     }
                 });
                 colsHtml[i] = colContent;
@@ -2586,8 +2605,170 @@
             if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
         };
 
+        // ==========================================
+        // ★ 週授業ポップアップ用モーダル関数群
+        // ==========================================
+        window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName };
+            
+            const dObj = new Date(dateStr);
+            const dayOfWeek = dObj.getDay(); 
+            const defaultDay = (dayOfWeek >= 1 && dayOfWeek <= 5) ? dayOfWeek : 1;
+            const defaultPeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
 
-        // 設定保存ロジック（同期元コード通り、省略せず）
+            const data = allPlanners[dateStr] || {};
+            const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
+
+            wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
+            wpSelectedPeriod = cData && cData.sourcePeriod !== undefined ? cData.sourcePeriod : defaultPeriod;
+
+            let initialCls = "", initialSub = "", initialMemo = "";
+            if (cData && !cData.disabled) {
+                initialCls = cData.cls || "";
+                initialSub = cData.sub || "";
+                initialMemo = cData.memo || "";
+            } else {
+                const baseTt = getBaseTimetableForDate(dObj);
+                if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
+                    initialCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
+                    initialSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
+                    initialMemo = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].memo || "";
+                }
+            }
+
+            document.getElementById('wp-modal-cls').value = initialCls;
+            document.getElementById('wp-modal-sub').value = initialSub;
+            document.getElementById('wp-modal-memo').value = initialMemo;
+
+            window.renderWpModalButtons();
+            window.updateWpModalBaseStatus();
+
+            document.getElementById('weekly-plan-modal').classList.remove('hidden');
+            document.getElementById('weekly-plan-modal').classList.add('flex');
+        };
+
+        window.closeWeeklyPlanModal = () => {
+            document.getElementById('weekly-plan-modal').classList.add('hidden');
+            document.getElementById('weekly-plan-modal').classList.remove('flex');
+        };
+
+        window.renderWpModalButtons = () => {
+            const daysContainer = document.getElementById('wp-modal-days');
+            const periodsContainer = document.getElementById('wp-modal-periods');
+            
+            let daysHtml = '';
+            const dayNames = ['月', '火', '水', '木', '金'];
+            for(let i=1; i<=5; i++) {
+                const isSelected = wpSelectedDay === i;
+                const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+                daysHtml += `<button onclick="window.changeWpModalSource('day', ${i})" class="px-2 py-1 rounded text-xs font-bold border transition ${baseClass}">${dayNames[i-1]}</button>`;
+            }
+            daysContainer.innerHTML = daysHtml;
+
+            const ttType = getTtType(wpModalTarget.targetDateStr);
+            const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay) : [];
+            const maxPeriods = ttPeriods.length > 0 ? ttPeriods.length : 6;
+
+            let periodsHtml = '';
+            for(let i=1; i<=maxPeriods; i++) {
+                const isSelected = wpSelectedPeriod === i;
+                const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+            }
+            periodsContainer.innerHTML = periodsHtml;
+        };
+
+        window.changeWpModalSource = (type, val) => {
+            if (type === 'day') wpSelectedDay = val;
+            if (type === 'period') wpSelectedPeriod = val;
+            
+            window.renderWpModalButtons();
+            
+            const dObj = new Date(wpModalTarget.targetDateStr);
+            const baseTt = getBaseTimetableForDate(dObj);
+            let newCls = "", newSub = "";
+            if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
+                newCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
+                newSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
+            }
+            
+            document.getElementById('wp-modal-cls').value = newCls;
+            document.getElementById('wp-modal-sub').value = newSub;
+            
+            window.updateWpModalBaseStatus();
+        };
+
+        window.updateWpModalBaseStatus = () => {
+            const statusEl = document.getElementById('wp-modal-base-status');
+            const dayNames = ['月', '火', '水', '木', '金'];
+            const dName = dayNames[wpSelectedDay - 1];
+            
+            const dObj = new Date(wpModalTarget.targetDateStr);
+            const origDay = dObj.getDay();
+            const origPeriod = parseInt(wpModalTarget.targetPeriodName.replace(/[^0-9]/g, '')) || 1;
+            
+            if (wpSelectedDay === origDay && wpSelectedPeriod === origPeriod) {
+                statusEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i> 通常の授業（${dName}曜${wpSelectedPeriod}限）`;
+                statusEl.className = "bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all";
+            } else {
+                statusEl.innerHTML = `<i class="fas fa-exchange-alt mr-1"></i> 時間割変更：${dName}曜${wpSelectedPeriod}限の授業を行います`;
+                statusEl.className = "bg-orange-50 rounded text-center p-1.5 text-xs font-bold text-orange-700 border border-orange-200 shadow-sm transition-all";
+            }
+        };
+
+        window.saveWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            const cls = document.getElementById('wp-modal-cls').value.trim();
+            const sub = document.getElementById('wp-modal-sub').value.trim();
+            const memo = document.getElementById('wp-modal-memo').value.trim();
+            
+            allPlanners[targetDateStr].classes[targetPeriodId] = {
+                cls: cls,
+                sub: sub,
+                memo: memo,
+                sourceDay: wpSelectedDay,
+                sourcePeriod: wpSelectedPeriod,
+                disabled: false
+            };
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        window.deleteWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            allPlanners[targetDateStr].classes[targetPeriodId] = { disabled: true };
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        window.resetWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (allPlanners[targetDateStr] && allPlanners[targetDateStr].classes) {
+                delete allPlanners[targetDateStr].classes[targetPeriodId];
+            }
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        // 設定保存ロジック
         window.syncTempSettingsFromDOM = () => {
             if (!tempSettings) return;
             Object.keys(tempSettings.timetables).forEach(key => {
@@ -2789,154 +2970,75 @@
             renderSettingsView();
         };
 
+        window.updatePatternName = (val) => {
+            const activeIdx = tempSettings.activePatternIndex || 0;
+            if (tempSettings.baseTimetablePatterns[activeIdx]) {
+                tempSettings.baseTimetablePatterns[activeIdx].name = val;
+                const select = document.getElementById('settings-pattern-select');
+                if (select && select.options[activeIdx]) {
+                    select.options[activeIdx].text = val;
+                }
+            }
+        };
 
-        // ==========================================
-        // 11. スワイプによるページ移動（月・週・週授業）
-        // ==========================================
-        let swipeStartX = 0;
-        let swipeStartY = 0;
-        let swipeTargetElem = null;
-        let swipeStartScrollLeft = 0;
-        let swipeStartScrollWidth = 0;
-        let swipeStartClientWidth = 0;
-        
-        let isSwiping = false;
-        let swipeDirectionDetermined = false;
-        let activeViewElem = null;
+        window.addSettingsPattern = () => {
+            window.syncTempSettingsFromDOM();
+            const newIdx = tempSettings.baseTimetablePatterns.length;
+            tempSettings.baseTimetablePatterns.push({
+                id: 'p_' + Date.now(),
+                name: '新しいパターン',
+                startDate: '',
+                endDate: '',
+                data: {1:{},2:{},3:{},4:{},5:{}}
+            });
+            tempSettings.activePatternIndex = newIdx;
+            renderSettingsView();
+        };
 
-        document.addEventListener('touchstart', (e) => {
-            if (isMemoDrawingMode) return;
-            
-            if (!document.getElementById('add-modal').classList.contains('hidden') ||
-                !document.getElementById('weekly-plan-modal').classList.contains('hidden') ||
-                !document.getElementById('memo-edit-modal').classList.contains('hidden')) {
+        window.removeSettingsPattern = () => {
+            if (tempSettings.baseTimetablePatterns.length <= 1) {
+                alert("パターンは最低1つ必要です。");
                 return;
             }
-
-            if (currentView !== 'month' && currentView !== 'week' && currentView !== 'weekly-plan') {
-                return;
+            if (confirm("現在表示しているパターンを削除しますか？")) {
+                const activeIdx = tempSettings.activePatternIndex || 0;
+                tempSettings.baseTimetablePatterns.splice(activeIdx, 1);
+                tempSettings.activePatternIndex = 0;
+                renderSettingsView();
             }
+        };
 
-            swipeStartX = e.touches[0].screenX;
-            swipeStartY = e.touches[0].screenY;
-            swipeTargetElem = null;
-            isSwiping = false;
-            swipeDirectionDetermined = false;
-            
-            activeViewElem = document.getElementById(`${currentView}-animation-area`);
+        window.addTtPeriod = (key) => {
+            window.syncTempSettingsFromDOM();
+            const tt = tempSettings.timetables[key];
+            const pId = 'p_' + Date.now();
+            const nextNum = tt.periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length + 1;
+            tt.periods.push({ id: pId, name: `${nextNum}限`, s: "", e: "" });
+            renderSettingsView();
+        };
 
-            let target = e.target;
-            while (target && target !== document.body) {
-                if (target.scrollWidth > target.clientWidth) {
-                    const style = window.getComputedStyle(target);
-                    if (style.overflowX === 'auto' || style.overflowX === 'scroll' || target.classList.contains('overflow-x-auto') || target.classList.contains('custom-scrollbar')) {
-                        swipeTargetElem = target;
-                        swipeStartScrollLeft = target.scrollLeft;
-                        swipeStartScrollWidth = target.scrollWidth;
-                        swipeStartClientWidth = target.clientWidth;
-                        break;
-                    }
-                }
-                target = target.parentNode;
+        window.removeTtPeriod = (key, idx) => {
+            if (confirm("この行を削除しますか？")) {
+                window.syncTempSettingsFromDOM();
+                tempSettings.timetables[key].periods.splice(idx, 1);
+                renderSettingsView();
             }
-            
-            if (activeViewElem) {
-                activeViewElem.style.transition = 'none';
-            }
-        }, { passive: true });
+        };
 
-        document.addEventListener('touchmove', (e) => {
-            if (!swipeStartX || !activeViewElem) return;
+        window.changeDisplayModeSetting = (mode) => {
+            // 一時設定へ反映
+            tempSettings.displayMode = mode;
+        };
 
-            const touchX = e.touches[0].screenX;
-            const touchY = e.touches[0].screenY;
-            const diffX = touchX - swipeStartX;
-            const diffY = touchY - swipeStartY;
-
-            if (!swipeDirectionDetermined) {
-                if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
-                    swipeDirectionDetermined = true;
-                    if (Math.abs(diffX) > Math.abs(diffY)) {
-                        isSwiping = true;
-                    } else {
-                        swipeStartX = null; 
-                        return;
-                    }
-                } else {
-                    return; 
-                }
-            }
-
-            if (isSwiping) {
-                if (swipeTargetElem) {
-                    if (diffX < 0) { 
-                        if (Math.ceil(swipeStartScrollLeft + swipeStartClientWidth) < swipeStartScrollWidth - 5) return; 
-                    } else { 
-                        if (swipeStartScrollLeft > 5) return; 
-                    }
-                }
-
-                const translateX = diffX * 0.5; 
-                activeViewElem.style.transform = `translateX(${translateX}px)`;
-                activeViewElem.style.opacity = Math.max(0.3, 1 - Math.abs(translateX) / window.innerWidth * 1.5);
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchend', (e) => {
-            if (!activeViewElem || !swipeDirectionDetermined || !isSwiping) {
-                if (activeViewElem) {
-                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
-                    activeViewElem.style.transform = 'translateX(0)';
-                    activeViewElem.style.opacity = '1';
-                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
-                }
-                swipeStartX = null;
-                return;
-            }
-
-            const swipeEndX = e.changedTouches[0].screenX;
-            const diffX = swipeEndX - swipeStartX;
-
-            activeViewElem.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
-
-            if (Math.abs(diffX) > 60) {
-                const sign = diffX > 0 ? 1 : -1;
-                activeViewElem.style.transform = `translateX(${sign * 30}px)`; 
-                activeViewElem.style.opacity = '0';
-
-                setTimeout(() => {
-                    if (diffX < 0) {
-                        if (currentView === 'month') window.changeMonthView(1);
-                        else if (currentView === 'week') window.changeWeekView(1);
-                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(1);
-                    } else {
-                        if (currentView === 'month') window.changeMonthView(-1);
-                        else if (currentView === 'week') window.changeWeekView(-1);
-                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(-1);
-                    }
-
-                    activeViewElem.style.transition = 'none';
-                    activeViewElem.style.transform = `translateX(${-sign * 20}px)`;
-                    
-                    void activeViewElem.offsetWidth;
-
-                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
-                    activeViewElem.style.transform = 'translateX(0)';
-                    activeViewElem.style.opacity = '1';
-
-                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
-
-                }, 100); 
-
-            } else {
-                activeViewElem.style.transform = 'translateX(0)';
-                activeViewElem.style.opacity = '1';
-                setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 100);
-            }
-
-            swipeStartX = null;
-            isSwiping = false;
-        });
+        window.saveSettings = () => {
+            window.syncTempSettingsFromDOM();
+            globalSettings = JSON.parse(JSON.stringify(tempSettings));
+            safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
+            window.saveToFirebase();
+            window.updateDisplayMode();
+            window.renderCurrentView();
+            alert("設定を保存しました。");
+        };
 
         // 検索結果から予定へジャンプする処理
         window.handleMonthSearch = () => {
@@ -3045,7 +3147,9 @@
             }, 100);
         };
 
+        // 初期化処理の呼び出し
         initDataSync();
+        window.updateDisplayMode();
 
     </script>
 </body>
