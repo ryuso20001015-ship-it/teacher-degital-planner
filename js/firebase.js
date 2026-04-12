@@ -1,5 +1,20 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
 import { state, LS_KEY } from './state.js';
 import { safeGetItem, safeSetItem } from './utils.js';
+
+const MY_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBQ86uhJYJw2H5_ioH1PgHXE8vjcckeys0",
+    authDomain: "teacher-degital-planner.firebaseapp.com",
+    databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
+    projectId: "teacher-degital-planner",
+    storageBucket: "teacher-degital-planner.firebasestorage.app",
+    messagingSenderId: "134884141905",
+    appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
+    measurementId: "G-Z7CPJ3KNV6"
+};
 
 // Firebase通信の内部でのみ使用する変数
 let db = null;
@@ -18,26 +33,13 @@ export const getSyncId = () => {
 };
 
 export const initFirebase = async () => {
-    if (!window.fb) return;
-    
-    const MY_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBQ86uhJYjw2H5_ioH1PgHXE8vjCckeys0",
-  authDomain: "teacher-degital-planner.firebaseapp.com",
-  databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
-  projectId: "teacher-degital-planner",
-  storageBucket: "teacher-degital-planner.firebasestorage.app",
-  messagingSenderId: "134884141905",
-  appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
-  measurementId: "G-Z7CPJ3KNV6"
-}; 
-    
     try {
-        const app = window.fb.initializeApp(MY_FIREBASE_CONFIG);
-        auth = window.fb.getAuth(app);
-        db = window.fb.getFirestore(app);
+        const app = initializeApp(MY_FIREBASE_CONFIG);
+        auth = getAuth(app);
+        db = getFirestore(app);
 
-        await window.fb.signInAnonymously(auth);
-        window.fb.onAuthStateChanged(auth, (user) => { 
+        await signInAnonymously(auth);
+        onAuthStateChanged(auth, (user) => { 
             if (user) startFirebaseSync(); 
         });
     } catch (e) { 
@@ -51,9 +53,9 @@ export const startFirebaseSync = () => {
     if (displayElem) displayElem.textContent = syncId;
 
     if (unsubscribeSnapshot) unsubscribeSnapshot();
-    const docRef = window.fb.doc(db, 'planners', syncId);
+    const docRef = doc(db, 'planners', syncId);
     
-    unsubscribeSnapshot = window.fb.onSnapshot(docRef, (docSnap) => {
+    unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             const cloudTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
@@ -98,13 +100,10 @@ export const startFirebaseSync = () => {
 };
 
 export const saveToFirebase = async () => {
-if (!db || !auth || !auth.currentUser) {
-        alert(`同期エラー：\nDB: ${!!db}\nAuth: ${!!auth}\nUser: ${!!(auth && auth.currentUser)}`);
-        return;
-    }
+    if (!db || !auth || !auth.currentUser) return;
     
     const syncId = getSyncId();
-    const docRef = window.fb.doc(db, 'planners', syncId);
+    const docRef = doc(db, 'planners', syncId);
     const statusEl = document.getElementById('sync-status');
     if (statusEl) statusEl.classList.remove('hidden');
 
@@ -119,7 +118,7 @@ if (!db || !auth || !auth.currentUser) {
             folders: JSON.parse(JSON.stringify(state.allFolders)),
             updatedAt: now
         };
-        await window.fb.setDoc(docRef, payload);
+        await setDoc(docRef, payload);
     } catch (e) {
         console.error("Firebase save failed:", e);
     } finally {
