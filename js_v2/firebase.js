@@ -2,8 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-import { state, LS_KEY } from './state.js';
-import { safeGetItem, safeSetItem } from './utils.js';
+import { state, LS_KEY } from './state.js?v=2';
+import { safeGetItem, safeSetItem } from './utils.js?v=2';
 
 const MY_FIREBASE_CONFIG = {
     apiKey: "AIzaSyBQ86uhJYJw2H5_ioH1PgHXE8vjcckeys0",
@@ -96,6 +96,8 @@ export const startFirebaseSync = () => {
         } else {
             if (!isLinkedDevice) saveToFirebase();
         }
+    }, (error) => {
+        console.error("Firestore snapshot error:", error);
     });
 };
 

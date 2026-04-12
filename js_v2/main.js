@@ -1,112 +1,59 @@
-import * as stateModule from './state.js';
-import * as utils from './utils.js';
-import * as firebase from './firebase.js';
-import * as memo from './memo.js';
-import * as calendar from './calendar.js';
-import * as settings from './settings.js';
+import { state, LS_KEY, DAYS_STR, MAX_HISTORY } from './state.js?v=2';
+import { safeGetItem, safeSetItem, getFormatDateStr } from './utils.js?v=2';
+import * as firebaseMod from './firebase.js?v=2';
+import * as memoMod from './memo.js?v=2';
+import * as calendarMod from './calendar.js?v=2';
+import * as settingsMod from './settings.js?v=2';
 
-// stateの読み込み（AIの出力形式の揺れを吸収する安全な書き方）
-const state = stateModule.state || stateModule;
-
-// ==========================================
-// 1. HTML連携用のグローバル登録 (超重要)
-// ==========================================
-Object.assign(window, utils);
-Object.assign(window, firebase);
-Object.assign(window, memo);
-Object.assign(window, calendar);
-Object.assign(window, settings);
-
-// ★ Firebaseの連携（念のため明示的に手動でも登録）
-if (firebase.saveToFirebase) window.saveToFirebase = firebase.saveToFirebase;
-if (firebase.linkDevice) window.linkDevice = firebase.linkDevice;
-
-// ==========================================
-// 2. アプリ全体の操作（Undo/Redo, 画面切替）
-// ==========================================
-const MAX_HISTORY = 20;
-
-window.saveStateToHistory = () => {
-    if (!state.undoStack) state.undoStack = [];
-    state.undoStack.push(JSON.stringify(state.allPlanners));
-    if (state.undoStack.length > MAX_HISTORY) state.undoStack.shift();
-    state.redoStack = [];
-    window.updateUndoRedoButtons();
-};
-
-window.undo = () => {
-    if (!state.undoStack || state.undoStack.length === 0) return;
-    if (!state.redoStack) state.redoStack = [];
-    state.redoStack.push(JSON.stringify(state.allPlanners));
-    state.allPlanners = JSON.parse(state.undoStack.pop());
-    utils.safeSetItem(state.LS_KEY || 'teacher_planner_all_data', JSON.stringify(state.allPlanners));
-    if (window.saveToFirebase) window.saveToFirebase();
-    window.updateUndoRedoButtons();
-    window.renderCurrentView();
-};
-
-window.redo = () => {
-    if (!state.redoStack || state.redoStack.length === 0) return;
-    if (!state.undoStack) state.undoStack = [];
-    state.undoStack.push(JSON.stringify(state.allPlanners));
-    state.allPlanners = JSON.parse(state.redoStack.pop());
-    utils.safeSetItem(state.LS_KEY || 'teacher_planner_all_data', JSON.stringify(state.allPlanners));
-    if (window.saveToFirebase) window.saveToFirebase();
-    window.updateUndoRedoButtons();
-    window.renderCurrentView();
-};
-
-window.updateUndoRedoButtons = () => {
-    const undoBtn = document.getElementById('btn-undo');
-    const redoBtn = document.getElementById('btn-redo');
-    if (undoBtn) {
-        undoBtn.style.opacity = (state.undoStack && state.undoStack.length > 0) ? '1' : '0.3';
-        undoBtn.style.pointerEvents = (state.undoStack && state.undoStack.length > 0) ? 'auto' : 'none';
+export const updateDisplayMode = () => {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        document.body.classList.add('mode-mobile'); document.body.classList.remove('mode-desktop');
+    } else {
+        document.body.classList.add('mode-desktop'); document.body.classList.remove('mode-mobile');
     }
-    if (redoBtn) {
-        redoBtn.style.opacity = (state.redoStack && state.redoStack.length > 0) ? '1' : '0.3';
-        redoBtn.style.pointerEvents = (state.redoStack && state.redoStack.length > 0) ? 'auto' : 'none';
-    }
+    if (typeof window.resizeMemoCanvas === 'function') setTimeout(window.resizeMemoCanvas, 100);
 };
+window.addEventListener('resize', updateDisplayMode);
 
-window.switchView = (viewName) => {
-    state.currentView = viewName;
+export const switchView = (viewName) => {
+    state.currentView = viewName; 
     if (typeof window.clearCellSelection === 'function') window.clearCellSelection();
-
+    
     document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
     const targetView = document.getElementById('view-' + viewName);
-    if (targetView) targetView.classList.remove('hidden');
-
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    const navBtn = document.getElementById('nav-btn-' + viewName);
-    if (navBtn) navBtn.classList.add('active');
+    if(targetView) targetView.classList.remove('hidden');
     
-    if (viewName === 'settings' && typeof window.initSettingsView === 'function') {
-        window.initSettingsView();
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const targetNav = document.getElementById('nav-btn-' + viewName);
+    if(targetNav) targetNav.classList.add('active');
+    
+    if(viewName === 'settings') {
+        if(typeof window.initSettingsView === 'function') window.initSettingsView();
         const dSync = document.getElementById('display-sync-id');
-        if (dSync && typeof window.getSyncId === 'function') dSync.textContent = window.getSyncId();
+        if(dSync && typeof window.getSyncId === 'function') dSync.textContent = window.getSyncId();
     }
 
-    if (viewName === 'memo' && typeof window.renderMemoSidebar === 'function') {
-        window.renderMemoSidebar();
-        if (typeof window.selectMemoFilter === 'function') window.selectMemoFilter(state.currentMemoFilter || 'all');
+    if(viewName === 'memo') {
+        if(typeof window.renderMemoSidebar === 'function') window.renderMemoSidebar();
+        if(typeof window.selectMemoFilter === 'function') window.selectMemoFilter(state.currentMemoFilter);
     }
 
-    window.renderCurrentView();
+    renderCurrentView();
 
     if (viewName === 'agenda') {
         setTimeout(() => {
-            const todayStr = utils.getFormatDateStr ? utils.getFormatDateStr(new Date()) : '';
+            const todayStr = getFormatDateStr(new Date());
             const el = document.getElementById(`agenda-date-${todayStr}`);
             if (el) {
                 const container = document.getElementById('agenda-view-list');
-                if (container) container.scrollTo({ top: el.offsetTop - container.offsetTop - 10, behavior: 'smooth' });
+                if(container) container.scrollTo({ top: el.offsetTop - container.offsetTop - 10, behavior: 'smooth' });
             }
         }, 50);
     }
 };
 
-window.renderCurrentView = () => {
+export const renderCurrentView = () => {
     if (state.currentView === 'month' && typeof window.renderMonthView === 'function') window.renderMonthView();
     else if (state.currentView === 'week' && typeof window.renderWeekView === 'function') window.renderWeekView();
     else if (state.currentView === 'agenda' && typeof window.renderAgendaView === 'function') window.renderAgendaView();
@@ -114,64 +61,117 @@ window.renderCurrentView = () => {
     else if (state.currentView === 'memo' && typeof window.renderMemoList === 'function') window.renderMemoList();
 };
 
-window.goToToday = () => {
+export const saveStateToHistory = () => {
+    state.undoStack.push(JSON.stringify(state.allPlanners));
+    if (state.undoStack.length > MAX_HISTORY) state.undoStack.shift();
+    state.redoStack = []; 
+    updateUndoRedoButtons();
+};
+
+export const undo = () => {
+    if (state.undoStack.length === 0) return;
+    state.redoStack.push(JSON.stringify(state.allPlanners));
+    state.allPlanners = JSON.parse(state.undoStack.pop());
+    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
+    if(typeof window.saveToFirebase === 'function') window.saveToFirebase(); 
+    updateUndoRedoButtons(); 
+    renderCurrentView();
+};
+
+export const redo = () => {
+    if (state.redoStack.length === 0) return;
+    state.undoStack.push(JSON.stringify(state.allPlanners));
+    state.allPlanners = JSON.parse(state.redoStack.pop());
+    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
+    if(typeof window.saveToFirebase === 'function') window.saveToFirebase(); 
+    updateUndoRedoButtons(); 
+    renderCurrentView();
+};
+
+export const updateUndoRedoButtons = () => {
+    const undoBtn = document.getElementById('btn-undo'), redoBtn = document.getElementById('btn-redo');
+    if (undoBtn) { undoBtn.style.opacity = state.undoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = state.undoStack.length > 0 ? 'auto' : 'none'; }
+    if (redoBtn) { redoBtn.style.opacity = state.redoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = state.redoStack.length > 0 ? 'auto' : 'none'; }
+};
+
+export const initDataSync = () => {
+    const localData = safeGetItem(LS_KEY);
+    if (localData) { try { state.allPlanners = JSON.parse(localData); } catch(e){} }
+    const localMemos = safeGetItem('teacher_planner_memos');
+    if (localMemos) { try { state.allMemos = JSON.parse(localMemos); } catch(e){} }
+    const localFolders = safeGetItem('teacher_planner_folders');
+    if (localFolders) { try { state.allFolders = JSON.parse(localFolders); } catch(e){} }
+
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    let memoChanged = false;
+    state.allMemos = state.allMemos.filter(m => {
+        if (m.categoryId === 'trash' && m.deletedAt && (now - m.deletedAt) > thirtyDays) {
+            memoChanged = true;
+            return false;
+        }
+        return true;
+    });
+    if (memoChanged) {
+        safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+        if(typeof window.saveToFirebase === 'function') window.saveToFirebase();
+    }
+
+    initTodayButtons(); 
+    updateUndoRedoButtons(); 
+    renderCurrentView(); 
+};
+
+const initTodayButtons = () => {
     const today = new Date();
-    state.currentDateObj = new Date(today);
+    const dateStr = today.getDate(), dayStr = `(${DAYS_STR[today.getDay()]})`;
+    document.querySelectorAll('.today-btn-date').forEach(el => el.textContent = dateStr);
+    document.querySelectorAll('.today-btn-day').forEach(el => el.textContent = dayStr);
+};
+
+export const goToToday = () => {
+    const today = new Date(); 
+    state.currentDateObj = new Date(today); 
     state.calendarDisplayDate = new Date(today);
-    window.renderCurrentView();
+    renderCurrentView();
     if (state.currentView === 'agenda') {
-        const todayStr = utils.getFormatDateStr ? utils.getFormatDateStr(today) : '';
+        const todayStr = getFormatDateStr(today);
         const el = document.getElementById(`agenda-date-${todayStr}`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 };
 
-window.updateDisplayMode = () => {
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-        document.body.classList.add('mode-mobile');
-        document.body.classList.remove('mode-desktop');
-    } else {
-        document.body.classList.add('mode-desktop');
-        document.body.classList.remove('mode-mobile');
-    }
-    if (typeof window.resizeMemoCanvas === 'function') setTimeout(window.resizeMemoCanvas, 100);
-};
-
-// ==========================================
-// 3. 検索機能
-// ==========================================
-window.handleMonthSearch = () => {
-    window.renderCurrentView(); 
-    const searchInput = document.getElementById('month-search-input');
-    if (!searchInput) return;
+export const handleMonthSearch = () => {
+    renderCurrentView(); 
     
-    const searchWord = searchInput.value.toLowerCase().trim();
+    const searchWordInput = document.getElementById('month-search-input');
+    if (!searchWordInput) return;
+    const searchWord = searchWordInput.value.toLowerCase().trim();
     const resultsContainer = document.getElementById('month-search-results');
     
     if (!searchWord) {
-        resultsContainer.classList.add('hidden');
+        if(resultsContainer) resultsContainer.classList.add('hidden');
         return;
     }
-    
+
     let resultsHtml = '';
     let count = 0;
-    const sortedDates = Object.keys(state.allPlanners || {}).sort();
-    const daysStrArr = state.DAYS_STR || ['日', '月', '火', '水', '木', '金', '土'];
+
+    const sortedDates = Object.keys(state.allPlanners).sort();
 
     sortedDates.forEach(dateStr => {
         const data = state.allPlanners[dateStr];
         const dObj = new Date(dateStr);
-        const dateLabel = `${dObj.getMonth()+1}/${dObj.getDate()}(${daysStrArr[dObj.getDay()]})`;
+        const dateLabel = `${dObj.getMonth()+1}/${dObj.getDate()}(${DAYS_STR[dObj.getDay()]})`;
         
         if (data.events) {
             data.events.forEach(ev => {
                 if (ev.title.toLowerCase().includes(searchWord) || (ev.memo && ev.memo.toLowerCase().includes(searchWord))) {
                     let timeLabel = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0,5) : "");
                     let badgeColor = "bg-gray-100 text-gray-700 border-gray-200";
-                    if (ev.category === 'work') badgeColor = "bg-red-50 text-red-700 border-red-200";
-                    else if (ev.category === 'club') badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
-                    else if (ev.category === 'private') badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
+                    if(ev.category === 'work') badgeColor = "bg-red-50 text-red-700 border-red-200";
+                    else if(ev.category === 'club') badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                    else if(ev.category === 'private') badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
 
                     resultsHtml += `
                         <div class="p-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition" onclick="event.stopPropagation(); window.goToDateFromSearch('${dateStr}', '${ev.id}')">
@@ -213,11 +213,14 @@ window.handleMonthSearch = () => {
     if (count === 0) {
         resultsHtml = '<div class="p-3 text-center text-gray-400 text-[10px] font-bold">一致する予定・タスクは見つかりませんでした</div>';
     }
-    resultsContainer.innerHTML = resultsHtml;
-    resultsContainer.classList.remove('hidden');
+
+    if(resultsContainer) {
+        resultsContainer.innerHTML = resultsHtml;
+        resultsContainer.classList.remove('hidden');
+    }
 };
 
-window.goToDateFromSearch = (dateStr, itemId) => {
+export const goToDateFromSearch = (dateStr, itemId) => {
     const resultsContainer = document.getElementById('month-search-results');
     if (resultsContainer) resultsContainer.classList.add('hidden');
     
@@ -228,11 +231,15 @@ window.goToDateFromSearch = (dateStr, itemId) => {
     state.calendarDisplayDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
     state.currentDateObj = new Date(targetDate);
     
-    state.selectedCellId = `month-cell-${dateStr}`;
-    state.selectedSlot = null;
     state.searchedItemId = itemId;
     
-    window.switchView('month');
+    switchView('month');
+    
+    if (typeof window.handleMonthCellClick === 'function') {
+        if(typeof window.clearCellSelection === 'function') window.clearCellSelection();
+        state.searchedItemId = itemId; 
+        window.handleMonthCellClick(dateStr);
+    }
     
     setTimeout(() => {
         const cell = document.getElementById(`month-cell-${dateStr}`);
@@ -242,79 +249,222 @@ window.goToDateFromSearch = (dateStr, itemId) => {
     }, 100);
 };
 
-// ==========================================
-// 4. アプリ起動時の初期化 (コンソールログ強化版)
-// ==========================================
-window.initDataSync = () => {
-    console.log("-> データの読み込みを開始します");
-    const localData = utils.safeGetItem ? utils.safeGetItem(state.LS_KEY || 'teacher_planner_all_data') : null;
-    if (localData) { try { state.allPlanners = JSON.parse(localData); } catch(e){} }
-    
-    const localMemos = utils.safeGetItem ? utils.safeGetItem('teacher_planner_memos') : null;
-    if (localMemos) { try { state.allMemos = JSON.parse(localMemos); } catch(e){} }
-    
-    const localFolders = utils.safeGetItem ? utils.safeGetItem('teacher_planner_folders') : null;
-    if (localFolders) { try { state.allFolders = JSON.parse(localFolders); } catch(e){} }
+export const handleStartTimeChange = () => {
+    const startDateStr = document.getElementById('add-modal-start-date').value;
+    const startTimeStr = document.getElementById('add-modal-start-time').value;
+    if (!startDateStr || !startTimeStr) return;
 
-    const localSettings = utils.safeGetItem ? utils.safeGetItem('teacher_planner_settings') : null;
-    if (localSettings) { try { state.globalSettings = JSON.parse(localSettings); } catch(e){} }
+    const startObj = new Date(`${startDateStr}T${startTimeStr}`);
+    if (isNaN(startObj.getTime())) return;
 
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    let memoChanged = false;
-    if (state.allMemos) {
-        state.allMemos = state.allMemos.filter(m => {
-            if (m.categoryId === 'trash' && m.deletedAt && (now - m.deletedAt) > thirtyDays) {
-                memoChanged = true; return false;
+    startObj.setHours(startObj.getHours() + 1); 
+
+    const endDateStr = getFormatDateStr(startObj);
+    const endHH = String(startObj.getHours()).padStart(2, '0');
+    const endMM = String(startObj.getMinutes()).padStart(2, '0');
+
+    document.getElementById('add-modal-end-date').value = endDateStr;
+    document.getElementById('add-modal-end-time').value = `${endHH}:${endMM}`;
+};
+
+export const changeDate = (dateParam) => {
+    const newDate = typeof dateParam === 'string' ? new Date(dateParam) : dateParam;
+    state.currentDateObj = newDate; state.calendarDisplayDate = new Date(newDate);
+    renderCurrentView();
+};
+
+// ==========================================
+// モジュールの全関数を window に登録
+// ==========================================
+Object.assign(window, firebaseMod);
+Object.assign(window, memoMod);
+Object.assign(window, calendarMod);
+Object.assign(window, settingsMod);
+
+window.updateDisplayMode = updateDisplayMode;
+window.switchView = switchView;
+window.renderCurrentView = renderCurrentView;
+window.saveStateToHistory = saveStateToHistory;
+window.undo = undo;
+window.redo = redo;
+window.updateUndoRedoButtons = updateUndoRedoButtons;
+window.initDataSync = initDataSync;
+window.goToToday = goToToday;
+window.handleMonthSearch = handleMonthSearch;
+window.goToDateFromSearch = goToDateFromSearch;
+window.handleStartTimeChange = handleStartTimeChange;
+window.changeDate = changeDate;
+
+// ==========================================
+// スワイプ処理等のイベントリスナー
+// ==========================================
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeTargetElem = null;
+let swipeStartScrollLeft = 0;
+let swipeStartScrollWidth = 0;
+let swipeStartClientWidth = 0;
+let isSwiping = false;
+let swipeDirectionDetermined = false;
+let activeViewElem = null;
+
+document.addEventListener('touchstart', (e) => {
+    const addModal = document.getElementById('add-modal');
+    const wpModal = document.getElementById('weekly-plan-modal');
+    const memoModal = document.getElementById('memo-edit-modal');
+    
+    if ((addModal && !addModal.classList.contains('hidden')) ||
+        (wpModal && !wpModal.classList.contains('hidden')) ||
+        (memoModal && !memoModal.classList.contains('hidden'))) {
+        return;
+    }
+
+    if (state.currentView !== 'month' && state.currentView !== 'week' && state.currentView !== 'weekly-plan') {
+        return;
+    }
+
+    swipeStartX = e.touches[0].screenX;
+    swipeStartY = e.touches[0].screenY;
+    swipeTargetElem = null;
+    isSwiping = false;
+    swipeDirectionDetermined = false;
+    
+    activeViewElem = document.getElementById(`${state.currentView}-animation-area`);
+
+    let target = e.target;
+    while (target && target !== document.body) {
+        if (target.scrollWidth > target.clientWidth) {
+            const style = window.getComputedStyle(target);
+            if (style.overflowX === 'auto' || style.overflowX === 'scroll' || target.classList.contains('overflow-x-auto') || target.classList.contains('custom-scrollbar')) {
+                swipeTargetElem = target;
+                swipeStartScrollLeft = target.scrollLeft;
+                swipeStartScrollWidth = target.scrollWidth;
+                swipeStartClientWidth = target.clientWidth;
+                break;
             }
-            return true;
-        });
-        if (memoChanged) {
-            if (utils.safeSetItem) utils.safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
-            if (window.saveToFirebase) window.saveToFirebase();
+        }
+        target = target.parentNode;
+    }
+    
+    if (activeViewElem) {
+        activeViewElem.style.transition = 'none';
+    }
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+    if (!swipeStartX || !activeViewElem) return;
+
+    const touchX = e.touches[0].screenX;
+    const touchY = e.touches[0].screenY;
+    const diffX = touchX - swipeStartX;
+    const diffY = touchY - swipeStartY;
+
+    if (!swipeDirectionDetermined) {
+        if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+            swipeDirectionDetermined = true;
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                isSwiping = true;
+            } else {
+                swipeStartX = null; 
+                return;
+            }
+        } else {
+            return; 
         }
     }
 
-    const today = new Date();
-    const daysStrArr = state.DAYS_STR || ['日', '月', '火', '水', '木', '金', '土'];
-    const dateStr = today.getDate(), dayStr = `(${daysStrArr[today.getDay()]})`;
-    document.querySelectorAll('.today-btn-date').forEach(el => el.textContent = dateStr);
-    document.querySelectorAll('.today-btn-day').forEach(el => el.textContent = dayStr);
+    if (isSwiping) {
+        if (swipeTargetElem) {
+            if (diffX < 0) { 
+                if (Math.ceil(swipeStartScrollLeft + swipeStartClientWidth) < swipeStartScrollWidth - 5) return; 
+            } else { 
+                if (swipeStartScrollLeft > 5) return; 
+            }
+        }
 
-    window.updateUndoRedoButtons();
-    window.renderCurrentView(); 
-    console.log("-> データの読み込みと画面描画が完了しました");
-};
+        const translateX = diffX * 0.5; 
+        activeViewElem.style.transform = `translateX(${translateX}px)`;
+        activeViewElem.style.opacity = Math.max(0.3, 1 - Math.abs(translateX) / window.innerWidth * 1.5);
+    }
+}, { passive: true });
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("=== アプリの初期化を開始します ===");
-    
-    // 1. メモ機能の初期化
-    if (typeof window.initMemoCanvas === 'function') {
-        window.initMemoCanvas();
-        console.log("✅ メモ(Canvas)の初期化: 成功");
+document.addEventListener('touchend', (e) => {
+    if (!activeViewElem || !swipeDirectionDetermined || !isSwiping) {
+        if (activeViewElem) {
+            activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+            activeViewElem.style.transform = 'translateX(0)';
+            activeViewElem.style.opacity = '1';
+            setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+        }
+        swipeStartX = null;
+        return;
+    }
+
+    const swipeEndX = e.changedTouches[0].screenX;
+    const diffX = swipeEndX - swipeStartX;
+
+    activeViewElem.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+
+    if (Math.abs(diffX) > 60) {
+        const sign = diffX > 0 ? 1 : -1;
+        activeViewElem.style.transform = `translateX(${sign * 30}px)`; 
+        activeViewElem.style.opacity = '0';
+
+        setTimeout(() => {
+            if (diffX < 0) {
+                if (state.currentView === 'month' && typeof window.changeMonthView === 'function') window.changeMonthView(1);
+                else if (state.currentView === 'week' && typeof window.changeWeekView === 'function') window.changeWeekView(1);
+                else if (state.currentView === 'weekly-plan' && typeof window.changeWeeklyPlanView === 'function') window.changeWeeklyPlanView(1);
+            } else {
+                if (state.currentView === 'month' && typeof window.changeMonthView === 'function') window.changeMonthView(-1);
+                else if (state.currentView === 'week' && typeof window.changeWeekView === 'function') window.changeWeekView(-1);
+                else if (state.currentView === 'weekly-plan' && typeof window.changeWeeklyPlanView === 'function') window.changeWeeklyPlanView(-1);
+            }
+
+            activeViewElem.style.transition = 'none';
+            activeViewElem.style.transform = `translateX(${-sign * 20}px)`;
+            
+            void activeViewElem.offsetWidth;
+
+            activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+            activeViewElem.style.transform = 'translateX(0)';
+            activeViewElem.style.opacity = '1';
+
+            setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+
+        }, 100); 
+
     } else {
-        console.warn("⚠️ initMemoCanvasが見つかりません。memo.jsの読み込みを確認してください。");
+        activeViewElem.style.transform = 'translateX(0)';
+        activeViewElem.style.opacity = '1';
+        setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 100);
     }
-    
-    // 2. ローカルデータの読み込みと画面描画
-    if (typeof window.initDataSync === 'function') {
-        window.initDataSync();
-    }
-    
-    // 3. 表示モードの更新
-    if (typeof window.updateDisplayMode === 'function') {
-        window.updateDisplayMode();
-        window.addEventListener('resize', window.updateDisplayMode);
-    }
-    
-    // 4. Firebaseの初期化
-    if (firebase && typeof firebase.initFirebase === 'function') {
-        firebase.initFirebase();
-        console.log("✅ Firebaseの初期化(initFirebase): 呼び出し成功");
-    } else {
-        console.error("❌ firebase.initFirebaseが見つかりません。firebase.jsのexport指定漏れの可能性があります。");
-    }
-    
-    console.log("=== アプリの初期化処理が完了しました ===");
+
+    swipeStartX = null;
+    isSwiping = false;
 });
+
+// ==========================================
+// アプリ初期化処理
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.initMemoCanvas === 'function') window.initMemoCanvas();
+    
+    const memoEditor = document.getElementById('memo-edit-content');
+    if (memoEditor) {
+        memoEditor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+            }
+        });
+    }
+});
+
+// Firebaseの初期化
+if (typeof window.initFirebase === 'function') {
+    window.initFirebase();
+}
+
+initDataSync();
+updateDisplayMode();
