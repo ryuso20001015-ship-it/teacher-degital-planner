@@ -21,15 +21,15 @@ export const initFirebase = async () => {
     if (!window.fb) return;
     
     const MY_FIREBASE_CONFIG = {
-        apiKey: "AIzaSyBQ86uhJYjw2H5_ioH1PgHXE8vjCckeys0",
-        authDomain: "teacher-degital-planner.firebaseapp.com",
-        databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
-        projectId: "teacher-degital-planner",
-        storageBucket: "teacher-degital-planner.firebasestorage.app",
-        messagingSenderId: "134884141905",
-        appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
-        measurementId: "G-Z7CPJ3KNV6"
-    }; 
+  apiKey: "AIzaSyBQ86uhJYjw2H5_ioH1PgHXE8vjCckeys0",
+  authDomain: "teacher-degital-planner.firebaseapp.com",
+  databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
+  projectId: "teacher-degital-planner",
+  storageBucket: "teacher-degital-planner.firebasestorage.app",
+  messagingSenderId: "134884141905",
+  appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
+  measurementId: "G-Z7CPJ3KNV6"
+}; 
     
     try {
         const app = window.fb.initializeApp(MY_FIREBASE_CONFIG);
@@ -98,7 +98,10 @@ export const startFirebaseSync = () => {
 };
 
 export const saveToFirebase = async () => {
-    if (!db || !auth || !auth.currentUser) return;
+if (!db || !auth || !auth.currentUser) {
+        alert(`同期エラー：\nDB: ${!!db}\nAuth: ${!!auth}\nUser: ${!!(auth && auth.currentUser)}`);
+        return;
+    }
     
     const syncId = getSyncId();
     const docRef = window.fb.doc(db, 'planners', syncId);
