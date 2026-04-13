@@ -3,15 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            alert("【エラー発生】\n" + message + "\n行: " + lineno);
-            return true;
-        };
-        window.addEventListener("unhandledrejection", function(event) {
-            alert("【通信エラー発生】\n" + event.reason);
-        });
-    </script>
-    <script>
         if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             window.location.href = window.location.href.replace('http:', 'https:');
         }
@@ -20,6 +11,18 @@
     <title>デジタル教師手帳 - Advanced Timetable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.fb = {
+            initializeApp, getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged,
+            getFirestore, doc, setDoc, onSnapshot, collection
+        };
+        window.dispatchEvent(new Event('firebase-loaded'));
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -170,6 +173,7 @@
         </div>
     </header>
 
+    <!-- 予定・タスク用 モーダル -->
     <div id="add-modal" class="fixed inset-0 bg-black/40 z-[110] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeAddMenu()">
         <div class="bg-[#f8f9fa] rounded-xl shadow-2xl p-3 w-[95%] max-w-sm modal-animate max-h-[90vh] flex flex-col relative overflow-hidden border border-gray-200">
             <div class="flex justify-between items-center mb-3 pb-1 shrink-0 relative">
@@ -280,6 +284,7 @@
         </div>
     </div>
 
+    <!-- 授業用 モーダル (月・週・週案簿から共通で呼び出し) -->
     <div id="weekly-plan-modal" class="fixed inset-0 bg-black/40 z-[120] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeWeeklyPlanModal()">
         <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-w-sm modal-animate relative border border-gray-200">
             <h3 id="wp-modal-title" class="font-bold text-[#4a5f73] text-sm mb-3 text-center border-b border-gray-200 pb-1.5"><i class="fas fa-chalkboard-teacher mr-1"></i>授業予定</h3>
@@ -318,6 +323,7 @@
         </div>
     </div>
 
+    <!-- 月・週用 ボトムシート（ポップアップ） -->
     <div id="month-bottom-sheet" class="fixed inset-x-0 bottom-0 z-[125] bg-white rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-full transition-transform duration-300 ease-out flex flex-col max-h-[75vh] sm:max-h-[60vh] sm:w-[450px] sm:mx-auto border border-gray-200">
         <div class="flex justify-center pt-2 pb-1.5 shrink-0 cursor-pointer w-full" onclick="window.closeMonthBottomSheet()">
             <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
@@ -331,6 +337,7 @@
 
     <main class="flex-1 relative overflow-hidden flex justify-center items-center bg-[#1a1a2e]">
         
+        <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
@@ -366,6 +373,7 @@
             </div>
         </div>
 
+        <!-- View 2: 週カレンダー -->
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
@@ -399,6 +407,7 @@
             </div>
         </div>
 
+        <!-- View 4: 週案簿 -->
         <div id="view-weekly-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
@@ -419,6 +428,7 @@
             </div>
         </div>
 
+        <!-- View 5: 一覧カレンダー -->
         <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col bg-gray-100 shadow-2xl overflow-hidden relative">
             <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex items-center">
                 <h2 class="text-base sm:text-lg font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> 予定・タスクの一覧</h2>
@@ -441,6 +451,7 @@
             </div>
         </div>
 
+        <!-- ★ View 8: メモ管理 -->
         <div id="view-memo" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-3 shrink-0 sm:hidden">
                 <button onclick="window.toggleMemoSidebar()" class="text-[#4a5f73] text-sm font-bold"><i class="fas fa-bars mr-1"></i> フォルダ</button>
@@ -521,6 +532,7 @@
             </div>
         </div>
 
+        <!-- View 6: 設定 -->
         <div id="view-settings" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-3 sm:p-4 border-b border-gray-300 flex justify-between items-center z-10 sticky top-0 shrink-0">
                 <h2 class="text-base sm:text-lg font-bold text-[#4a5f73]"><i class="fas fa-cog mr-1.5 text-[#4a5f73]"></i> 設定</h2>
@@ -562,6 +574,7 @@
 
     </main>
 
+    <!-- メモ編集 モーダル -->
     <div id="memo-edit-modal" class="fixed inset-0 z-[150] hidden bg-[#1a1a2e] flex-col p-1 sm:p-2">
         <div class="flex-1 flex flex-col bg-white rounded overflow-hidden shadow-inner relative w-full h-full">
             <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2 sm:px-4 shrink-0 no-print shadow-sm z-20">
@@ -648,6 +661,7 @@
                             </div>
                         </div>
 
+                        <!-- メモテキスト編集ツールバー -->
                         <div id="memo-text-toolbar" class="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar">
                             <button onclick="document.execCommand('bold',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="太字"><i class="fas fa-bold"></i></button>
                             <button onclick="document.execCommand('underline',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition" title="下線"><i class="fas fa-underline"></i></button>
@@ -670,6 +684,2742 @@
         </div>
     </div>
 
-    <script type="module" src="./js_v2/main.js?v=2"></script>
+    <script type="text/javascript">
+        const memoryStorage = {};
+        const safeGetItem = (key) => {
+            try { return localStorage.getItem(key) || memoryStorage[key] || null; } catch(e) { return memoryStorage[key] || null; }
+        };
+        const safeSetItem = (key, value) => {
+            try { localStorage.setItem(key, value); } catch(e) {}
+            memoryStorage[key] = String(value);
+        };
+        const safeRemoveItem = (key) => {
+            try { localStorage.removeItem(key); } catch(e) {}
+            delete memoryStorage[key];
+        };
+
+        const LS_KEY = 'teacher_planner_all_data';
+        const DAYS_STR = ['日', '月', '火', '水', '木', '金', '土'];
+        
+        const DEFAULT_TIMETABLES = {
+            normal: { name: "通常日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:30"}, {id:"p_2",name:"2限",s:"09:40",e:"10:30"}, {id:"p_3",name:"3限",s:"10:40",e:"11:30"}, {id:"p_4",name:"4限",s:"11:40",e:"12:30"}, {id:"p_5",name:"5限",s:"13:30",e:"14:20"}, {id:"p_6",name:"6限",s:"14:30",e:"15:20"} ] },
+            short: { name: "短縮日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:25"}, {id:"p_2",name:"2限",s:"09:35",e:"10:20"}, {id:"p_3",name:"3限",s:"10:30",e:"11:15"}, {id:"p_4",name:"4限",s:"11:25",e:"12:10"}, {id:"p_5",name:"5限",s:"13:00",e:"13:45"}, {id:"p_6",name:"6限",s:"13:55",e:"14:40"} ] },
+            special: { name: "特短日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:20"}, {id:"p_2",name:"2限",s:"09:30",e:"10:10"}, {id:"p_3",name:"3限",s:"10:20",e:"11:00"}, {id:"p_4",name:"4限",s:"11:10",e:"11:50"}, {id:"p_5",name:"5限",s:"12:40",e:"13:20"}, {id:"p_6",name:"6限",s:"13:30",e:"14:10"} ] },
+            test: { name: "テスト日課", periods: [ {id:"p_1",name:"1限",s:"08:50",e:"09:40"}, {id:"p_2",name:"2限",s:"09:55",e:"10:45"}, {id:"p_3",name:"11:00",e:"11:50"} ] }
+        };
+
+        let allPlanners = {}; 
+        let globalSettings = JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES };
+        globalSettings.displayMode = 'auto';
+        
+        if (!globalSettings.baseTimetablePatterns || globalSettings.baseTimetablePatterns.length === 0) {
+            const oldBaseTt = globalSettings.baseTimetable || {1:{},2:{},3:{},4:{},5:{}};
+            globalSettings.baseTimetablePatterns = [
+                { id: 'p_1', name: 'パターン1', startDate: '', endDate: '', data: oldBaseTt }
+            ];
+        }
+
+        let allMemos = [];
+        let allFolders = [];
+        const MEMO_CATEGORIES = [
+            { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
+            { id: 'guidance', name: '生徒指導', icon: 'fas fa-user-graduate', color: 'text-green-500' },
+            { id: 'other', name: 'その他', icon: 'fas fa-folder', color: 'text-gray-500' }
+        ];
+        let currentMemoFilter = 'all'; 
+        let currentMemoFolderId = null; 
+        let editingMemoId = null;
+        window.currentMemoSort = 'updatedAt_desc'; 
+
+        let tempSettings = null; 
+        let currentView = 'month'; 
+        let currentDateObj = new Date(); 
+        let calendarDisplayDate = new Date(); 
+        let selectedCellId = null; 
+        let selectedSlot = null; 
+        let addModalTargetDate = null;
+        let editTarget = null; 
+        let currentModalMode = 'schedule';
+        
+        let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null };
+        let wpSelectedDay = 1;
+        let wpSelectedPeriod = 1;
+
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_HISTORY = 20;
+
+        window.updateDisplayMode = () => {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                document.body.classList.add('mode-mobile'); document.body.classList.remove('mode-desktop');
+            } else {
+                document.body.classList.add('mode-desktop'); document.body.classList.remove('mode-mobile');
+            }
+            if (typeof window.resizeMemoCanvas === 'function') setTimeout(window.resizeMemoCanvas, 100);
+        };
+        window.addEventListener('resize', window.updateDisplayMode);
+
+        let db, auth;
+        let unsubscribeSnapshot = null;
+        let isLinkedDevice = false; 
+        let lastCloudUpdateTime = 0; 
+
+        const getSyncId = () => {
+            let id = safeGetItem('teacher_planner_sync_id');
+            if (!id) {
+                id = Math.floor(10000000 + Math.random() * 90000000).toString();
+                safeSetItem('teacher_planner_sync_id', id);
+            }
+            return id;
+        };
+
+        const initFirebase = async () => {
+            if (!window.fb) return;
+            const MY_FIREBASE_CONFIG = {
+                apiKey: "AIzaSyBQ86uhJYjw2H5_ioH1PgHXE8vjCckeys0",
+                authDomain: "teacher-degital-planner.firebaseapp.com",
+                databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
+                projectId: "teacher-degital-planner",
+                storageBucket: "teacher-degital-planner.firebasestorage.app",
+                messagingSenderId: "134884141905",
+                appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
+                measurementId: "G-Z7CPJ3KNV6"
+            }; 
+            
+            try {
+                const app = window.fb.initializeApp(MY_FIREBASE_CONFIG);
+                auth = window.fb.getAuth(app);
+                db = window.fb.getFirestore(app);
+
+                await window.fb.signInAnonymously(auth);
+                window.fb.onAuthStateChanged(auth, (user) => { if (user) startFirebaseSync(); });
+            } catch (e) { console.error("Firebase init failed:", e); }
+        };
+
+        const startFirebaseSync = () => {
+            const syncId = getSyncId();
+            const displayElem = document.getElementById('display-sync-id');
+            if (displayElem) displayElem.textContent = syncId;
+
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            const docRef = window.fb.doc(db, 'planners', syncId);
+            
+            unsubscribeSnapshot = window.fb.onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const cloudTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                    if (cloudTime <= lastCloudUpdateTime) return; 
+                    
+                    lastCloudUpdateTime = cloudTime;
+                    let changed = false;
+
+                    if (data.planners) {
+                        allPlanners = data.planners;
+                        safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+                        changed = true;
+                    }
+                    if (data.settings) {
+                        globalSettings = data.settings;
+                        safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
+                        changed = true;
+                        window.updateDisplayMode(); 
+                    }
+                    if (data.memos) {
+                        allMemos = data.memos;
+                        safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                        changed = true;
+                    }
+                    if (data.folders) {
+                        allFolders = data.folders;
+                        safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+                        changed = true;
+                    }
+
+                    if (changed) {
+                        window.renderCurrentView(); 
+                        if (currentView === 'memo') window.renderMemoList();
+                    }
+                } else {
+                    if (!isLinkedDevice) window.saveToFirebase();
+                }
+            });
+        };
+
+        window.saveToFirebase = async () => {
+            if (!db || !auth || !auth.currentUser) return;
+            const syncId = getSyncId();
+            const docRef = window.fb.doc(db, 'planners', syncId);
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl) statusEl.classList.remove('hidden');
+
+            const now = new Date().toISOString();
+            lastCloudUpdateTime = new Date(now).getTime(); 
+
+            try {
+                const payload = {
+                    planners: JSON.parse(JSON.stringify(allPlanners)),
+                    settings: JSON.parse(JSON.stringify(globalSettings)),
+                    memos: JSON.parse(JSON.stringify(allMemos)),
+                    folders: JSON.parse(JSON.stringify(allFolders)),
+                    updatedAt: now
+                };
+                await window.fb.setDoc(docRef, payload);
+            } catch (e) {
+                console.error("Firebase save failed:", e);
+            } finally {
+                setTimeout(() => { if (statusEl) statusEl.classList.add('hidden'); }, 1000);
+            }
+        };
+
+        window.linkDevice = () => {
+            const input = document.getElementById('input-sync-id').value.trim();
+            if (/^\d{8}$/.test(input)) {
+                if (confirm(`同期コード ${input} にリンクします。\n現在のこの端末のデータは失われ、リンク先のデータで上書きされますがよろしいですか？`)) {
+                    safeSetItem('teacher_planner_sync_id', input);
+                    const displayElem = document.getElementById('display-sync-id');
+                    if (displayElem) displayElem.textContent = input;
+                    isLinkedDevice = true; lastCloudUpdateTime = 0; 
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    startFirebaseSync();
+                    alert("同期コードをリンクし、データの受信を開始しました。");
+                }
+            } else { alert("正しい8桁の数字を入力してください。"); }
+        };
+
+        if (window.fb) initFirebase();
+        else window.addEventListener('firebase-loaded', () => initFirebase());
+
+        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6;
+        
+        const getEventColorClass = (category) => {
+            if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
+            if (category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
+            if (category === 'private') return "bg-orange-100 text-orange-800 border-orange-300";
+            return "bg-gray-100 text-gray-800 border-gray-300";
+        };
+        const getMultiDayColorClass = (category) => {
+            if (category === 'work') return "border-red-400 text-red-800";
+            if (category === 'club') return "border-blue-400 text-blue-800";
+            if (category === 'private') return "border-orange-400 text-orange-800";
+            return "border-gray-400 text-gray-800";
+        };
+        const getClassColorClass = (cls, sub) => {
+            const subStr = String(sub || "").trim();
+            if (['学活', '総合', '道徳'].includes(subStr)) return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100";
+            const clsStr = String(cls || "").trim();
+            if (clsStr.startsWith('1') || clsStr.includes('1年')) return "bg-red-50 text-red-800 border-red-200 hover:bg-red-100";
+            else if (clsStr.startsWith('2') || clsStr.includes('2年')) return "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100";
+            else if (clsStr.startsWith('3') || clsStr.includes('3年')) return "bg-green-50 text-green-800 border-green-200 hover:bg-green-100";
+            return "bg-gray-50 text-gray-800 border-gray-300 hover:bg-gray-100";
+        };
+
+        const timeToPct = (timeStr) => {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            if (h < 5) return 0;
+            if (h >= 24) return 100;
+            const totalMinutes = 19 * 60;
+            const minutes = (h - 5) * 60 + m;
+            return (minutes / totalMinutes) * 100;
+        };
+
+        const packTimeEvents = (events) => {
+            if (!events || events.length === 0) return;
+            events.forEach(ev => {
+                ev.startPos = timeToPct(ev.drawStart);
+                let endPos = timeToPct(ev.drawEnd);
+                if (endPos <= ev.startPos) endPos = ev.startPos + (15 / (19 * 60)) * 100;
+                ev.endPos = endPos;
+            });
+            events.sort((a, b) => a.startPos - b.startPos || b.endPos - a.endPos);
+
+            let columns = [];
+            let lastEventEnding = null;
+            events.forEach(ev => {
+                if (lastEventEnding !== null && ev.startPos >= lastEventEnding) {
+                    packGroup(columns); columns = []; lastEventEnding = null;
+                }
+                let placed = false;
+                for (let c = 0; c < columns.length; c++) {
+                    let col = columns[c];
+                    if (col[col.length - 1].endPos <= ev.startPos) { col.push(ev); placed = true; break; }
+                }
+                if (!placed) columns.push([ev]);
+                if (lastEventEnding === null || ev.endPos > lastEventEnding) lastEventEnding = ev.endPos;
+            });
+            if (columns.length > 0) packGroup(columns);
+
+            function packGroup(cols) {
+                let numCols = cols.length;
+                cols.forEach((col, colIdx) => { col.forEach(e => { e.colIndex = colIdx; e.numCols = numCols; }); });
+            }
+        };
+
+        window.saveStateToHistory = () => {
+            undoStack.push(JSON.stringify(allPlanners));
+            if (undoStack.length > MAX_HISTORY) undoStack.shift();
+            redoStack = []; window.updateUndoRedoButtons();
+        };
+        window.undo = () => {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.stringify(allPlanners));
+            allPlanners = JSON.parse(undoStack.pop());
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
+        };
+        window.redo = () => {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.stringify(allPlanners));
+            allPlanners = JSON.parse(redoStack.pop());
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
+        };
+        window.updateUndoRedoButtons = () => {
+            const undoBtn = document.getElementById('btn-undo'), redoBtn = document.getElementById('btn-redo');
+            if (undoBtn) { undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = undoStack.length > 0 ? 'auto' : 'none'; }
+            if (redoBtn) { redoBtn.style.opacity = redoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = redoStack.length > 0 ? 'auto' : 'none'; }
+        };
+
+        const initDataSync = () => {
+            const localData = safeGetItem(LS_KEY);
+            if (localData) { try { allPlanners = JSON.parse(localData); } catch(e){} }
+            const localMemos = safeGetItem('teacher_planner_memos');
+            if (localMemos) { try { allMemos = JSON.parse(localMemos); } catch(e){} }
+            const localFolders = safeGetItem('teacher_planner_folders');
+            if (localFolders) { try { allFolders = JSON.parse(localFolders); } catch(e){} }
+
+            const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            let memoChanged = false;
+            allMemos = allMemos.filter(m => {
+                if (m.categoryId === 'trash' && m.deletedAt && (now - m.deletedAt) > thirtyDays) {
+                    memoChanged = true;
+                    return false;
+                }
+                return true;
+            });
+            if (memoChanged) {
+                safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                window.saveToFirebase();
+            }
+
+            initTodayButtons(); window.updateUndoRedoButtons(); window.renderCurrentView(); 
+        };
+
+        const initTodayButtons = () => {
+            const today = new Date();
+            const dateStr = today.getDate(), dayStr = `(${DAYS_STR[today.getDay()]})`;
+            document.querySelectorAll('.today-btn-date').forEach(el => el.textContent = dateStr);
+            document.querySelectorAll('.today-btn-day').forEach(el => el.textContent = dayStr);
+        };
+        window.goToToday = () => {
+            const today = new Date(); currentDateObj = new Date(today); calendarDisplayDate = new Date(today);
+            window.renderCurrentView();
+            if (currentView === 'agenda') {
+                const todayStr = getFormatDateStr(today);
+                const el = document.getElementById(`agenda-date-${todayStr}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+
+        window.toggleMemoSidebar = () => {
+            const sidebar = document.getElementById('memo-sidebar');
+            const overlay = document.getElementById('memo-sidebar-overlay');
+            const openBtnPc = document.getElementById('memo-sidebar-open-btn-pc');
+            const isMobile = window.innerWidth < 640;
+            
+            if (isMobile) {
+                if (sidebar.classList.contains('-ml-48')) {
+                    sidebar.classList.remove('-ml-48');
+                    sidebar.classList.add('ml-0');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.remove('ml-0');
+                    sidebar.classList.add('-ml-48');
+                    overlay.classList.add('hidden');
+                }
+            } else {
+                if (sidebar.classList.contains('sm:-ml-48')) {
+                    sidebar.classList.remove('sm:-ml-48');
+                    sidebar.classList.add('sm:ml-0');
+                    if (openBtnPc) openBtnPc.classList.add('hidden');
+                } else {
+                    sidebar.classList.remove('sm:ml-0');
+                    sidebar.classList.add('sm:-ml-48');
+                    if (openBtnPc) openBtnPc.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.renderMemoSidebar = () => {
+            const list = document.getElementById('memo-category-list');
+            let html = '';
+            MEMO_CATEGORIES.forEach(cat => {
+                html += `
+                    <button onclick="window.selectMemoFilter('${cat.id}')" class="w-full text-left px-3 py-1.5 hover:bg-gray-200 flex items-center gap-2 transition" id="memo-filter-${cat.id}">
+                        <i class="${cat.icon} w-4 text-center ${cat.color} text-xs"></i> <span class="font-bold text-xs text-gray-700">${cat.name}</span>
+                    </button>
+                `;
+            });
+            html += `
+                <div class="px-3 mt-4 mb-1"><span class="text-[10px] font-bold text-gray-400">システム</span></div>
+                <button onclick="window.selectMemoFilter('trash')" class="w-full text-left px-3 py-1.5 hover:bg-gray-200 flex items-center gap-2 transition" id="memo-filter-trash">
+                    <i class="fas fa-trash-alt w-4 text-center text-red-500 text-xs"></i> <span class="font-bold text-xs text-gray-700">ごみ箱</span>
+                </button>
+            `;
+            list.innerHTML = html;
+        };
+
+        window.selectMemoFilter = (filter) => {
+            currentMemoFilter = filter;
+            currentMemoFolderId = null; 
+            window.renderMemoList();
+            
+            ['all', 'favorite', 'trash', ...MEMO_CATEGORIES.map(c=>c.id)].forEach(id => {
+                const btn = document.getElementById(`memo-filter-${id}`);
+                if(btn) {
+                    if(id === filter) btn.classList.add('bg-blue-50');
+                    else btn.classList.remove('bg-blue-50');
+                }
+            });
+
+            if (window.innerWidth < 640 && document.getElementById('memo-sidebar-overlay').classList.contains('hidden') === false) {
+                window.toggleMemoSidebar();
+            }
+        };
+
+        const formatDateForMemo = (timestamp) => {
+            const d = new Date(timestamp);
+            return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        };
+
+        const getFolderPath = (folderId) => {
+            let path = [];
+            let curr = allFolders.find(f => f.id === folderId);
+            while (curr) {
+                path.unshift(curr);
+                curr = allFolders.find(f => f.id === curr.parentId);
+            }
+            return path;
+        };
+
+        window.changeMemoSort = (value) => {
+            if(value) window.currentMemoSort = value;
+            const pSel = document.getElementById('memo-sort-select-pc');
+            const mSel = document.getElementById('memo-sort-select-mobile');
+            if(pSel && pSel.value !== window.currentMemoSort) pSel.value = window.currentMemoSort;
+            if(mSel && mSel.value !== window.currentMemoSort) mSel.value = window.currentMemoSort;
+            window.renderMemoList();
+        };
+
+        window.renderMemoList = () => {
+            const container = document.getElementById('memo-list-container');
+            const backBtnPc = document.getElementById('memo-back-btn');
+            const backBtnSp = document.getElementById('memo-back-btn-mobile');
+            const addFolderBtnPc = document.getElementById('memo-add-folder-btn');
+            const addFolderBtnSp = document.getElementById('memo-add-folder-btn-mobile');
+            
+            let filteredMemos = [];
+            let currentFolders = [];
+
+            if (currentMemoFilter === 'favorite') {
+                filteredMemos = allMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
+                addFolderBtnPc?.classList.add('hidden');
+                addFolderBtnSp?.classList.add('hidden');
+            } else if (currentMemoFilter === 'all') {
+                const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                filteredMemos = allMemos.filter(m => {
+                    if (m.categoryId === 'trash') return false;
+                    const targetTime = m.lastOpenedAt || m.updatedAt || 0;
+                    return targetTime >= oneWeekAgo;
+                });
+                addFolderBtnPc?.classList.add('hidden');
+                addFolderBtnSp?.classList.add('hidden');
+            } else if (currentMemoFilter === 'trash') {
+                filteredMemos = allMemos.filter(m => m.categoryId === 'trash');
+                addFolderBtnPc?.classList.add('hidden');
+                addFolderBtnSp?.classList.add('hidden');
+            } else {
+                addFolderBtnPc?.classList.remove('hidden');
+                addFolderBtnSp?.classList.remove('hidden');
+                currentFolders = allFolders.filter(f => f.categoryId === currentMemoFilter && f.parentId === currentMemoFolderId);
+                filteredMemos = allMemos.filter(m => m.categoryId === currentMemoFilter && m.folderId === currentMemoFolderId);
+            }
+
+            filteredMemos.sort((a, b) => {
+                const [key, order] = window.currentMemoSort.split('_');
+                let valA, valB;
+                if (key === 'title') {
+                    valA = a.title || ''; valB = b.title || '';
+                    return order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else if (key === 'createdAt') {
+                    valA = a.createdAt || a.updatedAt || 0; valB = b.createdAt || b.updatedAt || 0;
+                } else {
+                    valA = a.updatedAt || 0; valB = b.updatedAt || 0;
+                }
+                return order === 'asc' ? valA - valB : valB - valA;
+            });
+
+            let title = "";
+            if (currentMemoFilter === 'favorite') title = "お気に入り";
+            else if (currentMemoFilter === 'all') title = "最近使ったメモ";
+            else if (currentMemoFilter === 'trash') title = "ごみ箱";
+            else {
+                const cat = MEMO_CATEGORIES.find(c => c.id === currentMemoFilter);
+                title = cat ? cat.name : "メモ";
+                if (currentMemoFolderId) {
+                    const path = getFolderPath(currentMemoFolderId);
+                    if (path.length > 0) title = path[path.length - 1].name;
+                    
+                    backBtnPc?.classList.remove('hidden');
+                    backBtnSp?.classList.remove('hidden');
+                    
+                    const parentId = path.length > 1 ? path[path.length - 2].id : null;
+                    if(backBtnPc) backBtnPc.onclick = () => { window.enterFolder(parentId); };
+                    if(backBtnSp) backBtnSp.onclick = () => { window.enterFolder(parentId); };
+                } else {
+                    backBtnPc?.classList.add('hidden');
+                    backBtnSp?.classList.add('hidden');
+                }
+            }
+            
+            document.getElementById('memo-list-title').textContent = title;
+            const titleMobile = document.getElementById('memo-list-title-mobile');
+            if (titleMobile) titleMobile.textContent = title;
+
+            if (filteredMemos.length === 0 && currentFolders.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-folder-open text-3xl mb-3 opacity-50"></i><p class="text-xs">アイテムがありません</p></div>`;
+                return;
+            }
+
+            let html = '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">';
+            
+            currentFolders.forEach(folder => {
+                html += `
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm hover:shadow-md hover:bg-blue-100 cursor-pointer transition flex items-center gap-2 h-12 group relative" onclick="window.enterFolder('${folder.id}')">
+                        <i class="fas fa-folder text-blue-400 text-lg"></i>
+                        <h3 class="font-bold text-[#4a5f73] truncate text-sm flex-1">${folder.name}</h3>
+                        <button onclick="event.stopPropagation(); window.deleteFolder('${folder.id}')" class="absolute right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition p-1.5 bg-white/80 rounded"><i class="fas fa-trash-alt text-xs"></i></button>
+                    </div>
+                `;
+            });
+
+            filteredMemos.forEach(memo => {
+                const cat = MEMO_CATEGORIES.find(c => c.id === memo.categoryId) || { icon: 'fas fa-trash-alt', color: 'text-red-500' };
+                const dateStr = formatDateForMemo(memo.updatedAt);
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = memo.content || '';
+                const plainText = tempDiv.innerText || tempDiv.textContent || '';
+                const preview = plainText.replace(/\n/g, ' ').substring(0, 60) || '本文なし';
+                
+                const favIcon = memo.isFavorite ? '<i class="fas fa-star text-yellow-400"></i>' : '';
+                const hasDrawing = memo.canvasData ? '<i class="fas fa-pen-nib text-blue-400 ml-1.5 text-[10px]" title="手書きメモあり"></i>' : '';
+
+                html += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition flex flex-col h-24 group" onclick="window.openMemoEdit('${memo.id}')">
+                        <div class="flex justify-between items-start mb-1.5">
+                            <div class="flex items-center gap-1.5 max-w-[85%]">
+                                <i class="${cat.icon} ${cat.color} opacity-70 text-[10px]"></i>
+                                <h3 class="font-bold text-[#4a5f73] truncate text-sm flex-1">${memo.title || '無題のメモ'}</h3>
+                                ${hasDrawing}
+                            </div>
+                            <div class="shrink-0 text-[10px]">${favIcon}</div>
+                        </div>
+                        <div class="text-[9px] sm:text-[10px] text-gray-400 font-bold mb-1.5">${dateStr}</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 truncate flex-1 leading-relaxed opacity-80 group-hover:opacity-100 transition">${preview}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        };
+
+        window.enterFolder = (folderId) => {
+            currentMemoFolderId = folderId;
+            window.renderMemoList();
+        };
+
+        window.createNewFolder = () => {
+            const name = prompt("新しいフォルダの名前を入力してください");
+            if (!name) return;
+            
+            const newFolder = {
+                id: 'folder_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: name,
+                categoryId: currentMemoFilter,
+                parentId: currentMemoFolderId
+            };
+            allFolders.push(newFolder);
+            safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+            window.saveToFirebase();
+            window.renderMemoList();
+        };
+
+        window.deleteFolder = (folderId) => {
+            if(confirm("フォルダを削除しますか？中にあるメモや子フォルダはカテゴリーのルートに移動されます。")) {
+                allMemos.forEach(m => { if(m.folderId === folderId) m.folderId = null; });
+                allFolders = allFolders.filter(f => f.id !== folderId);
+                allFolders.forEach(f => { if(f.parentId === folderId) f.parentId = null; });
+                
+                safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+                window.saveToFirebase();
+                window.renderMemoList();
+            }
+        };
+
+        window.updateMemoFolderOptions = () => {
+            const catId = document.getElementById('memo-edit-category').value;
+            const folderSelect = document.getElementById('memo-edit-folder');
+            const foldersInCat = allFolders.filter(f => f.categoryId === catId);
+            
+            let html = '<option value="">(ルート)</option>';
+            const buildOptions = (parentId, depth) => {
+                const children = foldersInCat.filter(f => f.parentId === parentId);
+                children.forEach(child => {
+                    const prefix = '・'.repeat(depth);
+                    html += `<option value="${child.id}">${prefix} ${child.name}</option>`;
+                    buildOptions(child.id, depth + 1);
+                });
+            };
+            buildOptions(null, 0);
+            folderSelect.innerHTML = html;
+        };
+
+        window.updateMemoDateLabel = () => {
+            const val = document.getElementById('memo-edit-date').value;
+            const label = document.getElementById('memo-edit-day-of-week');
+            if (val) {
+                const d = new Date(val);
+                if (!isNaN(d.getTime())) {
+                    label.textContent = `(${DAYS_STR[d.getDay()]})`;
+                    return;
+                }
+            }
+            label.textContent = '';
+        };
+
+        let autoSaveTimeout = null;
+        window.triggerAutoSaveMemo = () => {
+            if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                window.saveMemoLocally();
+            }, 800);
+        };
+
+        window.updateDeleteMemoButtonText = () => {
+            const btnText = document.getElementById('memo-delete-btn-text');
+            const btnIcon = document.getElementById('memo-delete-btn-icon');
+            if (editingMemoId) {
+                const memo = allMemos.find(m => m.id === editingMemoId);
+                if (memo && memo.categoryId === 'trash') {
+                    if (btnText) btnText.textContent = '完全に削除';
+                    if (btnIcon) btnIcon.className = 'fas fa-eraser';
+                    return;
+                }
+            }
+            if (btnText) btnText.textContent = '削除';
+            if (btnIcon) btnIcon.className = 'fas fa-trash-alt';
+        };
+
+        window.openMemoEdit = (memoId = null) => {
+            editingMemoId = memoId;
+            const modal = document.getElementById('memo-edit-modal');
+            const titleInput = document.getElementById('memo-edit-title');
+            const contentInput = document.getElementById('memo-edit-content');
+            const catSelect = document.getElementById('memo-edit-category');
+            const folderSelect = document.getElementById('memo-edit-folder');
+            const dateInput = document.getElementById('memo-edit-date');
+            const favBtn = document.getElementById('memo-edit-fav-btn');
+
+            window.updateDeleteMemoButtonText();
+
+            if (memoId) {
+                const memo = allMemos.find(m => m.id === memoId);
+                if (memo) {
+                    memo.lastOpenedAt = Date.now(); 
+
+                    titleInput.value = memo.title;
+                    contentInput.innerHTML = memo.content || ''; 
+                    catSelect.value = memo.categoryId || 'other';
+                    
+                    window.updateMemoFolderOptions(); 
+                    folderSelect.value = memo.folderId || '';
+
+                    const d = new Date(memo.createdAt || memo.updatedAt);
+                    const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    dateInput.value = dStr;
+                    window.updateMemoDateLabel();
+
+                    if (memo.isFavorite) favBtn.classList.replace('text-gray-300', 'text-yellow-400');
+                    else favBtn.classList.replace('text-yellow-400', 'text-gray-300');
+
+                    memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+                    if (memo.canvasData) {
+                        const img = new Image();
+                        img.onload = () => {
+                            if (editingMemoId === memoId) { 
+                                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+                                memoCtx.drawImage(img, 0, 0, memoCanvas.width, memoCanvas.height);
+                            }
+                        };
+                        img.src = memo.canvasData;
+                    }
+                }
+            } else {
+                titleInput.value = ''; contentInput.innerHTML = ''; 
+                const defaultCat = (currentMemoFilter !== 'all' && currentMemoFilter !== 'favorite' && currentMemoFilter !== 'trash') ? currentMemoFilter : 'meeting';
+                catSelect.value = defaultCat;
+                
+                window.updateMemoFolderOptions();
+                folderSelect.value = currentMemoFolderId || '';
+
+                const d = new Date();
+                const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                dateInput.value = dStr;
+                window.updateMemoDateLabel();
+
+                favBtn.classList.replace('text-yellow-400', 'text-gray-300');
+                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+
+                const newMemo = {
+                    id: 'memo_' + Date.now() + Math.random().toString(36).substr(2, 9),
+                    title: '', content: '', categoryId: defaultCat, folderId: folderSelect.value || null,
+                    isFavorite: false, createdAt: Date.now(), updatedAt: Date.now(), lastOpenedAt: Date.now(), canvasData: ''
+                };
+                allMemos.push(newMemo);
+                editingMemoId = newMemo.id;
+            }
+
+            if(isMemoDrawingMode) window.toggleMemoDrawMode();
+
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { 
+                if(!memoId) titleInput.focus(); 
+                window.resizeMemoCanvas(); 
+            }, 100);
+        };
+
+        window.toggleMemoFavorite = () => {
+            const favBtn = document.getElementById('memo-edit-fav-btn');
+            if (favBtn.classList.contains('text-yellow-400')) favBtn.classList.replace('text-yellow-400', 'text-gray-300');
+            else favBtn.classList.replace('text-gray-300', 'text-yellow-400');
+            if (editingMemoId) window.triggerAutoSaveMemo(); 
+        };
+
+        window.saveMemoLocally = () => {
+            if (!editingMemoId) return;
+            const title = document.getElementById('memo-edit-title').value.trim();
+            const content = document.getElementById('memo-edit-content').innerHTML; 
+            const categoryId = document.getElementById('memo-edit-category').value;
+            const folderId = document.getElementById('memo-edit-folder').value || null;
+            const isFavorite = document.getElementById('memo-edit-fav-btn').classList.contains('text-yellow-400');
+            
+            let createTimeVal = Date.now();
+            const dateInputVal = document.getElementById('memo-edit-date').value;
+            if (dateInputVal) {
+                const d = new Date(dateInputVal);
+                createTimeVal = d.getTime(); 
+            }
+
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(memoCanvas, 0, 0);
+            const canvasData = tempCanvas.toDataURL('image/png', 0.5);
+
+            const memo = allMemos.find(m => m.id === editingMemoId);
+            if (memo) {
+                memo.title = title; 
+                memo.content = content; 
+                memo.categoryId = categoryId; 
+                if(categoryId !== 'trash') memo.deletedAt = null; 
+                
+                memo.folderId = folderId;
+                memo.isFavorite = isFavorite; 
+                memo.createdAt = createTimeVal; 
+                memo.updatedAt = Date.now(); 
+                memo.canvasData = canvasData;
+            }
+
+            safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+            window.saveToFirebase(); 
+            window.renderMemoList(); 
+        };
+
+        window.saveAndCloseMemo = () => {
+            window.saveMemoLocally();
+            
+            const memo = allMemos.find(m => m.id === editingMemoId);
+            if (memo && !memo.title.trim() && !memo.content.trim() && isCanvasBlank(memoCanvas)) {
+                allMemos = allMemos.filter(m => m.id !== editingMemoId);
+                safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                window.saveToFirebase();
+                window.renderMemoList();
+            }
+            
+            document.getElementById('memo-edit-modal').classList.add('hidden');
+            document.getElementById('memo-edit-modal').classList.remove('flex');
+            editingMemoId = null;
+        };
+
+        const isCanvasBlank = (canvas) => {
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            const pixelBuffer = new Uint32Array(context.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+            return !pixelBuffer.some(color => color !== 0);
+        };
+
+        window.saveMemo = () => { window.saveMemoLocally(); };
+
+        window.deleteMemo = () => {
+            if (!editingMemoId) { window.saveAndCloseMemo(); return; }
+            
+            const memo = allMemos.find(m => m.id === editingMemoId);
+            if (!memo) return;
+
+            if (memo.categoryId === 'trash') {
+                if (confirm("このメモを完全に削除してもよろしいですか？（復元できません）")) {
+                    allMemos = allMemos.filter(m => m.id !== editingMemoId);
+                    safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                    window.saveToFirebase(); window.renderMemoList();
+                    document.getElementById('memo-edit-modal').classList.add('hidden');
+                    document.getElementById('memo-edit-modal').classList.remove('flex');
+                    editingMemoId = null;
+                }
+            } else {
+                if (confirm("このメモをごみ箱に移動しますか？（1ヶ月後に完全に削除されます）")) {
+                    memo.categoryId = 'trash';
+                    memo.folderId = null; 
+                    memo.deletedAt = Date.now();
+                    memo.isFavorite = false;
+                    safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                    window.saveToFirebase(); window.renderMemoList();
+                    document.getElementById('memo-edit-modal').classList.add('hidden');
+                    document.getElementById('memo-edit-modal').classList.remove('flex');
+                    editingMemoId = null;
+                }
+            }
+        };
+
+        window.copyMemoText = () => {
+            const title = document.getElementById('memo-edit-title').value;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = document.getElementById('memo-edit-content').innerHTML;
+            const contentPlain = tempDiv.innerText || tempDiv.textContent;
+            const text = `【${title}】\n${contentPlain}`;
+            
+            try {
+                navigator.clipboard.writeText(text).then(() => alert("テキストをコピーしました")).catch(() => fallbackCopyTextToClipboard(text));
+            } catch(e) { fallbackCopyTextToClipboard(text); }
+        };
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text; textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { const successful = document.execCommand('copy'); if (successful) alert("テキストをコピーしました"); } catch (err) {}
+            document.body.removeChild(textArea);
+        }
+
+        window.printMemo = () => {
+            window.saveMemoLocally();
+            setTimeout(() => window.print(), 100);
+        };
+
+        let isMemoDrawing = false;
+        let isMemoDrawingMode = false;
+        let memoCurrentTool = 'pen';
+        let memoCurrentColor = '#000000';
+        let memoCurrentLineWidth = 4;
+        let memoLastX = 0, memoLastY = 0;
+        let memoCanvas = null, memoCtx = null;
+
+        window.initMemoCanvas = () => {
+            memoCanvas = document.getElementById('memo-drawing-canvas');
+            memoCtx = memoCanvas.getContext('2d', { willReadFrequently: true });
+
+            const getMemoCoords = (e) => { 
+                const rect = memoCanvas.getBoundingClientRect(); 
+                return (e.touches && e.touches.length > 0) ? { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top } : { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
+            };
+
+            const startMemoDrawing = (e) => {
+                if (!isMemoDrawingMode || (e.type === 'mousedown' && e.button !== 0)) return;
+                isMemoDrawing = true; const coords = getMemoCoords(e); memoLastX = coords.x; memoLastY = coords.y;
+                if (memoCurrentTool === 'eraser') { memoCtx.globalCompositeOperation = 'destination-out'; memoCtx.lineWidth = memoCurrentLineWidth * 5; memoCtx.fillStyle = 'rgba(0,0,0,1)'; } 
+                else if (memoCurrentTool === 'highlighter') { memoCtx.globalCompositeOperation = 'source-over'; const hex = memoCurrentColor; const rgbaColor = `rgba(${parseInt(hex.slice(1,3),16)}, ${parseInt(hex.slice(3,5),16)}, ${parseInt(hex.slice(5,7),16)}, 0.3)`; memoCtx.strokeStyle = rgbaColor; memoCtx.fillStyle = rgbaColor; memoCtx.lineWidth = memoCurrentLineWidth * 4; } 
+                else { memoCtx.globalCompositeOperation = 'source-over'; memoCtx.strokeStyle = memoCurrentColor; memoCtx.fillStyle = memoCurrentColor; memoCtx.lineWidth = memoCurrentLineWidth; }
+                memoCtx.beginPath(); memoCtx.arc(memoLastX, memoLastY, memoCtx.lineWidth / 2, 0, Math.PI * 2); memoCtx.fill(); e.preventDefault();
+            };
+
+            const drawMemo = (e) => { 
+                if (!isMemoDrawing) return; 
+                const coords = getMemoCoords(e); memoCtx.beginPath(); memoCtx.moveTo(memoLastX, memoLastY); memoCtx.lineTo(coords.x, coords.y); memoCtx.stroke(); memoLastX = coords.x; memoLastY = coords.y; e.preventDefault(); 
+            };
+            
+            const stopMemoDrawing = () => { 
+                if (isMemoDrawing) { 
+                    isMemoDrawing = false; 
+                    window.triggerAutoSaveMemo(); 
+                } 
+            };
+
+            memoCanvas.addEventListener('mousedown', startMemoDrawing); memoCanvas.addEventListener('mousemove', drawMemo); memoCanvas.addEventListener('mouseup', stopMemoDrawing); memoCanvas.addEventListener('mouseout', stopMemoDrawing);
+            memoCanvas.addEventListener('touchstart', startMemoDrawing, { passive: false }); memoCanvas.addEventListener('touchmove', drawMemo, { passive: false }); memoCanvas.addEventListener('touchend', stopMemoDrawing); memoCanvas.addEventListener('touchcancel', stopMemoDrawing);
+        };
+
+        window.resizeMemoCanvas = () => {
+            if (!memoCanvas) return;
+            const parent = memoCanvas.parentElement; if(!parent || parent.clientWidth === 0) return;
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
+            tempCanvas.getContext('2d').drawImage(memoCanvas, 0, 0);
+            memoCanvas.width = parent.clientWidth; memoCanvas.height = parent.clientHeight;
+            memoCtx.drawImage(tempCanvas, 0, 0); memoCtx.lineCap = 'round'; memoCtx.lineJoin = 'round';
+        };
+
+        window.toggleMemoDrawMode = () => {
+            isMemoDrawingMode = !isMemoDrawingMode;
+            const btn = document.getElementById('memo-draw-toggle-btn'), tb = document.getElementById('memo-drawing-toolbar');
+            if (isMemoDrawingMode) {
+                btn.classList.replace('bg-gray-200', 'bg-blue-500'); btn.classList.replace('hover:bg-gray-300', 'hover:bg-blue-600');
+                btn.classList.replace('text-gray-600', 'text-white');
+                document.getElementById('memo-draw-toggle-text').textContent = '手書き: ON';
+                tb.classList.remove('toolbar-hidden'); tb.classList.add('toolbar-visible'); memoCanvas.classList.remove('pointer-events-none');
+            } else {
+                btn.classList.replace('bg-blue-500', 'bg-gray-200'); btn.classList.replace('hover:bg-blue-600', 'hover:bg-gray-300');
+                btn.classList.replace('text-white', 'text-gray-600');
+                document.getElementById('memo-draw-toggle-text').textContent = '手書き: OFF';
+                tb.classList.add('toolbar-hidden'); tb.classList.remove('toolbar-visible'); memoCanvas.classList.add('pointer-events-none');
+            }
+        };
+
+        window.setMemoTool = (t) => { memoCurrentTool = t; ['pen', 'highlighter', 'eraser'].forEach(tool => document.getElementById(`memo-tool-${tool}`).classList.toggle('bg-gray-600', t === tool)); };
+        window.setMemoColor = (c, btn) => { memoCurrentColor = c; window.setMemoTool('pen'); btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); };
+        window.setMemoLineWidth = (w, btn) => { memoCurrentLineWidth = w; ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); btn.classList.replace('opacity-50', 'opacity-100'); };
+        window.clearMemoCanvas = () => { memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); window.triggerAutoSaveMemo(); };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.initMemoCanvas();
+
+            const memoEditor = document.getElementById('memo-edit-content');
+            if (memoEditor) {
+                memoEditor.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+                    }
+                });
+            }
+        });
+
+        const initSettingsView = () => {
+            tempSettings = JSON.parse(JSON.stringify(globalSettings));
+            tempSettings.activePatternIndex = 0;
+            renderSettingsView();
+        };
+
+        window.switchView = (viewName) => {
+            currentView = viewName; window.clearCellSelection();
+            document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + viewName).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('nav-btn-' + viewName).classList.add('active');
+            
+            if(viewName === 'settings') {
+                initSettingsView();
+                const dSync = document.getElementById('display-sync-id');
+                if(dSync) dSync.textContent = getSyncId();
+            }
+
+            if(viewName === 'memo') {
+                window.renderMemoSidebar();
+                window.selectMemoFilter(currentMemoFilter);
+            }
+
+            window.renderCurrentView();
+
+            if (viewName === 'agenda') {
+                setTimeout(() => {
+                    const todayStr = getFormatDateStr(new Date());
+                    const el = document.getElementById(`agenda-date-${todayStr}`);
+                    if (el) {
+                        const container = document.getElementById('agenda-view-list');
+                        container.scrollTo({ top: el.offsetTop - container.offsetTop - 10, behavior: 'smooth' });
+                    }
+                }, 50);
+            }
+        };
+
+        window.renderCurrentView = () => {
+            if (currentView === 'month') renderMonthView();
+            else if (currentView === 'week') renderWeekView();
+            else if (currentView === 'agenda') renderAgendaView();
+            else if (currentView === 'weekly-plan') renderWeeklyPlanView();
+            else if (currentView === 'memo') renderMemoList();
+        };
+
+        window.handleStartTimeChange = () => {
+            const startDateStr = document.getElementById('add-modal-start-date').value;
+            const startTimeStr = document.getElementById('add-modal-start-time').value;
+            if (!startDateStr || !startTimeStr) return;
+
+            const startObj = new Date(`${startDateStr}T${startTimeStr}`);
+            if (isNaN(startObj.getTime())) return;
+
+            startObj.setHours(startObj.getHours() + 1); 
+
+            const endDateStr = getFormatDateStr(startObj);
+            const endHH = String(startObj.getHours()).padStart(2, '0');
+            const endMM = String(startObj.getMinutes()).padStart(2, '0');
+
+            document.getElementById('add-modal-end-date').value = endDateStr;
+            document.getElementById('add-modal-end-time').value = `${endHH}:${endMM}`;
+        };
+
+        window.clearCellSelection = () => { 
+            let changed = false;
+            if (selectedCellId) { selectedCellId = null; changed = true; }
+            if (selectedSlot) { selectedSlot = null; changed = true; }
+            if (window.searchedItemId) { window.searchedItemId = null; changed = true; }
+            window.closeMonthBottomSheet();
+            if (changed) window.renderCurrentView(); 
+        };
+        
+        document.addEventListener('click', (e) => { 
+            if (!document.body.contains(e.target)) return;
+            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal')) {
+                window.clearCellSelection(); 
+            } 
+            const searchResults = document.getElementById('month-search-results');
+            if (searchResults && !searchResults.classList.contains('hidden') && !e.target.closest('#month-search-input') && !e.target.closest('#month-search-results')) {
+                searchResults.classList.add('hidden');
+            }
+        });
+
+        window.changeDate = (dateParam) => {
+            const newDate = typeof dateParam === 'string' ? new Date(dateParam) : dateParam;
+            currentDateObj = newDate; calendarDisplayDate = new Date(newDate);
+            window.renderCurrentView();
+        };
+
+        window.handleCellClick = function(viewType, dateStr, hour) {
+            window.openMonthBottomSheet(dateStr, hour);
+            selectedSlot = { view: viewType, date: dateStr, hour: hour }; selectedCellId = null;
+            window.renderCurrentView();
+        };
+
+        window.handleMonthCellClick = (dStr) => {
+            const cellId = `month-cell-${dStr}`;
+            if (selectedCellId === cellId) { window.clearCellSelection(); } 
+            else { selectedCellId = cellId; selectedSlot = null; window.renderCurrentView(); window.openMonthBottomSheet(dStr); }
+        };
+
+        const getTtType = (dStr) => {
+            const data = allPlanners[dStr] || {};
+            if (data.timetableType !== undefined) return data.timetableType;
+            if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
+            return 'normal';
+        };
+
+        const getBaseTimetableForDate = (dObj) => {
+            if (!globalSettings.baseTimetablePatterns || globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
+            const yyyyMmDd = getFormatDateStr(dObj);
+            const matchedPattern = globalSettings.baseTimetablePatterns.find(p => {
+                let sDate = p.startDate; if (!sDate && p.startMonth) sDate = p.startMonth + "-01";
+                let eDate = p.endDate; if (!eDate && p.endMonth) eDate = p.endMonth + "-31";
+                const afterStart = sDate ? yyyyMmDd >= sDate : true;
+                const beforeEnd = eDate ? yyyyMmDd <= eDate : true;
+                return afterStart && beforeEnd;
+            });
+            if (matchedPattern && matchedPattern.data) return matchedPattern.data;
+            return {1:{},2:{},3:{},4:{},5:{}};
+        };
+
+        const getPeriodClass = (dateStr, period, dObj) => {
+            const data = allPlanners[dateStr] || {};
+            let cls = "", sub = "", memo = "", isBase = false;
+            let sourceDay = dObj.getDay(), sourcePeriod = parseInt(period.name.replace('限','')) || 1;
+            const baseTt = getBaseTimetableForDate(dObj);
+
+            if (data.classes && data.classes[period.id]) {
+                const cData = data.classes[period.id];
+                if (cData.disabled) return null; 
+                cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
+                if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+            } else if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
+                const baseData = baseTt[dObj.getDay()][period.name];
+                cls = baseData.cls; sub = baseData.sub; memo = baseData.memo || ""; isBase = true;
+            }
+            if (!cls && !sub && !memo) return null;
+            return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
+        };
+
+        window.openMonthBottomSheet = (dStr, defaultHour = null) => {
+            window.mbsTargetDate = dStr;
+            window.mbsDefaultHour = defaultHour;
+            const dObj = new Date(dStr);
+            document.getElementById('mbs-date-title').textContent = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
+
+            const data = allPlanners[dStr] || {};
+            const isHoli = isHoliday(dObj);
+            const ttType = getTtType(dStr);
+            const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+
+            let schedHtml = '', taskHtml = '';
+            
+            if (!isHoli && ttType !== 'none') {
+                const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                const displayPeriods = ttPeriods.slice(0, lessonCount);
+
+                displayPeriods.forEach(p => {
+                    if(p.id === 'p_allday' || p.isAllDay) return;
+                    const cData = getPeriodClass(dStr, p, dObj);
+                    if (cData) { 
+                        const colorClass = getClassColorClass(cData.cls, cData.sub);
+                        let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
+                        schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
+                            <div class="flex items-start gap-2 w-full">
+                                <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-80 mt-0.5">${p.name}</span>
+                                <span class="break-words font-bold flex-1">${titleHtml}</span>
+                            </div>
+                            ${memoHtml}
+                        </div>`; 
+                    }
+                });
+            }
+            
+            let eventsForDay = [];
+            for (const dateKey in allPlanners) {
+                const events = allPlanners[dateKey].events || [];
+                events.forEach(ev => {
+                    const sDate = ev.start ? ev.start.split('T')[0] : dateKey;
+                    const eDate = ev.end ? ev.end.split('T')[0] : sDate;
+                    if (dStr >= sDate && dStr <= eDate) eventsForDay.push({ ...ev, originalDateKey: dateKey });
+                });
+            }
+
+            const uniqueEvents = []; const seenIds = new Set();
+            eventsForDay.forEach(ev => { if (!seenIds.has(ev.id)) { seenIds.add(ev.id); uniqueEvents.push(ev); } });
+
+            uniqueEvents.forEach(ev => {
+                let label = "", isMultiDay = false;
+                if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
+                    const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
+                    label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
+                } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
+
+                let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
+                const memoPreview = ev.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-black/10 pt-1.5 w-full">${ev.memo}</div>` : '';
+
+                schedHtml += `
+                    <div class="text-xs ${badgeClass} px-2.5 py-2 rounded flex flex-col cursor-pointer transition hover:shadow-md" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
+                        <div class="flex items-start gap-2 w-full">
+                            <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
+                            <span class="break-words font-bold flex-1">${ev.title}</span>
+                        </div>
+                        ${memoPreview}
+                    </div>`; 
+            });
+
+            if (data.reminders) {
+                data.reminders.forEach(t => { 
+                    const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                    const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
+                    const memoHtml = t.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200 pt-1.5 w-full ml-5">${t.memo}</div>` : '';
+                    taskHtml += `<div class="text-xs flex flex-col px-2.5 py-2 ${style} cursor-pointer bg-white shadow-sm hover:shadow-md hover:bg-gray-50 border border-gray-200 rounded transition font-bold" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
+                        <div class="flex items-start gap-2 w-full">
+                            <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5 text-sm" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
+                            <span class="break-words flex-1 mt-0.5">${t.title}</span>
+                        </div>
+                        ${memoHtml}
+                    </div>`; 
+                });
+            }
+
+            let html = '';
+            if (schedHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="far fa-calendar-alt"></i> 予定・授業</div><div class="space-y-2 mb-4">${schedHtml}</div>`;
+            if (taskHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="fas fa-check-square"></i> タスク</div><div class="space-y-2">${taskHtml}</div>`;
+            if (!html) html = '<div class="text-center py-4 text-gray-400 text-xs font-bold">予定・タスクはありません</div>';
+            
+            document.getElementById('mbs-content').innerHTML = html;
+            document.getElementById('mbs-add-btn').onclick = () => { 
+                let defaultTime = null;
+                let isAllDay = true;
+                if (window.mbsDefaultHour !== null && window.mbsDefaultHour !== 'allday') {
+                    defaultTime = `${String(window.mbsDefaultHour).padStart(2, '0')}:00`;
+                    isAllDay = false;
+                }
+                window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); 
+                window.closeMonthBottomSheet(); 
+            };
+            document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
+        };
+
+        window.closeMonthBottomSheet = () => { const sheet = document.getElementById('month-bottom-sheet'); if (sheet) sheet.classList.add('translate-y-full'); };
+
+        window.openAddMenu = (dateStr, defaultTime = null, isAllDay = true) => {
+            addModalTargetDate = dateStr; editTarget = null;
+            const dateYMD = getFormatDateStr(new Date(dateStr));
+            const startHHMM = defaultTime || "09:00";
+            let endHHMM = "10:00";
+            if (defaultTime) { const [h, m] = defaultTime.split(':').map(Number); endHHMM = `${String(h+1).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
+            
+            document.getElementById('add-modal-title').value = ''; document.getElementById('add-modal-location').value = '';
+            document.getElementById('add-modal-memo-sched').value = ''; document.getElementById('add-modal-memo-task').value = '';
+            document.getElementById('add-modal-delete-container').classList.add('hidden');
+            document.getElementById('add-modal-allday').checked = isAllDay;
+            document.getElementById('add-modal-start-date').value = dateYMD; document.getElementById('add-modal-start-time').value = startHHMM;
+            document.getElementById('add-modal-end-date').value = dateYMD; document.getElementById('add-modal-end-time').value = endHHMM;
+            document.getElementById('add-modal-due-date').value = dateYMD; 
+            
+            document.getElementById('add-modal-category-sched').value = 'work';
+            document.getElementById('add-modal-category-task').value = 'work';
+
+            document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
+            document.querySelector('input[name="add-type"][value="schedule"]').checked = true;
+            window.toggleAddModalType(); window.toggleAllDay();
+
+            window.updateModalColor(); 
+
+            document.getElementById('add-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('add-modal-title').focus(), 100);
+        };
+
+        window.openClassEditMenu = (dateStr, periodId, periodName) => {
+            addModalTargetDate = dateStr; editTarget = { dateStr, idOrIndex: periodId }; currentModalMode = 'class';
+            document.getElementById('modal-header-toggle').classList.add('hidden'); document.getElementById('modal-header-class').classList.remove('hidden');
+            document.getElementById('view-schedule-task').classList.add('hidden'); document.getElementById('view-class-edit').classList.remove('hidden');
+            document.getElementById('add-modal-delete-container').classList.add('hidden');
+            document.getElementById('class-edit-period-name').textContent = `${periodName} の授業変更`;
+            
+            const data = allPlanners[dateStr] || {}; let cls = "", sub = "";
+            if (data.classes && data.classes[periodId]) { cls = data.classes[periodId].cls; sub = data.classes[periodId].sub; }
+            document.getElementById('class-edit-cls').value = cls; document.getElementById('class-edit-sub').value = sub;
+
+            document.getElementById('add-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('class-edit-cls').focus(), 100);
+        };
+
+        window.openEditMenu = (dateStr, type, evId) => {
+            window.closeMonthBottomSheet(); 
+            addModalTargetDate = dateStr; editTarget = { dateStr, idOrIndex: evId };
+            const data = allPlanners[dateStr] || {};
+            document.getElementById('add-modal-delete-container').classList.remove('hidden');
+            document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
+
+            if (type === 'schedule') {
+                document.querySelector('input[name="add-type"][value="schedule"]').checked = true; window.toggleAddModalType(); 
+                const ev = (data.events || []).find(e => e.id === evId);
+                if (ev) {
+                    document.getElementById('add-modal-title').value = ev.title || ''; document.getElementById('add-modal-location').value = ev.location || '';
+                    document.getElementById('add-modal-allday').checked = !!ev.isAllDay;
+                    if (ev.start) { const parts = ev.start.split('T'); document.getElementById('add-modal-start-date').value = parts[0]; if(parts[1]) document.getElementById('add-modal-start-time').value = parts[1]; }
+                    if (ev.end) { const parts = ev.end.split('T'); document.getElementById('add-modal-end-date').value = parts[0]; if(parts[1]) document.getElementById('add-modal-end-time').value = parts[1]; }
+                    document.getElementById('add-modal-category-sched').value = ev.category || 'work'; document.getElementById('add-modal-memo-sched').value = ev.memo || '';
+                }
+                window.toggleAllDay();
+            } else if (type === 'task') {
+                document.querySelector('input[name="add-type"][value="task"]').checked = true; window.toggleAddModalType();
+                const task = (data.reminders || []).find(t => t.id === evId);
+                if (task) {
+                    document.getElementById('add-modal-title').value = task.title || '';
+                    if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
+                    document.getElementById('add-modal-category-task').value = task.category || 'work'; 
+                    document.getElementById('add-modal-memo-task').value = task.memo || '';
+                }
+            }
+            
+            window.updateModalColor(); 
+
+            document.getElementById('add-modal').classList.remove('hidden');
+        };
+
+        window.toggleTaskGlobal = (dateStr, taskId, completed) => {
+            window.saveStateToHistory();
+            if (allPlanners[dateStr] && allPlanners[dateStr].reminders) {
+                const task = allPlanners[dateStr].reminders.find(t => t.id === taskId);
+                if (task) {
+                    task.completed = completed;
+                    safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+                    window.saveToFirebase();
+                    window.renderCurrentView();
+                }
+            }
+        };
+
+        window.closeAddMenu = () => document.getElementById('add-modal').classList.add('hidden');
+        window.toggleAllDay = () => {
+            const isAllDay = document.getElementById('add-modal-allday').checked;
+            document.getElementById('add-modal-start-time').classList.toggle('hidden', isAllDay); document.getElementById('add-modal-end-time').classList.toggle('hidden', isAllDay);
+        };
+        window.toggleAddModalType = () => {
+            currentModalMode = document.querySelector('input[name="add-type"]:checked').value;
+            const isSched = currentModalMode === 'schedule';
+            document.getElementById('view-class-edit').classList.add('hidden'); document.getElementById('view-schedule-task').classList.remove('hidden');
+            document.getElementById('fields-location').style.display = isSched ? 'flex' : 'none';
+            document.getElementById('fields-schedule-datetime').style.display = isSched ? 'block' : 'none';
+            document.getElementById('fields-task-datetime').style.display = isSched ? 'none' : 'block';
+            document.getElementById('fields-schedule-options').style.display = isSched ? 'block' : 'none';
+            document.getElementById('fields-task-options').style.display = isSched ? 'none' : 'block';
+            
+            window.updateModalColor(); 
+        };
+
+        window.updateModalColor = () => {
+            const mode = document.querySelector('input[name="add-type"]:checked').value;
+            const cat = document.getElementById(`add-modal-category-${mode === 'schedule' ? 'sched' : 'task'}`).value;
+            const indicator = document.getElementById('add-modal-color-indicator');
+            if(!indicator) return;
+            
+            indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
+            if (cat === 'work') indicator.classList.add('bg-red-500');
+            else if (cat === 'club') indicator.classList.add('bg-blue-500');
+            else if (cat === 'private') indicator.classList.add('bg-orange-500');
+            else indicator.classList.add('bg-[#4a5f73]');
+        };
+
+        window.deleteFromMenu = () => {
+            if (!editTarget) return;
+            window.saveStateToHistory();
+            const { dateStr, idOrIndex } = editTarget;
+            if (currentModalMode === 'schedule') {
+                if (allPlanners[dateStr] && allPlanners[dateStr].events) allPlanners[dateStr].events = allPlanners[dateStr].events.filter(e => e.id !== idOrIndex);
+            } else if (currentModalMode === 'task') {
+                if (allPlanners[dateStr] && allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = allPlanners[dateStr].reminders.filter(t => t.id !== idOrIndex);
+            } else if (currentModalMode === 'class') {
+                if (allPlanners[dateStr] && allPlanners[dateStr].classes) delete allPlanners[dateStr].classes[idOrIndex];
+            }
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView();
+        };
+
+        window.saveAddMenu = () => {
+            window.saveStateToHistory(); 
+            const dateStr = addModalTargetDate;
+            if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
+
+            if (currentModalMode === 'class') {
+                const cls = document.getElementById('class-edit-cls').value.trim(), sub = document.getElementById('class-edit-sub').value.trim();
+                if (!allPlanners[dateStr].classes) allPlanners[dateStr].classes = {};
+                if (!cls && !sub) { delete allPlanners[dateStr].classes[editTarget.idOrIndex]; } 
+                else { allPlanners[dateStr].classes[editTarget.idOrIndex] = { cls, sub }; }
+            } else {
+                const title = document.getElementById('add-modal-title').value.trim();
+                if (!title) return;
+
+                if (currentModalMode === 'schedule') {
+                    const isAllDay = document.getElementById('add-modal-allday').checked;
+                    const startD = document.getElementById('add-modal-start-date').value, startT = document.getElementById('add-modal-start-time').value;
+                    const endD = document.getElementById('add-modal-end-date').value, endT = document.getElementById('add-modal-end-time').value;
+                    const ev = {
+                        id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
+                        title, isAllDay, category: document.getElementById('add-modal-category-sched').value,
+                        location: document.getElementById('add-modal-location').value, memo: document.getElementById('add-modal-memo-sched').value,
+                        start: isAllDay ? startD : `${startD}T${startT}`, end: isAllDay ? endD : `${endD}T${endT}`
+                    };
+                    if (!allPlanners[dateStr].events) allPlanners[dateStr].events = [];
+                    if (editTarget) {
+                        const idx = allPlanners[dateStr].events.findIndex(e => e.id === ev.id);
+                        if(idx >= 0) allPlanners[dateStr].events[idx] = ev; else allPlanners[dateStr].events.push(ev);
+                    } else { allPlanners[dateStr].events.push(ev); }
+                } else if (currentModalMode === 'task') {
+                    const dueStr = document.getElementById('add-modal-due-date').value;
+                    const cat = document.getElementById('add-modal-category-task').value; 
+                    const tsk = {
+                        id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
+                        title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
+                    };
+                    if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
+                    if (editTarget) {
+                        const taskObj = allPlanners[dateStr].reminders.find(t => t.id === tsk.id);
+                        if (taskObj) Object.assign(taskObj, tsk);
+                    } else { allPlanners[dateStr].reminders.push(tsk); }
+                }
+            }
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView(); 
+        };
+
+        window.changeMonthView = (offset) => { calendarDisplayDate.setMonth(calendarDisplayDate.getMonth() + offset); renderMonthView(); };
+
+        const renderMonthView = () => {
+            const year = calendarDisplayDate.getFullYear(), month = calendarDisplayDate.getMonth();
+            document.getElementById('month-view-title').textContent = `${year}年 ${month + 1}月`;
+            
+            const startDay = new Date(year, month, 1).getDay(); const startOffset = startDay === 0 ? 6 : startDay - 1; 
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('month-view-grid');
+            
+            const searchWord = document.getElementById('month-search-input').value.toLowerCase();
+            const filterCat = document.getElementById('month-category-filter').value;
+            const maxRows = document.body.classList.contains('mode-mobile') ? 5 : 7; const rowHeight = 15;
+
+            const cellDates = []; let dayCountForCalc = 1, nextDayCountForCalc = 1;
+            for (let i = 0; i < 42; i++) {
+                let dObj;
+                if (i < startOffset) { dObj = new Date(year, month, -(startOffset - i - 1)); } 
+                else if (dayCountForCalc <= daysInMonth) { dObj = new Date(year, month, dayCountForCalc++); }
+                else { dObj = new Date(year, month + 1, nextDayCountForCalc++); }
+                cellDates.push({ dateStr: getFormatDateStr(dObj), dateObj: dObj });
+            }
+            const viewStartDateStr = cellDates[0].dateStr; const viewEndDateStr = cellDates[41].dateStr;
+
+            let multiDayEvents = []; let singleDayAllDayEvents = {};  let singleDayTimeEvents = {};   
+            for (const dateKey in allPlanners) {
+                const events = allPlanners[dateKey].events || [];
+                events.forEach(ev => {
+                    const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
+                    if (sDate !== eDate) multiDayEvents.push({ ...ev, sDate, eDate, originalDateKey: dateKey });
+                    else {
+                        if (ev.isAllDay) { if (!singleDayAllDayEvents[sDate]) singleDayAllDayEvents[sDate] = []; singleDayAllDayEvents[sDate].push({ ...ev, originalDateKey: dateKey }); } 
+                        else { if (!singleDayTimeEvents[sDate]) singleDayTimeEvents[sDate] = []; singleDayTimeEvents[sDate].push({ ...ev, originalDateKey: dateKey }); }
+                    }
+                });
+            }
+
+            const allDaySlots = Array(42).fill(null).map(() => []); const overflowCounts = Array(42).fill(0);
+
+            multiDayEvents.sort((a, b) => {
+                const lenA = new Date(a.eDate) - new Date(a.sDate); const lenB = new Date(b.eDate) - new Date(b.sDate);
+                if (lenA !== lenB) return lenB - lenA; return a.sDate.localeCompare(b.sDate); 
+            });
+
+            multiDayEvents.forEach(ev => {
+                let sIdx = -1, eIdx = -1;
+                for (let i = 0; i < 42; i++) { if (cellDates[i].dateStr === ev.sDate) sIdx = i; if (cellDates[i].dateStr === ev.eDate) eIdx = i; }
+                if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = 41;
+                
+                if (sIdx !== -1 && eIdx !== -1 && sIdx <= eIdx) {
+                    let row = 0;
+                    while (true) {
+                        let isFree = true;
+                        for (let i = sIdx; i <= eIdx; i++) { if (allDaySlots[i][row] !== undefined) { isFree = false; break; } }
+                        if (isFree) break; row++;
+                    }
+                    for (let i = sIdx; i <= eIdx; i++) {
+                        const weekStart = Math.floor(i / 7) * 7; const weekEnd = weekStart + 6;
+                        const evWeekStart = Math.max(sIdx, weekStart); const evWeekEnd = Math.min(eIdx, weekEnd);
+                        allDaySlots[i][row] = { type: 'multi', event: ev, isSegmentStart: i === evWeekStart, segmentLength: evWeekEnd - evWeekStart + 1 };
+                    }
+                }
+            });
+
+            for (let i = 0; i < 42; i++) {
+                const dStr = cellDates[i].dateStr; const dObj = cellDates[i].dateObj; const data = allPlanners[dStr] || {};
+                let dayItems = [];
+                (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
+                (singleDayTimeEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'time', event: ev }));
+
+                if (!isHoliday(dObj) && (filterCat === 'all' || filterCat === 'jugyo')) {
+                    const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                    const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                    ttPeriods.slice(0, lessonCount).forEach(p => {
+                        if (p.id === 'p_allday' || p.isAllDay) return;
+                        const cData = getPeriodClass(dStr, p, dObj); if (cData) dayItems.push({ type: 'class', event: cData, period: p });
+                    });
+                }
+                (data.reminders || []).forEach(t => dayItems.push({ type: 'task', event: t }));
+
+                dayItems.forEach(item => { let row = 0; while(allDaySlots[i][row] !== undefined) row++; allDaySlots[i][row] = item; });
+            }
+
+            let html = '';
+            for (let i = 0; i < 42; i++) {
+                const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
+                const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
+                const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
+                const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400');
+                const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white';
+                
+                let cellContentHtml = ''; let overCount = 0;
+
+                for (let r = 0; r < allDaySlots[i].length; r++) {
+                    const slot = allDaySlots[i][r]; if (!slot) continue;
+                    const ev = slot.event; let shouldSkip = false;
+
+                    if (slot.type === 'class') {
+                        if (filterCat === 'work_club' || filterCat === 'private') shouldSkip = true;
+                    } else {
+                        const cat = ev.category || 'work'; 
+                        if (filterCat === 'work_club' && cat !== 'work' && cat !== 'club') shouldSkip = true;
+                        if (filterCat === 'private' && cat !== 'private') shouldSkip = true;
+                        if (filterCat === 'jugyo') shouldSkip = true;
+                        if (searchWord && !ev.title.toLowerCase().includes(searchWord) && !(ev.memo && ev.memo.toLowerCase().includes(searchWord))) shouldSkip = true;
+                    }
+
+                    if (shouldSkip) continue;
+
+                    if (r >= maxRows) { overCount++; continue; }
+                    const topPx = r * rowHeight; const isSearched = (ev && window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
+
+                    if (slot.type === 'multi') {
+                        if (slot.isSegmentStart) {
+                            let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
+                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: 14px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                        }
+                    } else if (slot.type === 'allday') {
+                        let bgColorClass = getEventColorClass(ev.category);
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
+                    } else if (slot.type === 'time') {
+                        let label = ev.start ? ev.start.split('T').pop().substring(0,5) : "";
+                        let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
+                    } else if (slot.type === 'class') {
+                        const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
+                        let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
+                    } else if (slot.type === 'task') {
+                        const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                        const style = ev.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
+                    }
+                }
+                let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
+                
+                html += `
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                        <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
+                        <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
+                        ${overflowHtml}
+                    </div>`;
+            }
+            grid.innerHTML = html;
+        };
+
+        window.changeWeekView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeekView(); };
+        
+        const renderWeekView = () => {
+            const d = new Date(calendarDisplayDate);
+            const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
+            const startOfWeek = new Date(d.setDate(diff));
+            document.getElementById('week-view-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
+
+            let timeLabelsHtml = '';
+            for(let i = 5; i <= 23; i++) {
+                const topPct = ((i - 5) / 19) * 100;
+                timeLabelsHtml += `<div class="absolute w-full text-right pr-2 text-[9px] text-gray-500 -mt-1.5" style="top: ${topPct}%;">${i}:00</div>`;
+            }
+            document.getElementById('week-time-labels').innerHTML = timeLabelsHtml;
+
+            const weekDates = []; const weekDateObjs = [];
+            for (let i = 0; i < 7; i++) {
+                const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
+                weekDates.push(getFormatDateStr(cur)); weekDateObjs.push(cur);
+            }
+            const viewStartDateStr = weekDates[0]; const viewEndDateStr = weekDates[6];
+
+            let multiDayEvents = []; let singleDayAllDayEvents = {};  let timeEventsByDay = Array(7).fill(null).map(() => []);
+
+            for (const dateKey in allPlanners) {
+                const events = allPlanners[dateKey].events || [];
+                events.forEach(ev => {
+                    const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
+                    if (eDate >= viewStartDateStr && sDate <= viewEndDateStr) {
+                        if (ev.isAllDay) {
+                            if (sDate !== eDate) multiDayEvents.push({ ...ev, sDate, eDate, originalDateKey: dateKey });
+                            else { if (!singleDayAllDayEvents[sDate]) singleDayAllDayEvents[sDate] = []; singleDayAllDayEvents[sDate].push({ ...ev, originalDateKey: dateKey }); }
+                        } else {
+                            if (sDate !== eDate) {
+                                for (let i = 0; i < 7; i++) {
+                                    const curDateStr = weekDates[i];
+                                    if (curDateStr >= sDate && curDateStr <= eDate) {
+                                        let drawStart = (curDateStr === sDate) ? ev.start.split('T')[1] : "05:00"; 
+                                        let drawEnd = (curDateStr === eDate) ? ev.end.split('T')[1] : "23:00";   
+                                        timeEventsByDay[i].push({ ...ev, drawStart, drawEnd, originalDateKey: dateKey });
+                                    }
+                                }
+                            } else {
+                                const dayIdx = weekDates.indexOf(sDate);
+                                if (dayIdx !== -1) {
+                                    let drawStart = ev.start ? ev.start.split('T')[1] : "09:00"; 
+                                    let drawEnd = ev.end ? ev.end.split('T')[1] : "10:00";
+                                    timeEventsByDay[dayIdx].push({ ...ev, drawStart, drawEnd, originalDateKey: dateKey });
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const allDaySlots = Array(7).fill(null).map(() => []);
+            multiDayEvents.sort((a, b) => {
+                const lenA = new Date(a.eDate) - new Date(a.sDate); const lenB = new Date(b.eDate) - new Date(b.sDate);
+                if (lenA !== lenB) return lenB - lenA; return a.sDate.localeCompare(b.sDate); 
+            });
+
+            multiDayEvents.forEach(ev => {
+                let sIdx = weekDates.indexOf(ev.sDate); let eIdx = weekDates.indexOf(ev.eDate);
+                if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = 6;
+                if (sIdx !== -1 && eIdx !== -1 && sIdx <= eIdx) {
+                    let row = 0;
+                    while (true) {
+                        let isFree = true;
+                        for (let i = sIdx; i <= eIdx; i++) { if (allDaySlots[i][row] !== undefined) { isFree = false; break; } }
+                        if (isFree) break; row++;
+                    }
+                    const segmentLength = eIdx - sIdx + 1;
+                    for (let i = sIdx; i <= eIdx; i++) allDaySlots[i][row] = { type: 'multi', event: ev, isSegmentStart: i === sIdx, segmentLength };
+                }
+            });
+
+            for (let i = 0; i < 7; i++) {
+                const dStr = weekDates[i]; const data = allPlanners[dStr] || {}; let dayItems = [];
+                (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
+                (data.reminders || []).forEach(t => dayItems.push({ type: 'task', event: t }));
+                dayItems.forEach(item => { let row = 0; while(allDaySlots[i][row] !== undefined) row++; allDaySlots[i][row] = item; });
+            }
+
+            let allDayHtml = `<div class="relative w-full h-full min-h-[30px] overflow-hidden"><div class="absolute inset-0 grid grid-cols-7 pointer-events-none">`;
+            for(let i=0; i<7; i++){ allDayHtml += `<div class="border-r border-gray-200 ${(weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; }
+            allDayHtml += `</div>`;
+            
+            let maxRow = -1;
+            for(let i=0; i<7; i++){ allDaySlots[i].forEach((slot, r) => { if(slot) maxRow = Math.max(maxRow, r); }); }
+            
+            const ALLDAY_ROW_HEIGHT = 15;
+            for(let r = 0; r <= maxRow; r++) {
+                for(let c = 0; c < 7; c++) {
+                    const slot = allDaySlots[c][r]; if (!slot) continue;
+                    const topPx = r * ALLDAY_ROW_HEIGHT + 1;
+                    
+                    if (slot.type === 'multi') {
+                        if (slot.isSegmentStart) {
+                            const ev = slot.event; let multiColorClass = getMultiDayColorClass(ev.category);
+                            const leftPct = (c / 7) * 100; const widthPct = (slot.segmentLength / 7) * 100;
+                            const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                            allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                        }
+                    } else if (slot.type === 'allday') {
+                        const ev = slot.event; let bgColorClass = getEventColorClass(ev.category);
+                        const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
+                        const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
+                    } else if (slot.type === 'task') {
+                        const t = slot.event; const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                        const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
+                        const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
+                        const isSearched = (window.searchedItemId === t.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
+                    }
+                }
+            }
+            
+            for (let i = 0; i < 7; i++) {
+                const isSelAllDay = selectedSlot && selectedSlot.view === 'allday' && selectedSlot.date === weekDates[i];
+                allDayHtml += `<div class="absolute top-0 bottom-0 cursor-pointer transition-colors ${isSelAllDay ? 'bg-blue-200/50' : 'hover:bg-gray-200/50'}" style="left: ${(i / 7) * 100}%; width: ${(1 / 7) * 100}%; z-index: 1;" onclick="event.stopPropagation(); window.handleCellClick('allday', '${weekDates[i]}', 'allday')"></div>`;
+            }
+            allDayHtml += `</div>`;
+            
+            const alldayContainer = document.getElementById('week-view-allday'); alldayContainer.innerHTML = allDayHtml; alldayContainer.style.minHeight = `${Math.max(30, (maxRow + 1) * ALLDAY_ROW_HEIGHT + 10)}px`;
+
+            let headerHtml = `<div class="bg-gray-50 border-r border-gray-300"></div>`;
+            let colsHtml = Array(7).fill('');
+
+            for (let i = 0; i < 7; i++) {
+                const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); const isHoli = isHoliday(cur);
+                const color = cur.getDay()===0 ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
+                const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white');
+
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}">${cur.getDate()}</span></div>`;
+
+                let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
+                for (let h = 5; h < 24; h++) {
+                    const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
+                    colContent += `<div class="timeline-cell w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" style="height: calc(100% / 19);" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
+                }
+                colContent += `</div>`;
+
+                let combinedEvents = [];
+                const data = allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+
+                if (!isHoli && ttType !== 'none') {
+                    const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                    ttPeriods.slice(0, lessonCount).forEach(p => {
+                        if (p.id === 'p_allday' || p.isAllDay) return;
+                        const cData = getPeriodClass(curStr, p, cur);
+                        if (cData) combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData });
+                    });
+                }
+                timeEventsByDay[i].forEach(ev => combinedEvents.push({ isClass: false, drawStart: ev.drawStart, drawEnd: ev.drawEnd, ev: ev }));
+                packTimeEvents(combinedEvents);
+
+                combinedEvents.forEach(item => {
+                    const leftStr = `calc(${(item.colIndex / item.numCols) * 100}% + 2px)`; const widthStr = `calc(${(1 / item.numCols) * 100}% - 4px)`;
+                    let heightPct = Math.max(1, item.endPos - item.startPos); 
+
+                    if (item.isClass) {
+                        const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
+                        let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div></div>`;
+                    } else {
+                        const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
+                        const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
+                    }
+                });
+                colsHtml[i] = colContent;
+            }
+
+            document.getElementById('week-view-header').innerHTML = headerHtml;
+            let gridHtml = '';
+            for(let i=0; i<7; i++) { 
+                const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i);
+                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${(cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
+            }
+            document.getElementById('week-view-grid').innerHTML = gridHtml;
+        };
+
+        const renderAgendaView = () => {
+            const dateSet = new Set(Object.keys(allPlanners)); const today = new Date(); const todayStr = getFormatDateStr(today);
+            for (let i = 0; i <= 30; i++) { const d = new Date(today); d.setDate(today.getDate() + i); dateSet.add(getFormatDateStr(d)); }
+            const dates = Array.from(dateSet).sort((a,b)=>a.localeCompare(b)); 
+            let html = '', count = 0;
+
+            dates.forEach(dStr => {
+                const data = allPlanners[dStr] || {}; const dObj = new Date(dStr);
+                const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                let schedHtml = '', taskHtml = '';
+                
+                if (!isHoli && ttType !== 'none') {
+                    const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                    ttPeriods.slice(0, lessonCount).forEach(p => {
+                        if (p.id === 'p_allday' || p.isAllDay) return;
+                        const cData = getPeriodClass(dStr, p, dObj);
+                        if (cData) { 
+                            let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                            let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
+                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                                <div class="flex items-start gap-1.5 w-full">
+                                    <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-80 mt-0.5">${p.name}</span>
+                                    <span class="font-bold break-words flex-1">${titleHtml}</span>
+                                </div>
+                                ${memoHtml}
+                            </div>`; 
+                        }
+                    });
+                }
+                
+                if (data.events) {
+                    data.events.forEach(ev => {
+                        let label = "", isMultiDay = false;
+                        if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
+                            const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
+                            label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
+                        } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
+                        let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
+                        const memoPreview = ev.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-black/10 pt-1 w-full">${ev.memo}</div>` : '';
+                        schedHtml += `<div class="text-[10px] ${badgeClass} px-2 py-1.5 rounded flex flex-col cursor-pointer transition hover:shadow-sm" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                            <div class="flex items-start gap-1.5 w-full">
+                                <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
+                                <span class="break-words font-bold flex-1">${ev.title}</span>
+                            </div>
+                            ${memoPreview}
+                        </div>`; 
+                    });
+                }
+
+                if (data.reminders) data.reminders.forEach(t => { 
+                    const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                    const style = t.completed ? 'text-gray-400 line-through' : 'text-gray-700'; 
+                    const taskMemoHtml = t.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-gray-200 pt-1 w-full ml-5">${t.memo}</div>` : '';
+                    taskHtml += `<div class="text-[10px] flex flex-col px-2 py-1.5 ${style} cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded transition hover:shadow-sm" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                        <div class="flex items-start gap-1.5 w-full">
+                            <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
+                            <span class="break-words flex-1 font-bold">${t.title}</span>
+                        </div>
+                        ${taskMemoHtml}
+                    </div>`; 
+                });
+
+                if (!schedHtml && !taskHtml) return;
+                count++;
+                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold text-gray-700">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal text-gray-500">(${DAYS_STR[dObj.getDay()]})</span></div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+            });
+            if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
+            document.getElementById('agenda-view-list').innerHTML = html;
+
+            let incompleteTasks = [];
+            for (const dateKey in allPlanners) {
+                if (allPlanners[dateKey].reminders) {
+                    allPlanners[dateKey].reminders.forEach(t => {
+                        if (!t.completed) { let taskDate = t.dueDate || dateKey; if (taskDate <= todayStr) incompleteTasks.push({ ...t, originalDateKey: dateKey, taskDate: taskDate }); }
+                    });
+                }
+            }
+            incompleteTasks.sort((a, b) => a.taskDate.localeCompare(b.taskDate));
+
+            let incompleteHtml = '';
+            if (incompleteTasks.length === 0) incompleteHtml = '<div class="text-center py-4 text-gray-400 text-[10px] font-bold">未完了のタスクはありません</div>';
+            else {
+                incompleteTasks.forEach(t => {
+                    const isOverdue = t.taskDate < todayStr;
+                    incompleteHtml += `<div class="text-[10px] flex items-start gap-1.5 px-1.5 py-1.5 bg-white border ${isOverdue ? 'border-red-200 shadow-sm' : 'border-gray-200'} rounded cursor-pointer hover:bg-gray-50 transition" onclick="event.stopPropagation(); window.openMonthBottomSheet('${t.originalDateKey}')"><div class="mt-px shrink-0 cursor-pointer flex items-center justify-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${t.originalDateKey}', '${t.id}', true)"><i class="far fa-square text-gray-400 hover:text-blue-500 transition text-sm"></i></div><div class="flex flex-col flex-1 min-w-0"><div class="flex items-center gap-1 w-full"><span class="font-bold text-[#4a5f73] truncate">${t.title}</span>${isOverdue ? `<span class="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-red-200">超過</span>` : `<span class="text-[8px] bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-yellow-200">本日</span>`}</div>${t.memo ? `<div class="text-[9px] text-gray-500 truncate mt-0.5">${t.memo}</div>` : ''}<div class="text-[8px] text-gray-400 mt-0.5">${t.taskDate}</div></div></div>`;
+                });
+            }
+            document.getElementById('agenda-incomplete-tasks').innerHTML = incompleteHtml;
+        };
+
+
+        const calculateTechCountsForWeek = (startOfWeek) => {
+            const friday = new Date(startOfWeek); friday.setDate(friday.getDate() + 4);
+            const year = friday.getMonth() >= 3 ? friday.getFullYear() : friday.getFullYear() - 1;
+            const startDate = new Date(year, 3, 1); 
+            const counts = {}; const lessonCountMap = {}; 
+            let curDate = new Date(startDate);
+            while (curDate <= friday) {
+                const dStr = getFormatDateStr(curDate);
+                if (!isHoliday(curDate)) {
+                    const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                    if (ttType !== 'none') {
+                        const ttPeriods = globalSettings.timetables[ttType].periods;
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                        ttPeriods.slice(0, lessonCount).forEach(p => {
+                            if (p.id === 'p_allday' || p.isAllDay) return;
+                            const cData = getPeriodClass(dStr, p, curDate);
+                            if (cData && String(cData.sub).trim() === '技術') {
+                                const cls = String(cData.cls).trim();
+                                if (cls) { counts[cls] = (counts[cls] || 0) + 1; lessonCountMap[`${dStr}_${p.id}`] = counts[cls]; }
+                            }
+                        });
+                    }
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+            return lessonCountMap;
+        };
+
+        window.changeWeeklyPlanView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeeklyPlanView(); };
+
+        const renderWeeklyPlanView = () => {
+            const d = new Date(calendarDisplayDate);
+            const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
+            const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
+            document.getElementById('weekly-plan-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
+
+            const workDays = [];
+            for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
+            const techCountsMap = calculateTechCountsForWeek(startOfWeek);
+
+            let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
+            html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
+            workDays.forEach(day => {
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
+            });
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
+            
+            // プルダウンの並び順を固定化
+            const ttOrder = ['normal', 'short', 'special', 'test'];
+
+            workDays.forEach(day => {
+                const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
+                
+                let optionsHtml = '';
+                ttOrder.forEach(k => {
+                    if (globalSettings.timetables[k]) {
+                        optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
+                    }
+                });
+                Object.keys(globalSettings.timetables).forEach(k => {
+                    if (!ttOrder.includes(k)) {
+                        optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
+                    }
+                });
+                optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
+
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+            });
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+            workDays.forEach(day => {
+                const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
+                const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+                    <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
+                    ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
+                </select></td>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            let maxPeriodsInWeek = 0; const weekPeriodsMap = []; 
+            for (let i = 0; i < 5; i++) {
+                const cur = workDays[i]; const dStr = getFormatDateStr(cur); const ttType = getTtType(dStr);
+                const periods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
+                weekPeriodsMap.push(periods); if (periods.length > maxPeriodsInWeek) maxPeriodsInWeek = periods.length;
+            }
+            if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
+
+            const rowsToRender = [];
+            rowsToRender.push({ type: 'special', id: 'sp_morning', name: '朝' });
+            for (let pIdx = 0; pIdx < maxPeriodsInWeek; pIdx++) {
+                rowsToRender.push({ type: 'period', index: pIdx });
+                if (pIdx === 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
+            }
+            if (maxPeriodsInWeek <= 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
+            rowsToRender.push({ type: 'special', id: 'sp_after_school', name: '放' });
+
+            for (let r of rowsToRender) {
+                const rowClass = r.type === 'special' ? 'h-8 sm:h-10' : 'h-16 sm:h-20';
+                html += `<tr class="${rowClass}">`;
+                
+                if (r.type === 'special') {
+                    html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
+                    
+                    for (let dIdx = 0; dIdx < 5; dIdx++) {
+                        const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                        const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
+                        const isCut = cData.isCut;
+                        const memo = cData.memo || "";
+                        
+                        let btnContent = "";
+                        let borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
+                        
+                        if (isCut) {
+                            bgClass = "bg-gray-100 text-gray-400";
+                            btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
+                            borderClass = "border border-dashed border-gray-300";
+                        } else if (memo) {
+                            bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
+                            borderClass = "border border-yellow-200 shadow-sm";
+                            btnContent = `<div class="text-[9px] sm:text-[10px] truncate w-full px-1 whitespace-normal leading-tight">${memo}</div>`;
+                        } else {
+                            btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
+                        }
+                        
+                        html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button></div></td>`;
+                    }
+                } else {
+                    const pIdx = r.index;
+                    html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
+                    
+                    for (let dIdx = 0; dIdx < 5; dIdx++) {
+                        const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                        const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
+
+                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-0.5 bg-gray-100 opacity-50 h-full relative"></td>`; continue; }
+
+                        const baseTt = getBaseTimetableForDate(day);
+                        let baseCls = "", baseSub = "", baseMemo = "";
+                        if (baseTt[day.getDay()] && baseTt[day.getDay()][p.name]) {
+                            baseCls = baseTt[day.getDay()][p.name].cls || ""; baseSub = baseTt[day.getDay()][p.name].sub || ""; baseMemo = baseTt[day.getDay()][p.name].memo || "";
+                        }
+
+                        let currentCls = "", currentSub = "", currentMemo = "", isExcluded = false, hasCustom = false;
+                        let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
+
+                        if (data.classes && data.classes[p.id]) {
+                            const cData = data.classes[p.id];
+                            currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
+                            if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                            if (cData.disabled) isExcluded = true;
+                        }
+
+                        let displayCls = hasCustom ? currentCls : baseCls, displaySub = hasCustom ? currentSub : baseSub, displayMemo = hasCustom ? currentMemo : baseMemo;
+                        let btnContent = "", borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
+
+                        const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
+                        const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
+                        const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
+
+                        if (isExcluded) {
+                            btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
+                        } else if (displayCls || displaySub || displayMemo || hasCustom) {
+                            const colorClass = getClassColorClass(displayCls, displaySub);
+                            bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
+                            const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
+                            let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[7px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
+                            let mainContent = '', techCountHtml = '';
+
+                            if (displayCls || displaySub) {
+                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
+                                if (displaySub.trim() === '技術') {
+                                    const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
+                                    let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
+                                    techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
+                                }
+                            } else if (displayMemo) {
+                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
+                            } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
+
+                            btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
+                            borderClass = "border border-[#4a5f73]/50 shadow-sm";
+                        } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
+
+                        html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button></div></td>`;
+                    }
+                }
+                html += `</tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('weekly-plan-container').innerHTML = html;
+        };
+
+        window.updateWeeklyPlanPeriods = (dStr) => {
+            const select = document.getElementById(`wp-tt-${dStr}`);
+            if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
+            allPlanners[dStr].timetableType = select.value;
+            if (select.value === 'none') { allPlanners[dStr].lessonCount = 0; } 
+            else { allPlanners[dStr].lessonCount = globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
+            window.saveWeeklyPlan(false); 
+        };
+
+        window.saveWeeklyPlan = (showAlert = true) => {
+            window.saveStateToHistory(); 
+            const d = new Date(calendarDisplayDate); const startOfWeek = new Date(d.setDate(d.getDate() - (d.getDay() === 0 ? 7 : d.getDay()) + 1));
+            for (let i = 0; i < 5; i++) {
+                const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
+                const dStr = getFormatDateStr(cur); const ttSelect = document.getElementById(`wp-tt-${dStr}`);
+                if (!ttSelect) continue;
+                const lessonCount = parseInt(document.getElementById(`wp-lc-${dStr}`).value);
+                if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
+                allPlanners[dStr].timetableType = ttSelect.value; allPlanners[dStr].lessonCount = lessonCount;
+                if (!allPlanners[dStr].classes) allPlanners[dStr].classes = {};
+            }
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); 
+            if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
+        };
+
+        // ==========================================
+        // ★ 週授業ポップアップ用モーダル関数群
+        // ==========================================
+        window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            const isSpecial = periodId.startsWith('sp_');
+            wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
+            
+            const classInputArea = document.getElementById('wp-modal-class-area');
+            const deleteBtn = document.getElementById('wp-modal-delete-btn');
+            const resetBtn = document.getElementById('wp-modal-reset-btn');
+            const modalTitle = document.getElementById('wp-modal-title');
+            const memoInput = document.getElementById('wp-modal-memo');
+
+            const dObj = new Date(dateStr);
+            const dayOfWeek = dObj.getDay(); 
+            const defaultDay = (dayOfWeek >= 1 && dayOfWeek <= 5) ? dayOfWeek : 1;
+            const defaultPeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
+
+            const data = allPlanners[dateStr] || {};
+            const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
+
+            if (isSpecial) {
+                classInputArea.classList.add('hidden');
+                modalTitle.innerHTML = `<i class="fas fa-sun mr-1"></i>${periodName}の予定`;
+                document.getElementById('wp-modal-base-status').classList.add('hidden');
+                document.getElementById('wp-modal-time-config').classList.add('hidden');
+                
+                deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
+                deleteBtn.onclick = () => window.toggleCutWeeklyPlanModal();
+                deleteBtn.className = "bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
+                
+                resetBtn.classList.add('hidden');
+                
+                memoInput.value = cData ? (cData.memo || "") : "";
+                memoInput.placeholder = "予定やタスクを入力...";
+
+            } else {
+                classInputArea.classList.remove('hidden');
+                modalTitle.innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
+                document.getElementById('wp-modal-base-status').classList.remove('hidden');
+                document.getElementById('wp-modal-time-config').classList.remove('hidden');
+                
+                deleteBtn.innerHTML = '空きコマ';
+                deleteBtn.onclick = () => window.deleteWeeklyPlanModal();
+                deleteBtn.className = "bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
+                resetBtn.classList.remove('hidden');
+
+                wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
+                wpSelectedPeriod = cData && cData.sourcePeriod !== undefined ? cData.sourcePeriod : defaultPeriod;
+
+                let initialCls = "", initialSub = "", initialMemo = "";
+                if (cData && !cData.disabled) {
+                    initialCls = cData.cls || "";
+                    initialSub = cData.sub || "";
+                    initialMemo = cData.memo || "";
+                } else {
+                    const baseTt = getBaseTimetableForDate(dObj);
+                    if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
+                        initialCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
+                        initialSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
+                        initialMemo = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].memo || "";
+                    }
+                }
+
+                document.getElementById('wp-modal-cls').value = initialCls;
+                document.getElementById('wp-modal-sub').value = initialSub;
+                memoInput.value = initialMemo;
+                memoInput.placeholder = "単元名や連絡事項など...";
+
+                window.renderWpModalButtons();
+                window.updateWpModalBaseStatus();
+            }
+
+            document.getElementById('weekly-plan-modal').classList.remove('hidden');
+            document.getElementById('weekly-plan-modal').classList.add('flex');
+        };
+
+        window.closeWeeklyPlanModal = () => {
+            document.getElementById('weekly-plan-modal').classList.add('hidden');
+            document.getElementById('weekly-plan-modal').classList.remove('flex');
+        };
+
+        window.renderWpModalButtons = () => {
+            const daysContainer = document.getElementById('wp-modal-days');
+            const periodsContainer = document.getElementById('wp-modal-periods');
+            
+            let daysHtml = '';
+            const dayNames = ['月', '火', '水', '木', '金'];
+            for(let i=1; i<=5; i++) {
+                const isSelected = wpSelectedDay === i;
+                const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+                daysHtml += `<button onclick="window.changeWpModalSource('day', ${i})" class="px-2 py-1 rounded text-xs font-bold border transition ${baseClass}">${dayNames[i-1]}</button>`;
+            }
+            daysContainer.innerHTML = daysHtml;
+
+            const ttType = getTtType(wpModalTarget.targetDateStr);
+            const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay) : [];
+            const maxPeriods = ttPeriods.length > 0 ? ttPeriods.length : 6;
+
+            let periodsHtml = '';
+            for(let i=1; i<=maxPeriods; i++) {
+                const isSelected = wpSelectedPeriod === i;
+                const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+            }
+            periodsContainer.innerHTML = periodsHtml;
+        };
+
+        window.changeWpModalSource = (type, val) => {
+            if (type === 'day') wpSelectedDay = val;
+            if (type === 'period') wpSelectedPeriod = val;
+            
+            window.renderWpModalButtons();
+            
+            const dObj = new Date(wpModalTarget.targetDateStr);
+            const baseTt = getBaseTimetableForDate(dObj);
+            let newCls = "", newSub = "";
+            if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
+                newCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
+                newSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
+            }
+            
+            document.getElementById('wp-modal-cls').value = newCls;
+            document.getElementById('wp-modal-sub').value = newSub;
+            
+            window.updateWpModalBaseStatus();
+        };
+
+        window.updateWpModalBaseStatus = () => {
+            const statusEl = document.getElementById('wp-modal-base-status');
+            const dayNames = ['月', '火', '水', '木', '金'];
+            const dName = dayNames[wpSelectedDay - 1];
+            
+            const dObj = new Date(wpModalTarget.targetDateStr);
+            const origDay = dObj.getDay();
+            const origPeriod = parseInt(wpModalTarget.targetPeriodName.replace(/[^0-9]/g, '')) || 1;
+            
+            if (wpSelectedDay === origDay && wpSelectedPeriod === origPeriod) {
+                statusEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i> 通常の授業（${dName}曜${wpSelectedPeriod}限）`;
+                statusEl.className = "bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all";
+            } else {
+                statusEl.innerHTML = `<i class="fas fa-exchange-alt mr-1"></i> 時間割変更：${dName}曜${wpSelectedPeriod}限の授業を行います`;
+                statusEl.className = "bg-orange-50 rounded text-center p-1.5 text-xs font-bold text-orange-700 border border-orange-200 shadow-sm transition-all";
+            }
+        };
+
+        window.saveWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId, isSpecial } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            const memo = document.getElementById('wp-modal-memo').value.trim();
+
+            if (isSpecial) {
+                const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
+                allPlanners[targetDateStr].classes[targetPeriodId] = {
+                    memo: memo,
+                    isCut: currentData.isCut || false
+                };
+            } else {
+                const cls = document.getElementById('wp-modal-cls').value.trim();
+                const sub = document.getElementById('wp-modal-sub').value.trim();
+                
+                allPlanners[targetDateStr].classes[targetPeriodId] = {
+                    cls: cls,
+                    sub: sub,
+                    memo: memo,
+                    sourceDay: wpSelectedDay,
+                    sourcePeriod: wpSelectedPeriod,
+                    disabled: false
+                };
+            }
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        window.toggleCutWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
+            const memo = document.getElementById('wp-modal-memo').value.trim();
+
+            allPlanners[targetDateStr].classes[targetPeriodId] = {
+                memo: memo,
+                isCut: !currentData.isCut
+            };
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        window.deleteWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            allPlanners[targetDateStr].classes[targetPeriodId] = { disabled: true };
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        window.resetWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (allPlanners[targetDateStr] && allPlanners[targetDateStr].classes) {
+                delete allPlanners[targetDateStr].classes[targetPeriodId];
+            }
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        // 設定保存ロジック
+        window.syncTempSettingsFromDOM = () => {
+            if (!tempSettings) return;
+            Object.keys(tempSettings.timetables).forEach(key => {
+                const tt = tempSettings.timetables[key];
+                const nameInput = document.getElementById(`set-tt-${key}-name`);
+                if (nameInput) tt.name = nameInput.value;
+                
+                tt.periods.forEach((p, idx) => {
+                    if (p.id === 'p_allday') return; 
+                    const nameEl = document.getElementById(`set-tt-${key}-${idx}-name`);
+                    const sEl = document.getElementById(`set-tt-${key}-${idx}-s`);
+                    const eEl = document.getElementById(`set-tt-${key}-${idx}-e`);
+                    if (nameEl) p.name = nameEl.value;
+                    if (sEl) p.s = sEl.value;
+                    if (eEl) p.e = eEl.value;
+                });
+            });
+
+            if (tempSettings.baseTimetablePatterns) {
+                const activeIdx = tempSettings.activePatternIndex || 0;
+                const activePat = tempSettings.baseTimetablePatterns[activeIdx];
+                if (activePat) {
+                    const nameEl = document.getElementById('settings-pattern-name');
+                    if (nameEl) activePat.name = nameEl.value;
+
+                    const sy = document.getElementById('settings-pattern-start-y').value;
+                    const sm = document.getElementById('settings-pattern-start-m').value;
+                    const sd = document.getElementById('settings-pattern-start-d').value;
+                    if (sy && sm && sd) activePat.startDate = `${sy}-${sm}-${sd}`;
+                    else activePat.startDate = "";
+
+                    const ey = document.getElementById('settings-pattern-end-y').value;
+                    const em = document.getElementById('settings-pattern-end-m').value;
+                    const ed = document.getElementById('settings-pattern-end-d').value;
+                    if (ey && em && ed) activePat.endDate = `${ey}-${em}-${ed}`;
+                    else activePat.endDate = "";
+
+                    delete activePat.startMonth;
+                    delete activePat.endMonth;
+
+                    const days = [1,2,3,4,5]; 
+                    const pNames = ["1限","2限","3限","4限","5限","6限"];
+                    days.forEach(d => {
+                        pNames.forEach(pn => {
+                            const clsEl = document.getElementById(`base-tt-${d}-${pn}-cls`);
+                            const subEl = document.getElementById(`base-tt-${d}-${pn}-sub`);
+                            const memoEl = document.getElementById(`base-tt-${d}-${pn}-memo`);
+                            if (clsEl && subEl && memoEl) {
+                                if (!activePat.data[d]) activePat.data[d] = {};
+                                if (clsEl.value || subEl.value || memoEl.value) {
+                                    activePat.data[d][pn] = { cls: clsEl.value, sub: subEl.value, memo: memoEl.value };
+                                } else {
+                                    activePat.data[d][pn] = null;
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        };
+
+        const renderSettingsView = () => {
+            let html = '';
+            Object.keys(tempSettings.timetables).forEach(key => {
+                const tt = tempSettings.timetables[key];
+                html += `<div class="border border-gray-200 rounded bg-gray-50 p-3 mb-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <input type="text" id="set-tt-${key}-name" class="font-bold text-sm text-gray-700 bg-transparent border-b border-dashed border-gray-400 outline-none w-1/2 focus:border-[#4a5f73]" value="${tt.name}">
+                        <button onclick="window.addTtPeriod('${key}')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 shadow-sm transition flex items-center gap-1"><i class="fas fa-plus text-[#4a5f73]"></i> 行を追加</button>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex text-[9px] font-bold text-gray-400 px-1 gap-1.5">
+                            <div class="w-20">枠の名前</div><div class="flex-1">開始 - 終了時刻</div>
+                        </div>`;
+                
+                tt.periods.forEach((p, idx) => {
+                    if (p.id === 'p_allday') return;
+
+                    html += `
+                    <div class="flex items-center gap-1.5 bg-white p-1 border border-gray-200 rounded shadow-sm">
+                        <input type="text" id="set-tt-${key}-${idx}-name" value="${p.name || ''}" class="w-20 font-bold text-xs text-gray-700 outline-none border border-transparent focus:border-[#4a5f73] bg-gray-50 rounded px-1" placeholder="例: 1限">
+                        <input type="time" id="set-tt-${key}-${idx}-s" value="${p.s || ''}" class="w-20 text-xs outline-none bg-gray-50 border border-gray-200 rounded px-1 focus:border-[#4a5f73]">
+                        <span class="text-gray-400 text-[10px]">-</span>
+                        <input type="time" id="set-tt-${key}-${idx}-e" value="${p.e || ''}" class="w-20 text-xs outline-none bg-gray-50 border border-gray-200 rounded px-1 focus:border-[#4a5f73]">
+                        <button onclick="window.removeTtPeriod('${key}', ${idx})" class="ml-auto text-gray-300 hover:text-red-500 p-1 transition"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+            document.getElementById('settings-timetables-container').innerHTML = html;
+
+            const activeIdx = tempSettings.activePatternIndex || 0;
+            const activePat = tempSettings.baseTimetablePatterns[activeIdx];
+
+            const generateDateSelects = (prefix, dateStr) => {
+                let y = "", m = "", d = "";
+                if (dateStr) {
+                    const parts = dateStr.split('-');
+                    y = parts[0]; m = parts[1]; d = parts[2];
+                }
+                
+                let yOpts = '<option value="">--</option>';
+                for(let i=2020; i<=2035; i++) yOpts += `<option value="${i}" ${y==i?'selected':''}>${i}</option>`;
+                
+                let mOpts = '<option value="">--</option>';
+                for(let i=1; i<=12; i++) {
+                    let pad = String(i).padStart(2, '0');
+                    mOpts += `<option value="${pad}" ${m==pad?'selected':''}>${i}</option>`;
+                }
+                
+                let dOpts = '<option value="">--</option>';
+                for(let i=1; i<=31; i++) {
+                    let pad = String(i).padStart(2, '0');
+                    dOpts += `<option value="${pad}" ${d==pad?'selected':''}>${i}</option>`;
+                }
+
+                return `
+                    <select id="${prefix}-y" class="border border-gray-300 rounded px-1 py-0.5 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white">${yOpts}</select><span class="text-[10px] text-gray-500 mx-0.5">年</span>
+                    <select id="${prefix}-m" class="border border-gray-300 rounded px-1 py-0.5 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white">${mOpts}</select><span class="text-[10px] text-gray-500 mx-0.5">月</span>
+                    <select id="${prefix}-d" class="border border-gray-300 rounded px-1 py-0.5 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white">${dOpts}</select><span class="text-[10px] text-gray-500 ml-0.5">日</span>
+                `;
+            };
+
+            let sDate = activePat.startDate;
+            if (!sDate && activePat.startMonth) sDate = activePat.startMonth + "-01";
+            let eDate = activePat.endDate;
+            if (!eDate && activePat.endMonth) eDate = activePat.endMonth + "-31";
+
+            const startSelects = generateDateSelects('settings-pattern-start', sDate);
+            const endSelects = generateDateSelects('settings-pattern-end', eDate);
+
+
+            let baseHtml = `
+            <div class="flex items-center gap-2 mb-2">
+                <select id="settings-pattern-select" class="border border-gray-300 rounded px-1.5 py-1 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-700 bg-white" onchange="window.changeSettingsPattern(this.value)">
+                    ${tempSettings.baseTimetablePatterns.map((p, i) => `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${p.name}</option>`).join('')}
+                </select>
+                <button onclick="window.addSettingsPattern()" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition shadow-sm flex items-center gap-1"><i class="fas fa-plus"></i> 追加</button>
+                ${tempSettings.baseTimetablePatterns.length > 1 ? `<button onclick="window.removeSettingsPattern()" class="text-[10px] bg-white border border-gray-300 text-red-500 px-2 py-1 rounded hover:bg-red-50 transition shadow-sm flex items-center gap-1"><i class="fas fa-trash-alt"></i> 削除</button>` : ''}
+            </div>
+
+            <div class="flex flex-col gap-2 mb-3 bg-gray-50 p-2 rounded border border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div>
+                        <label class="block text-[9px] font-bold text-gray-500 mb-0.5">パターン名</label>
+                        <input type="text" id="settings-pattern-name" value="${activePat.name}" onchange="window.updatePatternName(this.value)" class="border border-gray-300 rounded px-1.5 py-1 text-xs outline-none w-40 focus:border-[#4a5f73] font-bold text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-gray-500 mb-0.5">適用期間</label>
+                        <div class="flex flex-wrap items-center gap-1">
+                            <div class="flex items-center">${startSelects}</div>
+                            <span class="text-gray-400 font-bold mx-0.5 text-[10px]">〜</span>
+                            <div class="flex items-center">${endSelects}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            const days = [{d:1,n:"月"},{d:2,n:"火"},{d:3,n:"水"},{d:4,n:"木"},{d:5,n:"金"}];
+            const pNames = ["1限","2限","3限","4限","5限","6限"]; 
+
+            baseHtml += `<div class="overflow-x-auto"><table class="w-full text-xs text-left border-collapse min-w-[400px]">
+                <thead><tr class="bg-gray-100 text-gray-500"><th class="border border-gray-200 p-1 w-10 text-center">時限</th>
+                    ${days.map(day => `<th class="border border-gray-200 p-1 text-center w-[18%]">${day.n}</th>`).join('')}
+                </tr></thead><tbody>`;
+
+            pNames.forEach(pn => {
+                baseHtml += `<tr><td class="border border-gray-200 p-1 text-center font-bold text-gray-600 bg-gray-50 text-[10px]">${pn}</td>`;
+                days.forEach(day => {
+                    const val = activePat.data[day.d] && activePat.data[day.d][pn] ? activePat.data[day.d][pn] : {};
+                    const clsVal = typeof val === 'string' ? val.split(' ')[0] || '' : val.cls || '';
+                    const subVal = typeof val === 'string' ? val.split(' ').slice(1).join(' ') || '' : val.sub || '';
+                    const memoVal = typeof val === 'string' ? '' : val.memo || '';
+                    
+                    baseHtml += `<td class="border border-gray-200 p-0.5 bg-white align-top">
+                        <div class="flex flex-col gap-0.5">
+                            <input type="text" id="base-tt-${day.d}-${pn}-cls" value="${clsVal}" list="class-list" placeholder="ｸﾗｽ" class="w-full outline-none p-0.5 text-[9px] sm:text-[10px] bg-gray-50 focus:bg-blue-50 border border-gray-200 rounded">
+                            <input type="text" id="base-tt-${day.d}-${pn}-sub" value="${subVal}" list="sub-list" placeholder="教科・内容" class="w-full outline-none p-0.5 text-[9px] sm:text-[10px] bg-gray-50 focus:bg-blue-50 border border-gray-200 rounded">
+                            <input type="text" id="base-tt-${day.d}-${pn}-memo" value="${memoVal}" placeholder="予定/ﾒﾓ" class="w-full outline-none p-0.5 text-[9px] sm:text-[10px] bg-gray-50 focus:bg-blue-50 border border-gray-200 rounded">
+                        </div>
+                    </td>`;
+                });
+                baseHtml += `</tr>`;
+            });
+            baseHtml += `</tbody></table></div>`;
+            document.getElementById('settings-basetimetable-container').innerHTML = baseHtml;
+        };
+
+        window.changeSettingsPattern = (idxStr) => {
+            window.syncTempSettingsFromDOM();
+            tempSettings.activePatternIndex = parseInt(idxStr);
+            renderSettingsView();
+        };
+
+        window.updatePatternName = (val) => {
+            const activeIdx = tempSettings.activePatternIndex || 0;
+            if (tempSettings.baseTimetablePatterns[activeIdx]) {
+                tempSettings.baseTimetablePatterns[activeIdx].name = val;
+                const select = document.getElementById('settings-pattern-select');
+                if (select && select.options[activeIdx]) {
+                    select.options[activeIdx].text = val;
+                }
+            }
+        };
+
+        window.addSettingsPattern = () => {
+            window.syncTempSettingsFromDOM();
+            const newIdx = tempSettings.baseTimetablePatterns.length;
+            tempSettings.baseTimetablePatterns.push({
+                id: 'p_' + Date.now(),
+                name: '新しいパターン',
+                startDate: '',
+                endDate: '',
+                data: {1:{},2:{},3:{},4:{},5:{}}
+            });
+            tempSettings.activePatternIndex = newIdx;
+            renderSettingsView();
+        };
+
+        window.removeSettingsPattern = () => {
+            if (tempSettings.baseTimetablePatterns.length <= 1) {
+                alert("パターンは最低1つ必要です。");
+                return;
+            }
+            if (confirm("現在表示しているパターンを削除しますか？")) {
+                const activeIdx = tempSettings.activePatternIndex || 0;
+                tempSettings.baseTimetablePatterns.splice(activeIdx, 1);
+                tempSettings.activePatternIndex = 0;
+                renderSettingsView();
+            }
+        };
+
+        window.addTtPeriod = (key) => {
+            window.syncTempSettingsFromDOM();
+            const tt = tempSettings.timetables[key];
+            const pId = 'p_' + Date.now();
+            const nextNum = tt.periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length + 1;
+            tt.periods.push({ id: pId, name: `${nextNum}限`, s: "", e: "" });
+            renderSettingsView();
+        };
+
+        window.removeTtPeriod = (key, idx) => {
+            if (confirm("この行を削除しますか？")) {
+                window.syncTempSettingsFromDOM();
+                tempSettings.timetables[key].periods.splice(idx, 1);
+                renderSettingsView();
+            }
+        };
+
+        window.saveSettings = () => {
+            window.syncTempSettingsFromDOM();
+            globalSettings = JSON.parse(JSON.stringify(tempSettings));
+            safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
+            window.saveToFirebase();
+            window.updateDisplayMode();
+            window.renderCurrentView();
+            alert("設定を保存しました。");
+        };
+
+        window.handleMonthSearch = () => {
+            window.renderCurrentView(); 
+            
+            const searchWord = document.getElementById('month-search-input').value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('month-search-results');
+            
+            if (!searchWord) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            let resultsHtml = '';
+            let count = 0;
+
+            const sortedDates = Object.keys(allPlanners).sort();
+
+            sortedDates.forEach(dateStr => {
+                const data = allPlanners[dateStr];
+                const dObj = new Date(dateStr);
+                const dateLabel = `${dObj.getMonth()+1}/${dObj.getDate()}(${DAYS_STR[dObj.getDay()]})`;
+                
+                if (data.events) {
+                    data.events.forEach(ev => {
+                        if (ev.title.toLowerCase().includes(searchWord) || (ev.memo && ev.memo.toLowerCase().includes(searchWord))) {
+                            let timeLabel = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0,5) : "");
+                            let badgeColor = "bg-gray-100 text-gray-700 border-gray-200";
+                            if(ev.category === 'work') badgeColor = "bg-red-50 text-red-700 border-red-200";
+                            else if(ev.category === 'club') badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                            else if(ev.category === 'private') badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
+
+                            resultsHtml += `
+                                <div class="p-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition" onclick="event.stopPropagation(); window.goToDateFromSearch('${dateStr}', '${ev.id}')">
+                                    <div class="flex justify-between items-baseline mb-1">
+                                        <span class="font-bold text-xs text-[#4a5f73] truncate pr-2">${ev.title}</span>
+                                        <span class="text-[9px] font-bold text-gray-400 whitespace-nowrap shrink-0">${dateLabel}</span>
+                                    </div>
+                                    <div class="text-[9px] text-gray-500 flex items-center gap-1 truncate">
+                                        <span class="px-1 py-0.5 rounded border ${badgeColor} font-bold leading-none">${timeLabel}</span>
+                                        <span class="truncate">${ev.memo || ''}</span>
+                                    </div>
+                                </div>
+                            `;
+                            count++;
+                        }
+                    });
+                }
+
+                if (data.reminders) {
+                    data.reminders.forEach(task => {
+                        if (task.title.toLowerCase().includes(searchWord) || (task.memo && task.memo.toLowerCase().includes(searchWord))) {
+                            const statusIcon = task.completed ? '<i class="fas fa-check-square text-blue-400 mr-1"></i>' : '<i class="far fa-square text-gray-400 mr-1"></i>';
+                            const titleStyle = task.completed ? 'line-through opacity-70' : '';
+                            resultsHtml += `
+                                <div class="p-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition" onclick="event.stopPropagation(); window.goToDateFromSearch('${dateStr}', '${task.id}')">
+                                    <div class="flex justify-between items-baseline mb-1">
+                                        <span class="font-bold text-xs text-[#4a5f73] truncate pr-2 ${titleStyle}">${statusIcon}${task.title}</span>
+                                        <span class="text-[9px] font-bold text-gray-400 whitespace-nowrap shrink-0">${dateLabel}</span>
+                                    </div>
+                                    <div class="text-[9px] text-gray-500 truncate pl-3">${task.memo || ''}</div>
+                                </div>
+                            `;
+                            count++;
+                        }
+                    });
+                }
+            });
+
+            if (count === 0) {
+                resultsHtml = '<div class="p-3 text-center text-gray-400 text-[10px] font-bold">一致する予定・タスクは見つかりませんでした</div>';
+            }
+
+            resultsContainer.innerHTML = resultsHtml;
+            resultsContainer.classList.remove('hidden');
+        };
+
+        window.searchedItemId = null; 
+
+        window.goToDateFromSearch = (dateStr, itemId) => {
+            const resultsContainer = document.getElementById('month-search-results');
+            if (resultsContainer) resultsContainer.classList.add('hidden');
+            
+            const searchInput = document.getElementById('month-search-input');
+            if (searchInput) searchInput.value = '';
+            
+            const targetDate = new Date(dateStr);
+            calendarDisplayDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+            currentDateObj = new Date(targetDate);
+            
+            selectedCellId = `month-cell-${dateStr}`;
+            selectedSlot = null;
+            window.searchedItemId = itemId;
+            
+            window.switchView('month');
+            
+            setTimeout(() => {
+                const cell = document.getElementById(`month-cell-${dateStr}`);
+                if (cell) {
+                    cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        };
+
+        let swipeStartX = 0;
+        let swipeStartY = 0;
+        let swipeTargetElem = null;
+        let swipeStartScrollLeft = 0;
+        let swipeStartScrollWidth = 0;
+        let swipeStartClientWidth = 0;
+        
+        let isSwiping = false;
+        let swipeDirectionDetermined = false;
+        let activeViewElem = null;
+
+        document.addEventListener('touchstart', (e) => {
+            if (isMemoDrawingMode) return;
+            
+            if (!document.getElementById('add-modal').classList.contains('hidden') ||
+                !document.getElementById('weekly-plan-modal').classList.contains('hidden') ||
+                !document.getElementById('memo-edit-modal').classList.contains('hidden')) {
+                return;
+            }
+
+            if (currentView !== 'month' && currentView !== 'week' && currentView !== 'weekly-plan') {
+                return;
+            }
+
+            swipeStartX = e.touches[0].screenX;
+            swipeStartY = e.touches[0].screenY;
+            swipeTargetElem = null;
+            isSwiping = false;
+            swipeDirectionDetermined = false;
+            
+            activeViewElem = document.getElementById(`${currentView}-animation-area`);
+
+            let target = e.target;
+            while (target && target !== document.body) {
+                if (target.scrollWidth > target.clientWidth) {
+                    const style = window.getComputedStyle(target);
+                    if (style.overflowX === 'auto' || style.overflowX === 'scroll' || target.classList.contains('overflow-x-auto') || target.classList.contains('custom-scrollbar')) {
+                        swipeTargetElem = target;
+                        swipeStartScrollLeft = target.scrollLeft;
+                        swipeStartScrollWidth = target.scrollWidth;
+                        swipeStartClientWidth = target.clientWidth;
+                        break;
+                    }
+                }
+                target = target.parentNode;
+            }
+            
+            if (activeViewElem) {
+                activeViewElem.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!swipeStartX || !activeViewElem) return;
+
+            const touchX = e.touches[0].screenX;
+            const touchY = e.touches[0].screenY;
+            const diffX = touchX - swipeStartX;
+            const diffY = touchY - swipeStartY;
+
+            if (!swipeDirectionDetermined) {
+                if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+                    swipeDirectionDetermined = true;
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        isSwiping = true;
+                    } else {
+                        swipeStartX = null; 
+                        return;
+                    }
+                } else {
+                    return; 
+                }
+            }
+
+            if (isSwiping) {
+                if (swipeTargetElem) {
+                    if (diffX < 0) { 
+                        if (Math.ceil(swipeStartScrollLeft + swipeStartClientWidth) < swipeStartScrollWidth - 5) return; 
+                    } else { 
+                        if (swipeStartScrollLeft > 5) return; 
+                    }
+                }
+
+                const translateX = diffX * 0.5; 
+                activeViewElem.style.transform = `translateX(${translateX}px)`;
+                activeViewElem.style.opacity = Math.max(0.3, 1 - Math.abs(translateX) / window.innerWidth * 1.5);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!activeViewElem || !swipeDirectionDetermined || !isSwiping) {
+                if (activeViewElem) {
+                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+                    activeViewElem.style.transform = 'translateX(0)';
+                    activeViewElem.style.opacity = '1';
+                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+                }
+                swipeStartX = null;
+                return;
+            }
+
+            const swipeEndX = e.changedTouches[0].screenX;
+            const diffX = swipeEndX - swipeStartX;
+
+            activeViewElem.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+
+            if (Math.abs(diffX) > 60) {
+                const sign = diffX > 0 ? 1 : -1;
+                activeViewElem.style.transform = `translateX(${sign * 30}px)`; 
+                activeViewElem.style.opacity = '0';
+
+                setTimeout(() => {
+                    if (diffX < 0) {
+                        if (currentView === 'month') window.changeMonthView(1);
+                        else if (currentView === 'week') window.changeWeekView(1);
+                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(1);
+                    } else {
+                        if (currentView === 'month') window.changeMonthView(-1);
+                        else if (currentView === 'week') window.changeWeekView(-1);
+                        else if (currentView === 'weekly-plan') window.changeWeeklyPlanView(-1);
+                    }
+
+                    activeViewElem.style.transition = 'none';
+                    activeViewElem.style.transform = `translateX(${-sign * 20}px)`;
+                    
+                    void activeViewElem.offsetWidth;
+
+                    activeViewElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+                    activeViewElem.style.transform = 'translateX(0)';
+                    activeViewElem.style.opacity = '1';
+
+                    setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 150);
+
+                }, 100); 
+
+            } else {
+                activeViewElem.style.transform = 'translateX(0)';
+                activeViewElem.style.opacity = '1';
+                setTimeout(() => { if (activeViewElem) activeViewElem.style.transition = 'none'; }, 100);
+            }
+
+            swipeStartX = null;
+            isSwiping = false;
+        });
+
+        // 初期化処理の呼び出し
+        initDataSync();
+        window.updateDisplayMode();
+
+    </script>
 </body>
 </html>
