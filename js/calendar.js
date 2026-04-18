@@ -100,7 +100,14 @@ export const getBaseTimetableForDate = (dObj) => {
 export const getPeriodClass = (dateStr, period, dObj) => {
     const data = appState.allPlanners[dateStr] || {};
     let cls = "", sub = "", memo = "", isBase = false;
-    let sourceDay = dObj.getDay(), sourcePeriod = parseInt(period.name.replace('限','')) || 1;
+    let sourceDay = dObj.getDay(), sourcePeriod = 1;
+    
+    const ttType = getTtType(dateStr);
+    const ttPeriods = ttType !== 'none' && appState.globalSettings.timetables[ttType] ? appState.globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
+    const pIdx = ttPeriods.findIndex(p => p.id === period.id);
+    if (pIdx !== -1) sourcePeriod = pIdx + 1;
+    else sourcePeriod = parseInt(period.name.replace(/[^0-9]/g, '')) || 1;
+    
     const baseTt = getBaseTimetableForDate(dObj);
 
     if (data.classes && data.classes[period.id]) {
@@ -108,9 +115,19 @@ export const getPeriodClass = (dateStr, period, dObj) => {
         if (cData.disabled) return null; 
         cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
         if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
-    } else if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
-        const baseData = baseTt[dObj.getDay()][period.name];
-        cls = baseData.cls; sub = baseData.sub; memo = baseData.memo || ""; isBase = true;
+    } else {
+        let bData = null;
+        if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
+            bData = baseTt[dObj.getDay()][period.name];
+        } else {
+            const fallbackName = `${sourcePeriod}限`;
+            if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][fallbackName]) {
+                bData = baseTt[dObj.getDay()][fallbackName];
+            }
+        }
+        if (bData) {
+            cls = bData.cls || ""; sub = bData.sub || ""; memo = bData.memo || ""; isBase = true;
+        }
     }
     if (!cls && !sub && !memo) return null;
     return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
@@ -245,19 +262,24 @@ export const renderMonthView = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const grid = document.getElementById('month-view-grid');
     
+    // その月に必要な週数（行数）を計算（月によって4〜6週になる）
+    const totalWeeks = Math.ceil((daysInMonth + startOffset) / 7);
+    const totalCells = totalWeeks * 7;
+    grid.style.gridTemplateRows = `repeat(${totalWeeks}, minmax(0, 1fr))`;
+    
     const searchWord = document.getElementById('month-search-input').value.toLowerCase();
     const filterCat = document.getElementById('month-category-filter').value;
     const maxRows = document.body.classList.contains('mode-mobile') ? 5 : 7; const rowHeight = 15;
 
     const cellDates = []; let dayCountForCalc = 1, nextDayCountForCalc = 1;
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < totalCells; i++) {
         let dObj;
         if (i < startOffset) { dObj = new Date(year, month, -(startOffset - i - 1)); } 
         else if (dayCountForCalc <= daysInMonth) { dObj = new Date(year, month, dayCountForCalc++); }
         else { dObj = new Date(year, month + 1, nextDayCountForCalc++); }
         cellDates.push({ dateStr: getFormatDateStr(dObj), dateObj: dObj });
     }
-    const viewStartDateStr = cellDates[0].dateStr; const viewEndDateStr = cellDates[41].dateStr;
+    const viewStartDateStr = cellDates[0].dateStr; const viewEndDateStr = cellDates[totalCells - 1].dateStr;
 
     let multiDayEvents = []; let singleDayAllDayEvents = {};  let singleDayTimeEvents = {};   
     for (const dateKey in appState.allPlanners) {
@@ -272,7 +294,7 @@ export const renderMonthView = () => {
         });
     }
 
-    const allDaySlots = Array(42).fill(null).map(() => []); const overflowCounts = Array(42).fill(0);
+    const allDaySlots = Array(totalCells).fill(null).map(() => []); const overflowCounts = Array(totalCells).fill(0);
 
     multiDayEvents.sort((a, b) => {
         const lenA = new Date(a.eDate) - new Date(a.sDate); const lenB = new Date(b.eDate) - new Date(b.sDate);
@@ -281,8 +303,8 @@ export const renderMonthView = () => {
 
     multiDayEvents.forEach(ev => {
         let sIdx = -1, eIdx = -1;
-        for (let i = 0; i < 42; i++) { if (cellDates[i].dateStr === ev.sDate) sIdx = i; if (cellDates[i].dateStr === ev.eDate) eIdx = i; }
-        if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = 41;
+        for (let i = 0; i < totalCells; i++) { if (cellDates[i].dateStr === ev.sDate) sIdx = i; if (cellDates[i].dateStr === ev.eDate) eIdx = i; }
+        if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = totalCells - 1;
         
         if (sIdx !== -1 && eIdx !== -1 && sIdx <= eIdx) {
             let row = 0;
@@ -299,7 +321,7 @@ export const renderMonthView = () => {
         }
     });
 
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < totalCells; i++) {
         const dStr = cellDates[i].dateStr; const dObj = cellDates[i].dateObj; const data = appState.allPlanners[dStr] || {};
         let dayItems = [];
         (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
@@ -319,7 +341,7 @@ export const renderMonthView = () => {
     }
 
     let html = '';
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < totalCells; i++) {
         const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
         const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
         const cellId = `month-cell-${dStr}`; const isSelectedClass = appState.selectedCellId === cellId ? 'cell-selected' : '';
@@ -714,7 +736,8 @@ export const renderWeeklyPlanView = () => {
     for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
     const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-    let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
+    // h-full と min-w-full を削除し、スマホでも最低500pxの幅と自然な高さを確保（潰れ防止）
+    let html = '<table class="w-full border-collapse min-w-[500px] sm:min-w-[600px] bg-white rounded shadow-sm border border-gray-300 table-fixed">';
     html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
     workDays.forEach(day => {
         html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
@@ -814,8 +837,17 @@ export const renderWeeklyPlanView = () => {
 
                 const baseTt = getBaseTimetableForDate(day);
                 let baseCls = "", baseSub = "", baseMemo = "";
+                let bData = null;
                 if (baseTt[day.getDay()] && baseTt[day.getDay()][p.name]) {
-                    baseCls = baseTt[day.getDay()][p.name].cls || ""; baseSub = baseTt[day.getDay()][p.name].sub || ""; baseMemo = baseTt[day.getDay()][p.name].memo || "";
+                    bData = baseTt[day.getDay()][p.name];
+                } else {
+                    const fallbackName = `${pIdx + 1}限`;
+                    if (baseTt[day.getDay()] && baseTt[day.getDay()][fallbackName]) {
+                        bData = baseTt[day.getDay()][fallbackName];
+                    }
+                }
+                if (bData) {
+                    baseCls = bData.cls || ""; baseSub = bData.sub || ""; baseMemo = bData.memo || "";
                 }
 
                 let currentCls = "", currentSub = "", currentMemo = "", isExcluded = false, hasCustom = false;
