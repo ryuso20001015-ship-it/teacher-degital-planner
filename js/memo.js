@@ -1,14 +1,9 @@
-import { state, MEMO_CATEGORIES, DAYS_STR } from './state.js';
-import { safeSetItem } from './utils.js';
+import { appState, safeSetItem, MEMO_CATEGORIES, DAYS_STR } from './state.js';
 import { saveToFirebase } from './firebase.js';
 
-// メモ・手書き機能の内部でのみ使用する変数
-let currentMemoFilter = 'all';
-let currentMemoFolderId = null;
-let editingMemoId = null;
-let currentMemoSort = 'updatedAt_desc';
-
-let autoSaveTimeout = null;
+// ==========================================
+// 手書きキャンバス用のモジュール内変数
+// ==========================================
 let isMemoDrawing = false;
 let isMemoDrawingMode = false;
 let memoCurrentTool = 'pen';
@@ -16,7 +11,49 @@ let memoCurrentColor = '#000000';
 let memoCurrentLineWidth = 4;
 let memoLastX = 0, memoLastY = 0;
 let memoCanvas = null, memoCtx = null;
+let autoSaveTimeout = null;
 
+// ==========================================
+// 内部のみで使うヘルパー関数
+// ==========================================
+const formatDateForMemo = (timestamp) => {
+    const d = new Date(timestamp);
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+const getFolderPath = (folderId) => {
+    let path = [];
+    let curr = appState.allFolders.find(f => f.id === folderId);
+    while (curr) {
+        path.unshift(curr);
+        curr = appState.allFolders.find(f => f.id === curr.parentId);
+    }
+    return path;
+};
+
+const isCanvasBlank = (canvas) => {
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const pixelBuffer = new Uint32Array(context.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+    return !pixelBuffer.some(color => color !== 0);
+};
+
+const fallbackCopyTextToClipboard = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text; 
+    textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
+    document.body.appendChild(textArea); 
+    textArea.focus(); textArea.select();
+    try { 
+        const successful = document.execCommand('copy'); 
+        if (successful) alert("テキストをコピーしました"); 
+    } catch (err) {}
+    document.body.removeChild(textArea);
+};
+
+
+// ==========================================
+// UI・リストの描画と制御
+// ==========================================
 export const toggleMemoSidebar = () => {
     const sidebar = document.getElementById('memo-sidebar');
     const overlay = document.getElementById('memo-sidebar-overlay');
@@ -25,22 +62,18 @@ export const toggleMemoSidebar = () => {
     
     if (isMobile) {
         if (sidebar.classList.contains('-ml-48')) {
-            sidebar.classList.remove('-ml-48');
-            sidebar.classList.add('ml-0');
+            sidebar.classList.remove('-ml-48'); sidebar.classList.add('ml-0');
             overlay.classList.remove('hidden');
         } else {
-            sidebar.classList.remove('ml-0');
-            sidebar.classList.add('-ml-48');
+            sidebar.classList.remove('ml-0'); sidebar.classList.add('-ml-48');
             overlay.classList.add('hidden');
         }
     } else {
         if (sidebar.classList.contains('sm:-ml-48')) {
-            sidebar.classList.remove('sm:-ml-48');
-            sidebar.classList.add('sm:ml-0');
+            sidebar.classList.remove('sm:-ml-48'); sidebar.classList.add('sm:ml-0');
             if (openBtnPc) openBtnPc.classList.add('hidden');
         } else {
-            sidebar.classList.remove('sm:ml-0');
-            sidebar.classList.add('sm:-ml-48');
+            sidebar.classList.remove('sm:ml-0'); sidebar.classList.add('sm:-ml-48');
             if (openBtnPc) openBtnPc.classList.remove('hidden');
         }
     }
@@ -66,8 +99,8 @@ export const renderMemoSidebar = () => {
 };
 
 export const selectMemoFilter = (filter) => {
-    currentMemoFilter = filter;
-    currentMemoFolderId = null; 
+    appState.currentMemoFilter = filter;
+    appState.currentMemoFolderId = null; 
     renderMemoList();
     
     ['all', 'favorite', 'trash', ...MEMO_CATEGORIES.map(c=>c.id)].forEach(id => {
@@ -83,27 +116,12 @@ export const selectMemoFilter = (filter) => {
     }
 };
 
-const formatDateForMemo = (timestamp) => {
-    const d = new Date(timestamp);
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
-
-const getFolderPath = (folderId) => {
-    let path = [];
-    let curr = state.allFolders.find(f => f.id === folderId);
-    while (curr) {
-        path.unshift(curr);
-        curr = state.allFolders.find(f => f.id === curr.parentId);
-    }
-    return path;
-};
-
 export const changeMemoSort = (value) => {
-    if(value) currentMemoSort = value;
+    if(value) appState.currentMemoSort = value;
     const pSel = document.getElementById('memo-sort-select-pc');
     const mSel = document.getElementById('memo-sort-select-mobile');
-    if(pSel && pSel.value !== currentMemoSort) pSel.value = currentMemoSort;
-    if(mSel && mSel.value !== currentMemoSort) mSel.value = currentMemoSort;
+    if(pSel && pSel.value !== appState.currentMemoSort) pSel.value = appState.currentMemoSort;
+    if(mSel && mSel.value !== appState.currentMemoSort) mSel.value = appState.currentMemoSort;
     renderMemoList();
 };
 
@@ -117,32 +135,29 @@ export const renderMemoList = () => {
     let filteredMemos = [];
     let currentFolders = [];
 
-    if (currentMemoFilter === 'favorite') {
-        filteredMemos = state.allMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
-        addFolderBtnPc?.classList.add('hidden');
-        addFolderBtnSp?.classList.add('hidden');
-    } else if (currentMemoFilter === 'all') {
+    if (appState.currentMemoFilter === 'favorite') {
+        filteredMemos = appState.allMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
+        addFolderBtnPc?.classList.add('hidden'); addFolderBtnSp?.classList.add('hidden');
+    } else if (appState.currentMemoFilter === 'all') {
         const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        filteredMemos = state.allMemos.filter(m => {
+        filteredMemos = appState.allMemos.filter(m => {
             if (m.categoryId === 'trash') return false;
             const targetTime = m.lastOpenedAt || m.updatedAt || 0;
             return targetTime >= oneWeekAgo;
         });
-        addFolderBtnPc?.classList.add('hidden');
-        addFolderBtnSp?.classList.add('hidden');
-    } else if (currentMemoFilter === 'trash') {
-        filteredMemos = state.allMemos.filter(m => m.categoryId === 'trash');
-        addFolderBtnPc?.classList.add('hidden');
-        addFolderBtnSp?.classList.add('hidden');
+        addFolderBtnPc?.classList.add('hidden'); addFolderBtnSp?.classList.add('hidden');
+    } else if (appState.currentMemoFilter === 'trash') {
+        filteredMemos = appState.allMemos.filter(m => m.categoryId === 'trash');
+        addFolderBtnPc?.classList.add('hidden'); addFolderBtnSp?.classList.add('hidden');
     } else {
-        addFolderBtnPc?.classList.remove('hidden');
-        addFolderBtnSp?.classList.remove('hidden');
-        currentFolders = state.allFolders.filter(f => f.categoryId === currentMemoFilter && f.parentId === currentMemoFolderId);
-        filteredMemos = state.allMemos.filter(m => m.categoryId === currentMemoFilter && m.folderId === currentMemoFolderId);
+        addFolderBtnPc?.classList.remove('hidden'); addFolderBtnSp?.classList.remove('hidden');
+        currentFolders = appState.allFolders.filter(f => f.categoryId === appState.currentMemoFilter && f.parentId === appState.currentMemoFolderId);
+        filteredMemos = appState.allMemos.filter(m => m.categoryId === appState.currentMemoFilter && m.folderId === appState.currentMemoFolderId);
     }
 
+    // ソート処理
     filteredMemos.sort((a, b) => {
-        const [key, order] = currentMemoSort.split('_');
+        const [key, order] = appState.currentMemoSort.split('_');
         let valA, valB;
         if (key === 'title') {
             valA = a.title || ''; valB = b.title || '';
@@ -156,25 +171,22 @@ export const renderMemoList = () => {
     });
 
     let title = "";
-    if (currentMemoFilter === 'favorite') title = "お気に入り";
-    else if (currentMemoFilter === 'all') title = "最近使ったメモ";
-    else if (currentMemoFilter === 'trash') title = "ごみ箱";
+    if (appState.currentMemoFilter === 'favorite') title = "お気に入り";
+    else if (appState.currentMemoFilter === 'all') title = "最近使ったメモ";
+    else if (appState.currentMemoFilter === 'trash') title = "ごみ箱";
     else {
-        const cat = MEMO_CATEGORIES.find(c => c.id === currentMemoFilter);
+        const cat = MEMO_CATEGORIES.find(c => c.id === appState.currentMemoFilter);
         title = cat ? cat.name : "メモ";
-        if (currentMemoFolderId) {
-            const path = getFolderPath(currentMemoFolderId);
+        if (appState.currentMemoFolderId) {
+            const path = getFolderPath(appState.currentMemoFolderId);
             if (path.length > 0) title = path[path.length - 1].name;
             
-            backBtnPc?.classList.remove('hidden');
-            backBtnSp?.classList.remove('hidden');
-            
+            backBtnPc?.classList.remove('hidden'); backBtnSp?.classList.remove('hidden');
             const parentId = path.length > 1 ? path[path.length - 2].id : null;
-            if(backBtnPc) backBtnPc.onclick = () => { window.enterFolder(parentId); };
-            if(backBtnSp) backBtnSp.onclick = () => { window.enterFolder(parentId); };
+            if(backBtnPc) backBtnPc.onclick = () => { enterFolder(parentId); };
+            if(backBtnSp) backBtnSp.onclick = () => { enterFolder(parentId); };
         } else {
-            backBtnPc?.classList.add('hidden');
-            backBtnSp?.classList.add('hidden');
+            backBtnPc?.classList.add('hidden'); backBtnSp?.classList.add('hidden');
         }
     }
     
@@ -230,8 +242,12 @@ export const renderMemoList = () => {
     container.innerHTML = html;
 };
 
+
+// ==========================================
+// フォルダ管理
+// ==========================================
 export const enterFolder = (folderId) => {
-    currentMemoFolderId = folderId;
+    appState.currentMemoFolderId = folderId;
     renderMemoList();
 };
 
@@ -242,23 +258,23 @@ export const createNewFolder = () => {
     const newFolder = {
         id: 'folder_' + Date.now() + Math.random().toString(36).substr(2, 5),
         name: name,
-        categoryId: currentMemoFilter,
-        parentId: currentMemoFolderId
+        categoryId: appState.currentMemoFilter,
+        parentId: appState.currentMemoFolderId
     };
-    state.allFolders.push(newFolder);
-    safeSetItem('teacher_planner_folders', JSON.stringify(state.allFolders));
+    appState.allFolders.push(newFolder);
+    safeSetItem('teacher_planner_folders', JSON.stringify(appState.allFolders));
     saveToFirebase();
     renderMemoList();
 };
 
 export const deleteFolder = (folderId) => {
     if(confirm("フォルダを削除しますか？中にあるメモや子フォルダはカテゴリーのルートに移動されます。")) {
-        state.allMemos.forEach(m => { if(m.folderId === folderId) m.folderId = null; });
-        state.allFolders = state.allFolders.filter(f => f.id !== folderId);
-        state.allFolders.forEach(f => { if(f.parentId === folderId) f.parentId = null; });
+        appState.allMemos.forEach(m => { if(m.folderId === folderId) m.folderId = null; });
+        appState.allFolders = appState.allFolders.filter(f => f.id !== folderId);
+        appState.allFolders.forEach(f => { if(f.parentId === folderId) f.parentId = null; });
         
-        safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
-        safeSetItem('teacher_planner_folders', JSON.stringify(state.allFolders));
+        safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
+        safeSetItem('teacher_planner_folders', JSON.stringify(appState.allFolders));
         saveToFirebase();
         renderMemoList();
     }
@@ -267,7 +283,7 @@ export const deleteFolder = (folderId) => {
 export const updateMemoFolderOptions = () => {
     const catId = document.getElementById('memo-edit-category').value;
     const folderSelect = document.getElementById('memo-edit-folder');
-    const foldersInCat = state.allFolders.filter(f => f.categoryId === catId);
+    const foldersInCat = appState.allFolders.filter(f => f.categoryId === catId);
     
     let html = '<option value="">(ルート)</option>';
     const buildOptions = (parentId, depth) => {
@@ -282,6 +298,10 @@ export const updateMemoFolderOptions = () => {
     folderSelect.innerHTML = html;
 };
 
+
+// ==========================================
+// メモ編集処理
+// ==========================================
 export const updateMemoDateLabel = () => {
     const val = document.getElementById('memo-edit-date').value;
     const label = document.getElementById('memo-edit-day-of-week');
@@ -305,8 +325,8 @@ export const triggerAutoSaveMemo = () => {
 export const updateDeleteMemoButtonText = () => {
     const btnText = document.getElementById('memo-delete-btn-text');
     const btnIcon = document.getElementById('memo-delete-btn-icon');
-    if (editingMemoId) {
-        const memo = state.allMemos.find(m => m.id === editingMemoId);
+    if (appState.editingMemoId) {
+        const memo = appState.allMemos.find(m => m.id === appState.editingMemoId);
         if (memo && memo.categoryId === 'trash') {
             if (btnText) btnText.textContent = '完全に削除';
             if (btnIcon) btnIcon.className = 'fas fa-eraser';
@@ -318,7 +338,7 @@ export const updateDeleteMemoButtonText = () => {
 };
 
 export const openMemoEdit = (memoId = null) => {
-    editingMemoId = memoId;
+    appState.editingMemoId = memoId;
     const modal = document.getElementById('memo-edit-modal');
     const titleInput = document.getElementById('memo-edit-title');
     const contentInput = document.getElementById('memo-edit-content');
@@ -330,10 +350,9 @@ export const openMemoEdit = (memoId = null) => {
     updateDeleteMemoButtonText();
 
     if (memoId) {
-        const memo = state.allMemos.find(m => m.id === memoId);
+        const memo = appState.allMemos.find(m => m.id === memoId);
         if (memo) {
             memo.lastOpenedAt = Date.now(); 
-
             titleInput.value = memo.title;
             contentInput.innerHTML = memo.content || ''; 
             catSelect.value = memo.categoryId || 'other';
@@ -349,25 +368,27 @@ export const openMemoEdit = (memoId = null) => {
             if (memo.isFavorite) favBtn.classList.replace('text-gray-300', 'text-yellow-400');
             else favBtn.classList.replace('text-yellow-400', 'text-gray-300');
 
-            memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
-            if (memo.canvasData) {
-                const img = new Image();
-                img.onload = () => {
-                    if (editingMemoId === memoId) { 
-                        memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
-                        memoCtx.drawImage(img, 0, 0, memoCanvas.width, memoCanvas.height);
-                    }
-                };
-                img.src = memo.canvasData;
+            if (memoCtx) {
+                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+                if (memo.canvasData) {
+                    const img = new Image();
+                    img.onload = () => {
+                        if (appState.editingMemoId === memoId) { 
+                            memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+                            memoCtx.drawImage(img, 0, 0, memoCanvas.width, memoCanvas.height);
+                        }
+                    };
+                    img.src = memo.canvasData;
+                }
             }
         }
     } else {
         titleInput.value = ''; contentInput.innerHTML = ''; 
-        const defaultCat = (currentMemoFilter !== 'all' && currentMemoFilter !== 'favorite' && currentMemoFilter !== 'trash') ? currentMemoFilter : 'meeting';
+        const defaultCat = (appState.currentMemoFilter !== 'all' && appState.currentMemoFilter !== 'favorite' && appState.currentMemoFilter !== 'trash') ? appState.currentMemoFilter : 'meeting';
         catSelect.value = defaultCat;
         
         updateMemoFolderOptions();
-        folderSelect.value = currentMemoFolderId || '';
+        folderSelect.value = appState.currentMemoFolderId || '';
 
         const d = new Date();
         const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -375,15 +396,15 @@ export const openMemoEdit = (memoId = null) => {
         updateMemoDateLabel();
 
         favBtn.classList.replace('text-yellow-400', 'text-gray-300');
-        memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+        if (memoCtx) memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
 
         const newMemo = {
             id: 'memo_' + Date.now() + Math.random().toString(36).substr(2, 9),
             title: '', content: '', categoryId: defaultCat, folderId: folderSelect.value || null,
             isFavorite: false, createdAt: Date.now(), updatedAt: Date.now(), lastOpenedAt: Date.now(), canvasData: ''
         };
-        state.allMemos.push(newMemo);
-        editingMemoId = newMemo.id;
+        appState.allMemos.push(newMemo);
+        appState.editingMemoId = newMemo.id;
     }
 
     if(isMemoDrawingMode) toggleMemoDrawMode();
@@ -399,11 +420,11 @@ export const toggleMemoFavorite = () => {
     const favBtn = document.getElementById('memo-edit-fav-btn');
     if (favBtn.classList.contains('text-yellow-400')) favBtn.classList.replace('text-yellow-400', 'text-gray-300');
     else favBtn.classList.replace('text-gray-300', 'text-yellow-400');
-    if (editingMemoId) triggerAutoSaveMemo(); 
+    if (appState.editingMemoId) triggerAutoSaveMemo(); 
 };
 
 export const saveMemoLocally = () => {
-    if (!editingMemoId) return;
+    if (!appState.editingMemoId) return;
     const title = document.getElementById('memo-edit-title').value.trim();
     const content = document.getElementById('memo-edit-content').innerHTML; 
     const categoryId = document.getElementById('memo-edit-category').value;
@@ -417,12 +438,15 @@ export const saveMemoLocally = () => {
         createTimeVal = d.getTime(); 
     }
 
-    const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
-    const tCtx = tempCanvas.getContext('2d');
-    tCtx.drawImage(memoCanvas, 0, 0);
-    const canvasData = tempCanvas.toDataURL('image/png', 0.5);
+    let canvasData = '';
+    if (memoCanvas) {
+        const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(memoCanvas, 0, 0);
+        canvasData = tempCanvas.toDataURL('image/png', 0.5);
+    }
 
-    const memo = state.allMemos.find(m => m.id === editingMemoId);
+    const memo = appState.allMemos.find(m => m.id === appState.editingMemoId);
     if (memo) {
         memo.title = title; 
         memo.content = content; 
@@ -436,7 +460,7 @@ export const saveMemoLocally = () => {
         memo.canvasData = canvasData;
     }
 
-    safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+    safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
     saveToFirebase(); 
     renderMemoList(); 
 };
@@ -444,41 +468,33 @@ export const saveMemoLocally = () => {
 export const saveAndCloseMemo = () => {
     saveMemoLocally();
     
-    const memo = state.allMemos.find(m => m.id === editingMemoId);
-    if (memo && !memo.title.trim() && !memo.content.trim() && isCanvasBlank(memoCanvas)) {
-        state.allMemos = state.allMemos.filter(m => m.id !== editingMemoId);
-        safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+    const memo = appState.allMemos.find(m => m.id === appState.editingMemoId);
+    if (memo && !memo.title.trim() && !memo.content.trim() && (!memoCanvas || isCanvasBlank(memoCanvas))) {
+        appState.allMemos = appState.allMemos.filter(m => m.id !== appState.editingMemoId);
+        safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
         saveToFirebase();
         renderMemoList();
     }
     
     document.getElementById('memo-edit-modal').classList.add('hidden');
     document.getElementById('memo-edit-modal').classList.remove('flex');
-    editingMemoId = null;
+    appState.editingMemoId = null;
 };
-
-export const isCanvasBlank = (canvas) => {
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    const pixelBuffer = new Uint32Array(context.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-    return !pixelBuffer.some(color => color !== 0);
-};
-
-export const saveMemo = () => { saveMemoLocally(); };
 
 export const deleteMemo = () => {
-    if (!editingMemoId) { saveAndCloseMemo(); return; }
+    if (!appState.editingMemoId) { saveAndCloseMemo(); return; }
     
-    const memo = state.allMemos.find(m => m.id === editingMemoId);
+    const memo = appState.allMemos.find(m => m.id === appState.editingMemoId);
     if (!memo) return;
 
     if (memo.categoryId === 'trash') {
         if (confirm("このメモを完全に削除してもよろしいですか？（復元できません）")) {
-            state.allMemos = state.allMemos.filter(m => m.id !== editingMemoId);
-            safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+            appState.allMemos = appState.allMemos.filter(m => m.id !== appState.editingMemoId);
+            safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
             saveToFirebase(); renderMemoList();
             document.getElementById('memo-edit-modal').classList.add('hidden');
             document.getElementById('memo-edit-modal').classList.remove('flex');
-            editingMemoId = null;
+            appState.editingMemoId = null;
         }
     } else {
         if (confirm("このメモをごみ箱に移動しますか？（1ヶ月後に完全に削除されます）")) {
@@ -486,11 +502,11 @@ export const deleteMemo = () => {
             memo.folderId = null; 
             memo.deletedAt = Date.now();
             memo.isFavorite = false;
-            safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+            safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
             saveToFirebase(); renderMemoList();
             document.getElementById('memo-edit-modal').classList.add('hidden');
             document.getElementById('memo-edit-modal').classList.remove('flex');
-            editingMemoId = null;
+            appState.editingMemoId = null;
         }
     }
 };
@@ -507,21 +523,18 @@ export const copyMemoText = () => {
     } catch(e) { fallbackCopyTextToClipboard(text); }
 };
 
-function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text; textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
-    document.body.appendChild(textArea); textArea.focus(); textArea.select();
-    try { const successful = document.execCommand('copy'); if (successful) alert("テキストをコピーしました"); } catch (err) {}
-    document.body.removeChild(textArea);
-}
-
 export const printMemo = () => {
     saveMemoLocally();
     setTimeout(() => window.print(), 100);
 };
 
+
+// ==========================================
+// 手書きキャンバスの制御
+// ==========================================
 export const initMemoCanvas = () => {
     memoCanvas = document.getElementById('memo-drawing-canvas');
+    if (!memoCanvas) return;
     memoCtx = memoCanvas.getContext('2d', { willReadFrequently: true });
 
     const getMemoCoords = (e) => { 
@@ -555,7 +568,7 @@ export const initMemoCanvas = () => {
 };
 
 export const resizeMemoCanvas = () => {
-    if (!memoCanvas) return;
+    if (!memoCanvas || !memoCtx) return;
     const parent = memoCanvas.parentElement; if(!parent || parent.clientWidth === 0) return;
     const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
     tempCanvas.getContext('2d').drawImage(memoCanvas, 0, 0);
@@ -579,7 +592,25 @@ export const toggleMemoDrawMode = () => {
     }
 };
 
-export const setMemoTool = (t) => { memoCurrentTool = t; ['pen', 'highlighter', 'eraser'].forEach(tool => document.getElementById(`memo-tool-${tool}`).classList.toggle('bg-gray-600', t === tool)); };
-export const setMemoColor = (c, btn) => { memoCurrentColor = c; setMemoTool('pen'); btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); };
-export const setMemoLineWidth = (w, btn) => { memoCurrentLineWidth = w; ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); btn.classList.replace('opacity-50', 'opacity-100'); };
-export const clearMemoCanvas = () => { memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); triggerAutoSaveMemo(); };
+export const setMemoTool = (t) => { 
+    memoCurrentTool = t; 
+    ['pen', 'highlighter', 'eraser'].forEach(tool => document.getElementById(`memo-tool-${tool}`).classList.toggle('bg-gray-600', t === tool)); 
+};
+
+export const setMemoColor = (c, btn) => { 
+    memoCurrentColor = c; 
+    setMemoTool('pen'); 
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); 
+    btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); 
+};
+
+export const setMemoLineWidth = (w, btn) => { 
+    memoCurrentLineWidth = w; 
+    ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); 
+    btn.classList.replace('opacity-50', 'opacity-100'); 
+};
+
+export const clearMemoCanvas = () => { 
+    if (memoCtx && memoCanvas) memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); 
+    triggerAutoSaveMemo(); 
+};

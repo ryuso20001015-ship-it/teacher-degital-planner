@@ -2,27 +2,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-import { state, LS_KEY } from './state.js';
-import { safeGetItem, safeSetItem } from './utils.js';
+// 先ほど作成した state.js からデータや関数をインポート
+import { appState, safeGetItem, safeSetItem, LS_KEY } from './state.js';
 
-const MY_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBQ86uhJYJw2H5_ioH1PgHXE8vjcckeys0",
-    authDomain: "teacher-degital-planner.firebaseapp.com",
-    databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
-    projectId: "teacher-degital-planner",
-    storageBucket: "teacher-degital-planner.firebasestorage.app",
-    messagingSenderId: "134884141905",
-    appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
-    measurementId: "G-Z7CPJ3KNV6"
+// --- モジュール内変数 ---
+let db, auth;
+let unsubscribeSnapshot = null;
+let isLinkedDevice = false; 
+let lastCloudUpdateTime = 0; 
+
+// --- データ更新時のコールバック（main.jsから登録される） ---
+let onDataChangedCallback = () => {};
+export const setOnDataChangedCallback = (callback) => {
+    onDataChangedCallback = callback;
 };
 
-// Firebase通信の内部でのみ使用する変数
-let db = null;
-let auth = null;
-let unsubscribeSnapshot = null;
-let isLinkedDevice = false;
-let lastCloudUpdateTime = 0;
-
+// --- 同期コード取得 ---
 export const getSyncId = () => {
     let id = safeGetItem('teacher_planner_sync_id');
     if (!id) {
@@ -32,7 +27,19 @@ export const getSyncId = () => {
     return id;
 };
 
+// --- Firebase初期化 ---
 export const initFirebase = async () => {
+    const MY_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBQ86uhJYjw2H5_ioH1PgHXE8vjCckeys0",
+        authDomain: "teacher-degital-planner.firebaseapp.com",
+        databaseURL: "https://teacher-degital-planner-default-rtdb.firebaseio.com",
+        projectId: "teacher-degital-planner",
+        storageBucket: "teacher-degital-planner.firebasestorage.app",
+        messagingSenderId: "134884141905",
+        appId: "1:134884141905:web:cf16ccdcd6bbe9907b4170",
+        measurementId: "G-Z7CPJ3KNV6"
+    }; 
+    
     try {
         const app = initializeApp(MY_FIREBASE_CONFIG);
         auth = getAuth(app);
@@ -47,6 +54,7 @@ export const initFirebase = async () => {
     }
 };
 
+// --- 同期の開始（リアルタイムリスナー） ---
 export const startFirebaseSync = () => {
     const syncId = getSyncId();
     const displayElem = document.getElementById('display-sync-id');
@@ -64,34 +72,30 @@ export const startFirebaseSync = () => {
             lastCloudUpdateTime = cloudTime;
             let changed = false;
 
-            // リモートのデータで state を上書き
             if (data.planners) {
-                state.allPlanners = data.planners;
-                safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
+                appState.allPlanners = data.planners;
+                safeSetItem(LS_KEY, JSON.stringify(appState.allPlanners));
                 changed = true;
             }
             if (data.settings) {
-                state.globalSettings = data.settings;
-                safeSetItem('teacher_planner_settings', JSON.stringify(state.globalSettings));
+                appState.globalSettings = data.settings;
+                safeSetItem('teacher_planner_settings', JSON.stringify(appState.globalSettings));
                 changed = true;
-                if (typeof window.updateDisplayMode === 'function') window.updateDisplayMode(); 
             }
             if (data.memos) {
-                state.allMemos = data.memos;
-                safeSetItem('teacher_planner_memos', JSON.stringify(state.allMemos));
+                appState.allMemos = data.memos;
+                safeSetItem('teacher_planner_memos', JSON.stringify(appState.allMemos));
                 changed = true;
             }
             if (data.folders) {
-                state.allFolders = data.folders;
-                safeSetItem('teacher_planner_folders', JSON.stringify(state.allFolders));
+                appState.allFolders = data.folders;
+                safeSetItem('teacher_planner_folders', JSON.stringify(appState.allFolders));
                 changed = true;
             }
 
             if (changed) {
-                if (typeof window.renderCurrentView === 'function') window.renderCurrentView(); 
-                if (state.currentView === 'memo' && typeof window.renderMemoList === 'function') {
-                    window.renderMemoList();
-                }
+                // データが変更されたことを司令塔（main.js）に通知し、UI再描画を依頼する
+                onDataChangedCallback();
             }
         } else {
             if (!isLinkedDevice) saveToFirebase();
@@ -99,9 +103,9 @@ export const startFirebaseSync = () => {
     });
 };
 
+// --- データをFirebaseへ保存 ---
 export const saveToFirebase = async () => {
     if (!db || !auth || !auth.currentUser) return;
-    
     const syncId = getSyncId();
     const docRef = doc(db, 'planners', syncId);
     const statusEl = document.getElementById('sync-status');
@@ -112,10 +116,10 @@ export const saveToFirebase = async () => {
 
     try {
         const payload = {
-            planners: JSON.parse(JSON.stringify(state.allPlanners)),
-            settings: JSON.parse(JSON.stringify(state.globalSettings)),
-            memos: JSON.parse(JSON.stringify(state.allMemos)),
-            folders: JSON.parse(JSON.stringify(state.allFolders)),
+            planners: JSON.parse(JSON.stringify(appState.allPlanners)),
+            settings: JSON.parse(JSON.stringify(appState.globalSettings)),
+            memos: JSON.parse(JSON.stringify(appState.allMemos)),
+            folders: JSON.parse(JSON.stringify(appState.allFolders)),
             updatedAt: now
         };
         await setDoc(docRef, payload);
@@ -126,6 +130,7 @@ export const saveToFirebase = async () => {
     }
 };
 
+// --- 他の端末とリンク ---
 export const linkDevice = () => {
     const input = document.getElementById('input-sync-id').value.trim();
     if (/^\d{8}$/.test(input)) {

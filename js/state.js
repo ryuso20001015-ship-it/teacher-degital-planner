@@ -1,5 +1,18 @@
-import { safeGetItem } from './utils.js';
+// --- メモリとローカルストレージの管理 ---
+export const memoryStorage = {};
+export const safeGetItem = (key) => {
+    try { return localStorage.getItem(key) || memoryStorage[key] || null; } catch(e) { return memoryStorage[key] || null; }
+};
+export const safeSetItem = (key, value) => {
+    try { localStorage.setItem(key, value); } catch(e) {}
+    memoryStorage[key] = String(value);
+};
+export const safeRemoveItem = (key) => {
+    try { localStorage.removeItem(key); } catch(e) {}
+    delete memoryStorage[key];
+};
 
+// --- 定数（絶対に変わらないデータ） ---
 export const LS_KEY = 'teacher_planner_all_data';
 export const DAYS_STR = ['日', '月', '火', '水', '木', '金', '土'];
 export const MAX_HISTORY = 20;
@@ -17,54 +30,52 @@ export const MEMO_CATEGORIES = [
     { id: 'other', name: 'その他', icon: 'fas fa-folder', color: 'text-gray-500' }
 ];
 
-// 他のモジュールから安全にアクセス・更新できるよう、状態を一元管理するオブジェクト
-export const state = {
-    allPlanners: {},
-    globalSettings: JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES, displayMode: 'auto' },
-    
+
+// --- 状態管理（アプリ全体で共有する変数） ---
+// ※ 他のファイルから書き換えやすいように、一つのオブジェクトにまとめます
+export const appState = {
+    // データ群
+    allPlanners: {}, 
+    globalSettings: {},
     allMemos: [],
     allFolders: [],
     
-    currentMemoFilter: 'all',
-    currentMemoFolderId: null,
+    // メモの状態
+    currentMemoFilter: 'all', 
+    currentMemoFolderId: null, 
     editingMemoId: null,
     currentMemoSort: 'updatedAt_desc',
     
-    tempSettings: null,
-    currentView: 'month',
-    currentDateObj: new Date(),
-    calendarDisplayDate: new Date(),
-    
-    selectedCellId: null,
-    selectedSlot: null,
+    // 表示とUIの状態
+    tempSettings: null, 
+    currentView: 'month', 
+    currentDateObj: new Date(), 
+    calendarDisplayDate: new Date(), 
+    selectedCellId: null, 
+    selectedSlot: null, 
     addModalTargetDate: null,
-    editTarget: null,
+    editTarget: null, 
     currentModalMode: 'schedule',
+    searchedItemId: null,
     
+    // 週案簿用モーダルの状態
     wpModalTarget: { targetDateStr: null, targetPeriodId: null, targetPeriodName: null },
     wpSelectedDay: 1,
     wpSelectedPeriod: 1,
 
+    // Undo / Redo 用
     undoStack: [],
-    redoStack: [],
-
-    // Firebase関連
-    db: null,
-    auth: null,
-    unsubscribeSnapshot: null,
-    isLinkedDevice: false,
-    lastCloudUpdateTime: 0,
-    
-    // その他UI関連
-    searchedItemId: null,
-    mbsTargetDate: null,
-    mbsDefaultHour: null
+    redoStack: []
 };
 
-// globalSettings の初期化補正 (既存コードの引き継ぎ)
-if (!state.globalSettings.baseTimetablePatterns || state.globalSettings.baseTimetablePatterns.length === 0) {
-    const oldBaseTt = state.globalSettings.baseTimetable || {1:{},2:{},3:{},4:{},5:{}};
-    state.globalSettings.baseTimetablePatterns = [
+
+// --- 設定データの初期化 ---
+appState.globalSettings = JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES };
+appState.globalSettings.displayMode = 'auto';
+
+if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) {
+    const oldBaseTt = appState.globalSettings.baseTimetable || {1:{},2:{},3:{},4:{},5:{}};
+    appState.globalSettings.baseTimetablePatterns = [
         { id: 'p_1', name: 'パターン1', startDate: '', endDate: '', data: oldBaseTt }
     ];
 }

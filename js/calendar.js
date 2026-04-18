@@ -1,57 +1,92 @@
-import { state, LS_KEY, DAYS_STR } from './state.js';
-import { safeSetItem, getFormatDateStr, isHoliday, getEventColorClass, getClassColorClass, getMultiDayColorClass, packTimeEvents } from './utils.js';
+import { appState, safeSetItem, LS_KEY, DAYS_STR } from './state.js';
 import { saveToFirebase } from './firebase.js';
 
-// カレンダー・モーダルUI固有の内部変数
-let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null, isSpecial: false };
-let wpSelectedDay = 1;
-let wpSelectedPeriod = 1;
-let selectedCellId = null;
-let selectedSlot = null;
-let addModalTargetDate = null;
-let editTarget = null;
-let currentModalMode = 'schedule';
-
-export const clearCellSelection = () => { 
-    let changed = false;
-    if (selectedCellId) { selectedCellId = null; changed = true; }
-    if (selectedSlot) { selectedSlot = null; changed = true; }
-    if (state.searchedItemId) { state.searchedItemId = null; changed = true; }
-    closeMonthBottomSheet();
-    if (changed && typeof window.renderCurrentView === 'function') window.renderCurrentView(); 
+// ==========================================
+// ヘルパー関数（日付・色・計算）
+// ==========================================
+export const getFormatDateStr = (date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-export const handleCellClick = function(viewType, dateStr, hour) {
-    openMonthBottomSheet(dateStr, hour);
-    selectedSlot = { view: viewType, date: dateStr, hour: hour }; 
-    selectedCellId = null;
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
+export const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6;
+
+export const getEventColorClass = (category) => {
+    if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
+    if (category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
+    if (category === 'private') return "bg-orange-100 text-orange-800 border-orange-300";
+    return "bg-gray-100 text-gray-800 border-gray-300";
 };
 
-export const handleMonthCellClick = (dStr) => {
-    const cellId = `month-cell-${dStr}`;
-    if (selectedCellId === cellId) { 
-        clearCellSelection(); 
-    } 
-    else { 
-        selectedCellId = cellId; 
-        selectedSlot = null; 
-        if (typeof window.renderCurrentView === 'function') window.renderCurrentView(); 
-        openMonthBottomSheet(dStr); 
+export const getMultiDayColorClass = (category) => {
+    if (category === 'work') return "border-red-400 text-red-800";
+    if (category === 'club') return "border-blue-400 text-blue-800";
+    if (category === 'private') return "border-orange-400 text-orange-800";
+    return "border-gray-400 text-gray-800";
+};
+
+export const getClassColorClass = (cls, sub) => {
+    const subStr = String(sub || "").trim();
+    if (['学活', '総合', '道徳'].includes(subStr)) return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100";
+    const clsStr = String(cls || "").trim();
+    if (clsStr.startsWith('1') || clsStr.includes('1年')) return "bg-red-50 text-red-800 border-red-200 hover:bg-red-100";
+    else if (clsStr.startsWith('2') || clsStr.includes('2年')) return "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100";
+    else if (clsStr.startsWith('3') || clsStr.includes('3年')) return "bg-green-50 text-green-800 border-green-200 hover:bg-green-100";
+    return "bg-gray-50 text-gray-800 border-gray-300 hover:bg-gray-100";
+};
+
+export const timeToPct = (timeStr) => {
+    if (!timeStr) return 0;
+    const [h, m] = timeStr.split(':').map(Number);
+    if (h < 5) return 0;
+    if (h >= 24) return 100;
+    const totalMinutes = 19 * 60;
+    const minutes = (h - 5) * 60 + m;
+    return (minutes / totalMinutes) * 100;
+};
+
+export const packTimeEvents = (events) => {
+    if (!events || events.length === 0) return;
+    events.forEach(ev => {
+        ev.startPos = timeToPct(ev.drawStart);
+        let endPos = timeToPct(ev.drawEnd);
+        if (endPos <= ev.startPos) endPos = ev.startPos + (15 / (19 * 60)) * 100;
+        ev.endPos = endPos;
+    });
+    events.sort((a, b) => a.startPos - b.startPos || b.endPos - a.endPos);
+
+    let columns = [];
+    let lastEventEnding = null;
+    events.forEach(ev => {
+        if (lastEventEnding !== null && ev.startPos >= lastEventEnding) {
+            packGroup(columns); columns = []; lastEventEnding = null;
+        }
+        let placed = false;
+        for (let c = 0; c < columns.length; c++) {
+            let col = columns[c];
+            if (col[col.length - 1].endPos <= ev.startPos) { col.push(ev); placed = true; break; }
+        }
+        if (!placed) columns.push([ev]);
+        if (lastEventEnding === null || ev.endPos > lastEventEnding) lastEventEnding = ev.endPos;
+    });
+    if (columns.length > 0) packGroup(columns);
+
+    function packGroup(cols) {
+        let numCols = cols.length;
+        cols.forEach((col, colIdx) => { col.forEach(e => { e.colIndex = colIdx; e.numCols = numCols; }); });
     }
 };
 
-const getTtType = (dStr) => {
-    const data = state.allPlanners[dStr] || {};
+export const getTtType = (dStr) => {
+    const data = appState.allPlanners[dStr] || {};
     if (data.timetableType !== undefined) return data.timetableType;
     if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
     return 'normal';
 };
 
-const getBaseTimetableForDate = (dObj) => {
-    if (!state.globalSettings.baseTimetablePatterns || state.globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
+export const getBaseTimetableForDate = (dObj) => {
+    if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
     const yyyyMmDd = getFormatDateStr(dObj);
-    const matchedPattern = state.globalSettings.baseTimetablePatterns.find(p => {
+    const matchedPattern = appState.globalSettings.baseTimetablePatterns.find(p => {
         let sDate = p.startDate; if (!sDate && p.startMonth) sDate = p.startMonth + "-01";
         let eDate = p.endDate; if (!eDate && p.endMonth) eDate = p.endMonth + "-31";
         const afterStart = sDate ? yyyyMmDd >= sDate : true;
@@ -62,8 +97,8 @@ const getBaseTimetableForDate = (dObj) => {
     return {1:{},2:{},3:{},4:{},5:{}};
 };
 
-const getPeriodClass = (dateStr, period, dObj) => {
-    const data = state.allPlanners[dateStr] || {};
+export const getPeriodClass = (dateStr, period, dObj) => {
+    const data = appState.allPlanners[dateStr] || {};
     let cls = "", sub = "", memo = "", isBase = false;
     let sourceDay = dObj.getDay(), sourcePeriod = parseInt(period.name.replace('限','')) || 1;
     const baseTt = getBaseTimetableForDate(dObj);
@@ -81,16 +116,20 @@ const getPeriodClass = (dateStr, period, dObj) => {
     return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
 };
 
+
+// ==========================================
+// ボトムシート（月カレンダーセルクリック時）
+// ==========================================
 export const openMonthBottomSheet = (dStr, defaultHour = null) => {
-    state.mbsTargetDate = dStr;
-    state.mbsDefaultHour = defaultHour;
+    window.mbsTargetDate = dStr;
+    window.mbsDefaultHour = defaultHour;
     const dObj = new Date(dStr);
     document.getElementById('mbs-date-title').textContent = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
 
-    const data = state.allPlanners[dStr] || {};
+    const data = appState.allPlanners[dStr] || {};
     const isHoli = isHoliday(dObj);
     const ttType = getTtType(dStr);
-    const ttPeriods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods : [];
+    const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
 
     let schedHtml = '', taskHtml = '';
     
@@ -117,8 +156,8 @@ export const openMonthBottomSheet = (dStr, defaultHour = null) => {
     }
     
     let eventsForDay = [];
-    for (const dateKey in state.allPlanners) {
-        const events = state.allPlanners[dateKey].events || [];
+    for (const dateKey in appState.allPlanners) {
+        const events = appState.allPlanners[dateKey].events || [];
         events.forEach(ev => {
             const sDate = ev.start ? ev.start.split('T')[0] : dateKey;
             const eDate = ev.end ? ev.end.split('T')[0] : sDate;
@@ -173,11 +212,11 @@ export const openMonthBottomSheet = (dStr, defaultHour = null) => {
     document.getElementById('mbs-add-btn').onclick = () => { 
         let defaultTime = null;
         let isAllDay = true;
-        if (state.mbsDefaultHour !== null && state.mbsDefaultHour !== 'allday') {
-            defaultTime = `${String(state.mbsDefaultHour).padStart(2, '0')}:00`;
+        if (window.mbsDefaultHour !== null && window.mbsDefaultHour !== 'allday') {
+            defaultTime = `${String(window.mbsDefaultHour).padStart(2, '0')}:00`;
             isAllDay = false;
         }
-        openAddMenu(state.mbsTargetDate, defaultTime, isAllDay); 
+        window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); 
         closeMonthBottomSheet(); 
     };
     document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
@@ -188,192 +227,18 @@ export const closeMonthBottomSheet = () => {
     if (sheet) sheet.classList.add('translate-y-full'); 
 };
 
-export const openAddMenu = (dateStr, defaultTime = null, isAllDay = true) => {
-    addModalTargetDate = dateStr; editTarget = null;
-    const dateYMD = getFormatDateStr(new Date(dateStr));
-    const startHHMM = defaultTime || "09:00";
-    let endHHMM = "10:00";
-    if (defaultTime) { const [h, m] = defaultTime.split(':').map(Number); endHHMM = `${String(h+1).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
-    
-    document.getElementById('add-modal-title').value = ''; document.getElementById('add-modal-location').value = '';
-    document.getElementById('add-modal-memo-sched').value = ''; document.getElementById('add-modal-memo-task').value = '';
-    document.getElementById('add-modal-delete-container').classList.add('hidden');
-    document.getElementById('add-modal-allday').checked = isAllDay;
-    document.getElementById('add-modal-start-date').value = dateYMD; document.getElementById('add-modal-start-time').value = startHHMM;
-    document.getElementById('add-modal-end-date').value = dateYMD; document.getElementById('add-modal-end-time').value = endHHMM;
-    document.getElementById('add-modal-due-date').value = dateYMD; 
-    
-    document.getElementById('add-modal-category-sched').value = 'work';
-    document.getElementById('add-modal-category-task').value = 'work';
 
-    document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
-    document.querySelector('input[name="add-type"][value="schedule"]').checked = true;
-    toggleAddModalType(); toggleAllDay();
-    updateModalColor(); 
-
-    document.getElementById('add-modal').classList.remove('hidden');
-    setTimeout(() => document.getElementById('add-modal-title').focus(), 100);
+// ==========================================
+// 月カレンダー（Month View）
+// ==========================================
+export const changeMonthView = (offset) => { 
+    appState.calendarDisplayDate.setMonth(appState.calendarDisplayDate.getMonth() + offset); 
+    renderMonthView(); 
 };
-
-export const openClassEditMenu = (dateStr, periodId, periodName) => {
-    addModalTargetDate = dateStr; editTarget = { dateStr, idOrIndex: periodId }; currentModalMode = 'class';
-    document.getElementById('modal-header-toggle').classList.add('hidden'); document.getElementById('modal-header-class').classList.remove('hidden');
-    document.getElementById('view-schedule-task').classList.add('hidden'); document.getElementById('view-class-edit').classList.remove('hidden');
-    document.getElementById('add-modal-delete-container').classList.add('hidden');
-    document.getElementById('class-edit-period-name').textContent = `${periodName} の授業変更`;
-    
-    const data = state.allPlanners[dateStr] || {}; let cls = "", sub = "";
-    if (data.classes && data.classes[periodId]) { cls = data.classes[periodId].cls; sub = data.classes[periodId].sub; }
-    document.getElementById('class-edit-cls').value = cls; document.getElementById('class-edit-sub').value = sub;
-
-    document.getElementById('add-modal').classList.remove('hidden');
-    setTimeout(() => document.getElementById('class-edit-cls').focus(), 100);
-};
-
-export const openEditMenu = (dateStr, type, evId) => {
-    closeMonthBottomSheet(); 
-    addModalTargetDate = dateStr; editTarget = { dateStr, idOrIndex: evId };
-    const data = state.allPlanners[dateStr] || {};
-    document.getElementById('add-modal-delete-container').classList.remove('hidden');
-    document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
-
-    if (type === 'schedule') {
-        document.querySelector('input[name="add-type"][value="schedule"]').checked = true; toggleAddModalType(); 
-        const ev = (data.events || []).find(e => e.id === evId);
-        if (ev) {
-            document.getElementById('add-modal-title').value = ev.title || ''; document.getElementById('add-modal-location').value = ev.location || '';
-            document.getElementById('add-modal-allday').checked = !!ev.isAllDay;
-            if (ev.start) { const parts = ev.start.split('T'); document.getElementById('add-modal-start-date').value = parts[0]; if(parts[1]) document.getElementById('add-modal-start-time').value = parts[1]; }
-            if (ev.end) { const parts = ev.end.split('T'); document.getElementById('add-modal-end-date').value = parts[0]; if(parts[1]) document.getElementById('add-modal-end-time').value = parts[1]; }
-            document.getElementById('add-modal-category-sched').value = ev.category || 'work'; document.getElementById('add-modal-memo-sched').value = ev.memo || '';
-        }
-        toggleAllDay();
-    } else if (type === 'task') {
-        document.querySelector('input[name="add-type"][value="task"]').checked = true; toggleAddModalType();
-        const task = (data.reminders || []).find(t => t.id === evId);
-        if (task) {
-            document.getElementById('add-modal-title').value = task.title || '';
-            if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
-            document.getElementById('add-modal-category-task').value = task.category || 'work'; 
-            document.getElementById('add-modal-memo-task').value = task.memo || '';
-        }
-    }
-    
-    updateModalColor(); 
-    document.getElementById('add-modal').classList.remove('hidden');
-};
-
-export const toggleTaskGlobal = (dateStr, taskId, completed) => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    if (state.allPlanners[dateStr] && state.allPlanners[dateStr].reminders) {
-        const task = state.allPlanners[dateStr].reminders.find(t => t.id === taskId);
-        if (task) {
-            task.completed = completed;
-            safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
-            saveToFirebase();
-            if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-        }
-    }
-};
-
-export const closeAddMenu = () => document.getElementById('add-modal').classList.add('hidden');
-
-export const toggleAllDay = () => {
-    const isAllDay = document.getElementById('add-modal-allday').checked;
-    document.getElementById('add-modal-start-time').classList.toggle('hidden', isAllDay); document.getElementById('add-modal-end-time').classList.toggle('hidden', isAllDay);
-};
-
-export const toggleAddModalType = () => {
-    currentModalMode = document.querySelector('input[name="add-type"]:checked').value;
-    const isSched = currentModalMode === 'schedule';
-    document.getElementById('view-class-edit').classList.add('hidden'); document.getElementById('view-schedule-task').classList.remove('hidden');
-    document.getElementById('fields-location').style.display = isSched ? 'flex' : 'none';
-    document.getElementById('fields-schedule-datetime').style.display = isSched ? 'block' : 'none';
-    document.getElementById('fields-task-datetime').style.display = isSched ? 'none' : 'block';
-    document.getElementById('fields-schedule-options').style.display = isSched ? 'block' : 'none';
-    document.getElementById('fields-task-options').style.display = isSched ? 'none' : 'block';
-    updateModalColor(); 
-};
-
-export const updateModalColor = () => {
-    const mode = document.querySelector('input[name="add-type"]:checked').value;
-    const cat = document.getElementById(`add-modal-category-${mode === 'schedule' ? 'sched' : 'task'}`).value;
-    const indicator = document.getElementById('add-modal-color-indicator');
-    if(!indicator) return;
-    
-    indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
-    if (cat === 'work') indicator.classList.add('bg-red-500');
-    else if (cat === 'club') indicator.classList.add('bg-blue-500');
-    else if (cat === 'private') indicator.classList.add('bg-orange-500');
-    else indicator.classList.add('bg-[#4a5f73]');
-};
-
-export const deleteFromMenu = () => {
-    if (!editTarget) return;
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    const { dateStr, idOrIndex } = editTarget;
-    if (currentModalMode === 'schedule') {
-        if (state.allPlanners[dateStr] && state.allPlanners[dateStr].events) state.allPlanners[dateStr].events = state.allPlanners[dateStr].events.filter(e => e.id !== idOrIndex);
-    } else if (currentModalMode === 'task') {
-        if (state.allPlanners[dateStr] && state.allPlanners[dateStr].reminders) state.allPlanners[dateStr].reminders = state.allPlanners[dateStr].reminders.filter(t => t.id !== idOrIndex);
-    } else if (currentModalMode === 'class') {
-        if (state.allPlanners[dateStr] && state.allPlanners[dateStr].classes) delete state.allPlanners[dateStr].classes[idOrIndex];
-    }
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners)); saveToFirebase(); closeAddMenu(); 
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-};
-
-export const saveAddMenu = () => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory(); 
-    const dateStr = addModalTargetDate;
-    if (!state.allPlanners[dateStr]) state.allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
-
-    if (currentModalMode === 'class') {
-        const cls = document.getElementById('class-edit-cls').value.trim(), sub = document.getElementById('class-edit-sub').value.trim();
-        if (!state.allPlanners[dateStr].classes) state.allPlanners[dateStr].classes = {};
-        if (!cls && !sub) { delete state.allPlanners[dateStr].classes[editTarget.idOrIndex]; } 
-        else { state.allPlanners[dateStr].classes[editTarget.idOrIndex] = { cls, sub }; }
-    } else {
-        const title = document.getElementById('add-modal-title').value.trim();
-        if (!title) return;
-
-        if (currentModalMode === 'schedule') {
-            const isAllDay = document.getElementById('add-modal-allday').checked;
-            const startD = document.getElementById('add-modal-start-date').value, startT = document.getElementById('add-modal-start-time').value;
-            const endD = document.getElementById('add-modal-end-date').value, endT = document.getElementById('add-modal-end-time').value;
-            const ev = {
-                id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                title, isAllDay, category: document.getElementById('add-modal-category-sched').value,
-                location: document.getElementById('add-modal-location').value, memo: document.getElementById('add-modal-memo-sched').value,
-                start: isAllDay ? startD : `${startD}T${startT}`, end: isAllDay ? endD : `${endD}T${endT}`
-            };
-            if (!state.allPlanners[dateStr].events) state.allPlanners[dateStr].events = [];
-            if (editTarget) {
-                const idx = state.allPlanners[dateStr].events.findIndex(e => e.id === ev.id);
-                if(idx >= 0) state.allPlanners[dateStr].events[idx] = ev; else state.allPlanners[dateStr].events.push(ev);
-            } else { state.allPlanners[dateStr].events.push(ev); }
-        } else if (currentModalMode === 'task') {
-            const dueStr = document.getElementById('add-modal-due-date').value;
-            const cat = document.getElementById('add-modal-category-task').value; 
-            const tsk = {
-                id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
-            };
-            if (!state.allPlanners[dateStr].reminders) state.allPlanners[dateStr].reminders = [];
-            if (editTarget) {
-                const taskObj = state.allPlanners[dateStr].reminders.find(t => t.id === tsk.id);
-                if (taskObj) Object.assign(taskObj, tsk);
-            } else { state.allPlanners[dateStr].reminders.push(tsk); }
-        }
-    }
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners)); saveToFirebase(); closeAddMenu(); 
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView(); 
-};
-
-export const changeMonthView = (offset) => { state.calendarDisplayDate.setMonth(state.calendarDisplayDate.getMonth() + offset); renderMonthView(); };
 
 export const renderMonthView = () => {
-    const year = state.calendarDisplayDate.getFullYear(), month = state.calendarDisplayDate.getMonth();
+    const year = appState.calendarDisplayDate.getFullYear();
+    const month = appState.calendarDisplayDate.getMonth();
     document.getElementById('month-view-title').textContent = `${year}年 ${month + 1}月`;
     
     const startDay = new Date(year, month, 1).getDay(); const startOffset = startDay === 0 ? 6 : startDay - 1; 
@@ -395,8 +260,8 @@ export const renderMonthView = () => {
     const viewStartDateStr = cellDates[0].dateStr; const viewEndDateStr = cellDates[41].dateStr;
 
     let multiDayEvents = []; let singleDayAllDayEvents = {};  let singleDayTimeEvents = {};   
-    for (const dateKey in state.allPlanners) {
-        const events = state.allPlanners[dateKey].events || [];
+    for (const dateKey in appState.allPlanners) {
+        const events = appState.allPlanners[dateKey].events || [];
         events.forEach(ev => {
             const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
             if (sDate !== eDate) multiDayEvents.push({ ...ev, sDate, eDate, originalDateKey: dateKey });
@@ -435,13 +300,13 @@ export const renderMonthView = () => {
     });
 
     for (let i = 0; i < 42; i++) {
-        const dStr = cellDates[i].dateStr; const dObj = cellDates[i].dateObj; const data = state.allPlanners[dStr] || {};
+        const dStr = cellDates[i].dateStr; const dObj = cellDates[i].dateObj; const data = appState.allPlanners[dStr] || {};
         let dayItems = [];
         (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
         (singleDayTimeEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'time', event: ev }));
 
         if (!isHoliday(dObj) && (filterCat === 'all' || filterCat === 'jugyo')) {
-            const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods : [];
+            const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
             const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
             ttPeriods.slice(0, lessonCount).forEach(p => {
                 if (p.id === 'p_allday' || p.isAllDay) return;
@@ -457,7 +322,7 @@ export const renderMonthView = () => {
     for (let i = 0; i < 42; i++) {
         const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
         const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
-        const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
+        const cellId = `month-cell-${dStr}`; const isSelectedClass = appState.selectedCellId === cellId ? 'cell-selected' : '';
         const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400');
         const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white';
         
@@ -480,7 +345,7 @@ export const renderMonthView = () => {
             if (shouldSkip) continue;
 
             if (r >= maxRows) { overCount++; continue; }
-            const topPx = r * rowHeight; const isSearched = (ev && state.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
+            const topPx = r * rowHeight; const isSearched = (ev && appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
 
             if (slot.type === 'multi') {
                 if (slot.isSegmentStart) {
@@ -516,10 +381,17 @@ export const renderMonthView = () => {
     grid.innerHTML = html;
 };
 
-export const changeWeekView = (offset) => { state.calendarDisplayDate.setDate(state.calendarDisplayDate.getDate() + (offset * 7)); renderWeekView(); };
+
+// ==========================================
+// 週カレンダー（Week View）
+// ==========================================
+export const changeWeekView = (offset) => { 
+    appState.calendarDisplayDate.setDate(appState.calendarDisplayDate.getDate() + (offset * 7)); 
+    renderWeekView(); 
+};
 
 export const renderWeekView = () => {
-    const d = new Date(state.calendarDisplayDate);
+    const d = new Date(appState.calendarDisplayDate);
     const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
     const startOfWeek = new Date(d.setDate(diff));
     document.getElementById('week-view-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
@@ -540,8 +412,8 @@ export const renderWeekView = () => {
 
     let multiDayEvents = []; let singleDayAllDayEvents = {};  let timeEventsByDay = Array(7).fill(null).map(() => []);
 
-    for (const dateKey in state.allPlanners) {
-        const events = state.allPlanners[dateKey].events || [];
+    for (const dateKey in appState.allPlanners) {
+        const events = appState.allPlanners[dateKey].events || [];
         events.forEach(ev => {
             const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
             if (eDate >= viewStartDateStr && sDate <= viewEndDateStr) {
@@ -593,7 +465,7 @@ export const renderWeekView = () => {
     });
 
     for (let i = 0; i < 7; i++) {
-        const dStr = weekDates[i]; const data = state.allPlanners[dStr] || {}; let dayItems = [];
+        const dStr = weekDates[i]; const data = appState.allPlanners[dStr] || {}; let dayItems = [];
         (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
         (data.reminders || []).forEach(t => dayItems.push({ type: 'task', event: t }));
         dayItems.forEach(item => { let row = 0; while(allDaySlots[i][row] !== undefined) row++; allDaySlots[i][row] = item; });
@@ -616,31 +488,33 @@ export const renderWeekView = () => {
                 if (slot.isSegmentStart) {
                     const ev = slot.event; let multiColorClass = getMultiDayColorClass(ev.category);
                     const leftPct = (c / 7) * 100; const widthPct = (slot.segmentLength / 7) * 100;
-                    const isSearched = (state.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                    const isSearched = (appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
                     allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                 }
             } else if (slot.type === 'allday') {
                 const ev = slot.event; let bgColorClass = getEventColorClass(ev.category);
                 const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
-                const isSearched = (state.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                const isSearched = (appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
                 allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
             } else if (slot.type === 'task') {
                 const t = slot.event; const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                 const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
                 const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
-                const isSearched = (state.searchedItemId === t.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
+                const isSearched = (appState.searchedItemId === t.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
                 allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
             }
         }
     }
     
     for (let i = 0; i < 7; i++) {
-        const isSelAllDay = selectedSlot && selectedSlot.view === 'allday' && selectedSlot.date === weekDates[i];
+        const isSelAllDay = appState.selectedSlot && appState.selectedSlot.view === 'allday' && appState.selectedSlot.date === weekDates[i];
         allDayHtml += `<div class="absolute top-0 bottom-0 cursor-pointer transition-colors ${isSelAllDay ? 'bg-blue-200/50' : 'hover:bg-gray-200/50'}" style="left: ${(i / 7) * 100}%; width: ${(1 / 7) * 100}%; z-index: 1;" onclick="event.stopPropagation(); window.handleCellClick('allday', '${weekDates[i]}', 'allday')"></div>`;
     }
     allDayHtml += `</div>`;
     
-    const alldayContainer = document.getElementById('week-view-allday'); alldayContainer.innerHTML = allDayHtml; alldayContainer.style.minHeight = `${Math.max(30, (maxRow + 1) * ALLDAY_ROW_HEIGHT + 10)}px`;
+    const alldayContainer = document.getElementById('week-view-allday'); 
+    alldayContainer.innerHTML = allDayHtml; 
+    alldayContainer.style.minHeight = `${Math.max(30, (maxRow + 1) * ALLDAY_ROW_HEIGHT + 10)}px`;
 
     let headerHtml = `<div class="bg-gray-50 border-r border-gray-300"></div>`;
     let colsHtml = Array(7).fill('');
@@ -654,13 +528,13 @@ export const renderWeekView = () => {
 
         let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
         for (let h = 5; h < 24; h++) {
-            const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
+            const isSel = appState.selectedSlot && appState.selectedSlot.view === 'timeline' && appState.selectedSlot.date === curStr && appState.selectedSlot.hour === h;
             colContent += `<div class="timeline-cell w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" style="height: calc(100% / 19);" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
         }
         colContent += `</div>`;
 
         let combinedEvents = [];
-        const data = state.allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods : [];
+        const data = appState.allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
 
         if (!isHoli && ttType !== 'none') {
             const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
@@ -683,7 +557,7 @@ export const renderWeekView = () => {
                 colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div></div>`;
             } else {
                 const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
-                const isSearched = (state.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
+                const isSearched = (appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
                 colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
             }
         });
@@ -699,15 +573,19 @@ export const renderWeekView = () => {
     document.getElementById('week-view-grid').innerHTML = gridHtml;
 };
 
+
+// ==========================================
+// 一覧カレンダー（Agenda View）
+// ==========================================
 export const renderAgendaView = () => {
-    const dateSet = new Set(Object.keys(state.allPlanners)); const today = new Date(); const todayStr = getFormatDateStr(today);
+    const dateSet = new Set(Object.keys(appState.allPlanners)); const today = new Date(); const todayStr = getFormatDateStr(today);
     for (let i = 0; i <= 30; i++) { const d = new Date(today); d.setDate(today.getDate() + i); dateSet.add(getFormatDateStr(d)); }
     const dates = Array.from(dateSet).sort((a,b)=>a.localeCompare(b)); 
     let html = '', count = 0;
 
     dates.forEach(dStr => {
-        const data = state.allPlanners[dStr] || {}; const dObj = new Date(dStr);
-        const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods : [];
+        const data = appState.allPlanners[dStr] || {}; const dObj = new Date(dStr);
+        const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
         let schedHtml = '', taskHtml = '';
         
         if (!isHoli && ttType !== 'none') {
@@ -769,9 +647,9 @@ export const renderAgendaView = () => {
     document.getElementById('agenda-view-list').innerHTML = html;
 
     let incompleteTasks = [];
-    for (const dateKey in state.allPlanners) {
-        if (state.allPlanners[dateKey].reminders) {
-            state.allPlanners[dateKey].reminders.forEach(t => {
+    for (const dateKey in appState.allPlanners) {
+        if (appState.allPlanners[dateKey].reminders) {
+            appState.allPlanners[dateKey].reminders.forEach(t => {
                 if (!t.completed) { let taskDate = t.dueDate || dateKey; if (taskDate <= todayStr) incompleteTasks.push({ ...t, originalDateKey: dateKey, taskDate: taskDate }); }
             });
         }
@@ -789,6 +667,10 @@ export const renderAgendaView = () => {
     document.getElementById('agenda-incomplete-tasks').innerHTML = incompleteHtml;
 };
 
+
+// ==========================================
+// 週案簿（Weekly Plan View）
+// ==========================================
 export const calculateTechCountsForWeek = (startOfWeek) => {
     const friday = new Date(startOfWeek); friday.setDate(friday.getDate() + 4);
     const year = friday.getMonth() >= 3 ? friday.getFullYear() : friday.getFullYear() - 1;
@@ -798,9 +680,9 @@ export const calculateTechCountsForWeek = (startOfWeek) => {
     while (curDate <= friday) {
         const dStr = getFormatDateStr(curDate);
         if (!isHoliday(curDate)) {
-            const data = state.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+            const data = appState.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
             if (ttType !== 'none') {
-                const ttPeriods = state.globalSettings.timetables[ttType].periods;
+                const ttPeriods = appState.globalSettings.timetables[ttType].periods;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                 ttPeriods.slice(0, lessonCount).forEach(p => {
                     if (p.id === 'p_allday' || p.isAllDay) return;
@@ -817,10 +699,13 @@ export const calculateTechCountsForWeek = (startOfWeek) => {
     return lessonCountMap;
 };
 
-export const changeWeeklyPlanView = (offset) => { state.calendarDisplayDate.setDate(state.calendarDisplayDate.getDate() + (offset * 7)); renderWeeklyPlanView(); };
+export const changeWeeklyPlanView = (offset) => { 
+    appState.calendarDisplayDate.setDate(appState.calendarDisplayDate.getDate() + (offset * 7)); 
+    renderWeeklyPlanView(); 
+};
 
 export const renderWeeklyPlanView = () => {
-    const d = new Date(state.calendarDisplayDate);
+    const d = new Date(appState.calendarDisplayDate);
     const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
     const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
     document.getElementById('weekly-plan-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
@@ -839,18 +724,18 @@ export const renderWeeklyPlanView = () => {
     const ttOrder = ['normal', 'short', 'special', 'test'];
 
     workDays.forEach(day => {
-        const dStr = getFormatDateStr(day); const data = state.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+        const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
         const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
         
         let optionsHtml = '';
         ttOrder.forEach(k => {
-            if (state.globalSettings.timetables[k]) {
-                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${state.globalSettings.timetables[k].name}</option>`;
+            if (appState.globalSettings.timetables[k]) {
+                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${appState.globalSettings.timetables[k].name}</option>`;
             }
         });
-        Object.keys(state.globalSettings.timetables).forEach(k => {
+        Object.keys(appState.globalSettings.timetables).forEach(k => {
             if (!ttOrder.includes(k)) {
-                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${state.globalSettings.timetables[k].name}</option>`;
+                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${appState.globalSettings.timetables[k].name}</option>`;
             }
         });
         optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
@@ -859,8 +744,8 @@ export const renderWeeklyPlanView = () => {
     });
     html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
     workDays.forEach(day => {
-        const dStr = getFormatDateStr(day); const data = state.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-        let maxLessons = 0; if (ttType !== 'none') maxLessons = state.globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
+        const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+        let maxLessons = 0; if (ttType !== 'none') maxLessons = appState.globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
         html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
             <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
@@ -872,7 +757,7 @@ export const renderWeeklyPlanView = () => {
     let maxPeriodsInWeek = 0; const weekPeriodsMap = []; 
     for (let i = 0; i < 5; i++) {
         const cur = workDays[i]; const dStr = getFormatDateStr(cur); const ttType = getTtType(dStr);
-        const periods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
+        const periods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
         weekPeriodsMap.push(periods); if (periods.length > maxPeriodsInWeek) maxPeriodsInWeek = periods.length;
     }
     if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
@@ -894,7 +779,7 @@ export const renderWeeklyPlanView = () => {
             html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
-                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = state.allPlanners[dStr] || {};
+                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
                 const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
                 const isCut = cData.isCut;
                 const memo = cData.memo || "";
@@ -921,7 +806,7 @@ export const renderWeeklyPlanView = () => {
             html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
-                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = state.allPlanners[dStr] || {};
+                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
                 const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
@@ -985,254 +870,25 @@ export const renderWeeklyPlanView = () => {
 
 export const updateWeeklyPlanPeriods = (dStr) => {
     const select = document.getElementById(`wp-tt-${dStr}`);
-    if (!state.allPlanners[dStr]) state.allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
-    state.allPlanners[dStr].timetableType = select.value;
-    if (select.value === 'none') { state.allPlanners[dStr].lessonCount = 0; } 
-    else { state.allPlanners[dStr].lessonCount = state.globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
+    if (!appState.allPlanners[dStr]) appState.allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
+    appState.allPlanners[dStr].timetableType = select.value;
+    if (select.value === 'none') { appState.allPlanners[dStr].lessonCount = 0; } 
+    else { appState.allPlanners[dStr].lessonCount = appState.globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
     saveWeeklyPlan(false); 
 };
 
 export const saveWeeklyPlan = (showAlert = true) => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory(); 
-    const d = new Date(state.calendarDisplayDate); const startOfWeek = new Date(d.setDate(d.getDate() - (d.getDay() === 0 ? 7 : d.getDay()) + 1));
+    if(window.saveStateToHistory) window.saveStateToHistory(); 
+    const d = new Date(appState.calendarDisplayDate); const startOfWeek = new Date(d.setDate(d.getDate() - (d.getDay() === 0 ? 7 : d.getDay()) + 1));
     for (let i = 0; i < 5; i++) {
         const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
         const dStr = getFormatDateStr(cur); const ttSelect = document.getElementById(`wp-tt-${dStr}`);
         if (!ttSelect) continue;
         const lessonCount = parseInt(document.getElementById(`wp-lc-${dStr}`).value);
-        if (!state.allPlanners[dStr]) state.allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
-        state.allPlanners[dStr].timetableType = ttSelect.value; state.allPlanners[dStr].lessonCount = lessonCount;
-        if (!state.allPlanners[dStr].classes) state.allPlanners[dStr].classes = {};
+        if (!appState.allPlanners[dStr]) appState.allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
+        appState.allPlanners[dStr].timetableType = ttSelect.value; appState.allPlanners[dStr].lessonCount = lessonCount;
+        if (!appState.allPlanners[dStr].classes) appState.allPlanners[dStr].classes = {};
     }
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners)); saveToFirebase(); 
-    if (showAlert) { 
-        alert("週の授業計画を保存しました。"); 
-        if (typeof window.renderCurrentView === 'function') window.renderCurrentView(); 
-    } else { 
-        renderWeeklyPlanView(); 
-    }
-};
-
-export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
-    const isSpecial = periodId.startsWith('sp_');
-    wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
-    
-    const classInputArea = document.getElementById('wp-modal-class-area');
-    const deleteBtn = document.getElementById('wp-modal-delete-btn');
-    const resetBtn = document.getElementById('wp-modal-reset-btn');
-    const modalTitle = document.getElementById('wp-modal-title');
-    const memoInput = document.getElementById('wp-modal-memo');
-
-    const dObj = new Date(dateStr);
-    const dayOfWeek = dObj.getDay(); 
-    const defaultDay = (dayOfWeek >= 1 && dayOfWeek <= 5) ? dayOfWeek : 1;
-    const defaultPeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
-
-    const data = state.allPlanners[dateStr] || {};
-    const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
-
-    if (isSpecial) {
-        classInputArea.classList.add('hidden');
-        modalTitle.innerHTML = `<i class="fas fa-sun mr-1"></i>${periodName}の予定`;
-        document.getElementById('wp-modal-base-status').classList.add('hidden');
-        document.getElementById('wp-modal-time-config').classList.add('hidden');
-        
-        deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
-        deleteBtn.onclick = () => toggleCutWeeklyPlanModal();
-        deleteBtn.className = "bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
-        
-        resetBtn.classList.add('hidden');
-        
-        memoInput.value = cData ? (cData.memo || "") : "";
-        memoInput.placeholder = "予定やタスクを入力...";
-
-    } else {
-        classInputArea.classList.remove('hidden');
-        modalTitle.innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
-        document.getElementById('wp-modal-base-status').classList.remove('hidden');
-        document.getElementById('wp-modal-time-config').classList.remove('hidden');
-        
-        deleteBtn.innerHTML = '空きコマ';
-        deleteBtn.onclick = () => deleteWeeklyPlanModal();
-        deleteBtn.className = "bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
-        resetBtn.classList.remove('hidden');
-
-        wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
-        wpSelectedPeriod = cData && cData.sourcePeriod !== undefined ? cData.sourcePeriod : defaultPeriod;
-
-        let initialCls = "", initialSub = "", initialMemo = "";
-        if (cData && !cData.disabled) {
-            initialCls = cData.cls || "";
-            initialSub = cData.sub || "";
-            initialMemo = cData.memo || "";
-        } else {
-            const baseTt = getBaseTimetableForDate(dObj);
-            if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
-                initialCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
-                initialSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
-                initialMemo = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].memo || "";
-            }
-        }
-
-        document.getElementById('wp-modal-cls').value = initialCls;
-        document.getElementById('wp-modal-sub').value = initialSub;
-        memoInput.value = initialMemo;
-        memoInput.placeholder = "単元名や連絡事項など...";
-
-        renderWpModalButtons();
-        updateWpModalBaseStatus();
-    }
-
-    document.getElementById('weekly-plan-modal').classList.remove('hidden');
-    document.getElementById('weekly-plan-modal').classList.add('flex');
-};
-
-export const closeWeeklyPlanModal = () => {
-    document.getElementById('weekly-plan-modal').classList.add('hidden');
-    document.getElementById('weekly-plan-modal').classList.remove('flex');
-};
-
-export const renderWpModalButtons = () => {
-    const daysContainer = document.getElementById('wp-modal-days');
-    const periodsContainer = document.getElementById('wp-modal-periods');
-    
-    let daysHtml = '';
-    const dayNames = ['月', '火', '水', '木', '金'];
-    for(let i=1; i<=5; i++) {
-        const isSelected = wpSelectedDay === i;
-        const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-        daysHtml += `<button onclick="window.changeWpModalSource('day', ${i})" class="px-2 py-1 rounded text-xs font-bold border transition ${baseClass}">${dayNames[i-1]}</button>`;
-    }
-    daysContainer.innerHTML = daysHtml;
-
-    const ttType = getTtType(wpModalTarget.targetDateStr);
-    const ttPeriods = ttType !== 'none' ? state.globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay) : [];
-    const maxPeriods = ttPeriods.length > 0 ? ttPeriods.length : 6;
-
-    let periodsHtml = '';
-    for(let i=1; i<=maxPeriods; i++) {
-        const isSelected = wpSelectedPeriod === i;
-        const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-        periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
-    }
-    periodsContainer.innerHTML = periodsHtml;
-};
-
-export const changeWpModalSource = (type, val) => {
-    if (type === 'day') wpSelectedDay = val;
-    if (type === 'period') wpSelectedPeriod = val;
-    
-    renderWpModalButtons();
-    
-    const dObj = new Date(wpModalTarget.targetDateStr);
-    const baseTt = getBaseTimetableForDate(dObj);
-    let newCls = "", newSub = "";
-    if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
-        newCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
-        newSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
-    }
-    
-    document.getElementById('wp-modal-cls').value = newCls;
-    document.getElementById('wp-modal-sub').value = newSub;
-    
-    updateWpModalBaseStatus();
-};
-
-export const updateWpModalBaseStatus = () => {
-    const statusEl = document.getElementById('wp-modal-base-status');
-    const dayNames = ['月', '火', '水', '木', '金'];
-    const dName = dayNames[wpSelectedDay - 1];
-    
-    const dObj = new Date(wpModalTarget.targetDateStr);
-    const origDay = dObj.getDay();
-    const origPeriod = parseInt(wpModalTarget.targetPeriodName.replace(/[^0-9]/g, '')) || 1;
-    
-    if (wpSelectedDay === origDay && wpSelectedPeriod === origPeriod) {
-        statusEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i> 通常の授業（${dName}曜${wpSelectedPeriod}限）`;
-        statusEl.className = "bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all";
-    } else {
-        statusEl.innerHTML = `<i class="fas fa-exchange-alt mr-1"></i> 時間割変更：${dName}曜${wpSelectedPeriod}限の授業を行います`;
-        statusEl.className = "bg-orange-50 rounded text-center p-1.5 text-xs font-bold text-orange-700 border border-orange-200 shadow-sm transition-all";
-    }
-};
-
-export const saveWeeklyPlanModal = () => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    const { targetDateStr, targetPeriodId, isSpecial } = wpModalTarget;
-    if (!state.allPlanners[targetDateStr]) state.allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
-    if (!state.allPlanners[targetDateStr].classes) state.allPlanners[targetDateStr].classes = {};
-    
-    const memo = document.getElementById('wp-modal-memo').value.trim();
-
-    if (isSpecial) {
-        const currentData = state.allPlanners[targetDateStr].classes[targetPeriodId] || {};
-        state.allPlanners[targetDateStr].classes[targetPeriodId] = {
-            memo: memo,
-            isCut: currentData.isCut || false
-        };
-    } else {
-        const cls = document.getElementById('wp-modal-cls').value.trim();
-        const sub = document.getElementById('wp-modal-sub').value.trim();
-        
-        state.allPlanners[targetDateStr].classes[targetPeriodId] = {
-            cls: cls,
-            sub: sub,
-            memo: memo,
-            sourceDay: wpSelectedDay,
-            sourcePeriod: wpSelectedPeriod,
-            disabled: false
-        };
-    }
-    
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
-    saveToFirebase();
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-    closeWeeklyPlanModal();
-};
-
-export const toggleCutWeeklyPlanModal = () => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    const { targetDateStr, targetPeriodId } = wpModalTarget;
-    if (!state.allPlanners[targetDateStr]) state.allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
-    if (!state.allPlanners[targetDateStr].classes) state.allPlanners[targetDateStr].classes = {};
-    
-    const currentData = state.allPlanners[targetDateStr].classes[targetPeriodId] || {};
-    const memo = document.getElementById('wp-modal-memo').value.trim();
-
-    state.allPlanners[targetDateStr].classes[targetPeriodId] = {
-        memo: memo,
-        isCut: !currentData.isCut
-    };
-    
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
-    saveToFirebase();
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-    closeWeeklyPlanModal();
-};
-
-export const deleteWeeklyPlanModal = () => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    const { targetDateStr, targetPeriodId } = wpModalTarget;
-    if (!state.allPlanners[targetDateStr]) state.allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
-    if (!state.allPlanners[targetDateStr].classes) state.allPlanners[targetDateStr].classes = {};
-    
-    state.allPlanners[targetDateStr].classes[targetPeriodId] = { disabled: true };
-    
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
-    saveToFirebase();
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-    closeWeeklyPlanModal();
-};
-
-export const resetWeeklyPlanModal = () => {
-    if (typeof window.saveStateToHistory === 'function') window.saveStateToHistory();
-    const { targetDateStr, targetPeriodId } = wpModalTarget;
-    if (state.allPlanners[targetDateStr] && state.allPlanners[targetDateStr].classes) {
-        delete state.allPlanners[targetDateStr].classes[targetPeriodId];
-    }
-    
-    safeSetItem(LS_KEY, JSON.stringify(state.allPlanners));
-    saveToFirebase();
-    if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
-    closeWeeklyPlanModal();
+    safeSetItem(LS_KEY, JSON.stringify(appState.allPlanners)); saveToFirebase(); 
+    if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
 };
