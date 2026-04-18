@@ -846,9 +846,10 @@ export const renderWeeklyPlanView = () => {
     for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
     const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-    // h-full と min-w-full を削除し、スマホでも最低500pxの幅と自然な高さを確保（潰れ防止）
+    // colgroup を追加して列幅を均等に固定（日によって授業数が違っても列幅が崩れないようにする）
     let html = '<table class="w-full border-collapse min-w-[500px] sm:min-w-[600px] bg-white rounded shadow-sm border border-gray-300 table-fixed">';
-    html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
+    html += '<colgroup><col style="width: 2.5rem;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"></colgroup>';
+    html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 bg-gray-50 sticky-col z-10"></th>';
     workDays.forEach(day => {
         // 祝日の取得と表示
         const holidayName = getHoliday(day);
@@ -919,7 +920,7 @@ export const renderWeeklyPlanView = () => {
         html += `<tr class="${rowClass}">`;
         
         if (r.type === 'special') {
-            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
+            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
                 const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
@@ -946,14 +947,18 @@ export const renderWeeklyPlanView = () => {
             }
         } else {
             const pIdx = r.index;
-            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
+            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
                 const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
                 const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
-                if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-0.5 bg-gray-100 opacity-50 h-full relative"></td>`; continue; }
+                // 授業数カットで空きになっている部分を灰色の背景・×印にして列幅を保持
+                if (!p || pIdx >= lessonCount) { 
+                    html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative bg-gray-100"><div class="absolute inset-[1px]"><div class="relative w-full h-full rounded-sm flex flex-col justify-center items-center bg-gray-100 text-gray-400 border border-dashed border-gray-300 opacity-70"><i class="fas fa-times text-gray-300 text-xs"></i></div></div></td>`; 
+                    continue; 
+                }
 
                 const baseTt = getBaseTimetableForDate(day);
                 let baseCls = "", baseSub = "", baseMemo = "";
@@ -1043,4 +1048,119 @@ export const saveWeeklyPlan = (showAlert = true) => {
     }
     safeSetItem(LS_KEY, JSON.stringify(appState.allPlanners)); saveToFirebase(); 
     if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
+};
+
+export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+    const isSpecial = periodId.startsWith('sp_');
+    appState.wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
+    
+    const classInputArea = document.getElementById('wp-modal-class-area');
+    const deleteBtn = document.getElementById('wp-modal-delete-btn');
+    const resetBtn = document.getElementById('wp-modal-reset-btn');
+    const modalTitle = document.getElementById('wp-modal-title');
+    const memoInput = document.getElementById('wp-modal-memo');
+
+    const dObj = new Date(dateStr);
+    const dayOfWeek = dObj.getDay(); 
+    const defaultDay = (dayOfWeek >= 1 && dayOfWeek <= 5) ? dayOfWeek : 1;
+    const defaultPeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
+
+    const data = appState.allPlanners[dateStr] || {};
+    const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
+
+    // ベース（My時間割）の情報を取得
+    const baseTt = getBaseTimetableForDate(dObj);
+    let baseCls = "", baseSub = "", baseMemo = "";
+    let bData = null;
+    if (baseTt[dayOfWeek] && baseTt[dayOfWeek][periodName]) {
+        bData = baseTt[dayOfWeek][periodName];
+    } else {
+        const fallbackName = `${defaultPeriod}限`;
+        if (baseTt[dayOfWeek] && baseTt[dayOfWeek][fallbackName]) {
+            bData = baseTt[dayOfWeek][fallbackName];
+        }
+    }
+    if (bData) {
+        baseCls = bData.cls || ""; baseSub = bData.sub || ""; baseMemo = bData.memo || "";
+    }
+
+    if (isSpecial) {
+        classInputArea.classList.add('hidden');
+        modalTitle.innerHTML = `<i class="fas fa-sun mr-1"></i>${periodName}の予定`;
+        document.getElementById('wp-modal-base-status').classList.add('hidden');
+        document.getElementById('wp-modal-time-config').classList.add('hidden');
+        
+        deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
+        deleteBtn.onclick = () => toggleCutWeeklyPlanModal();
+        deleteBtn.className = "bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
+        
+        resetBtn.classList.add('hidden');
+        memoInput.value = cData ? (cData.memo || "") : "";
+        memoInput.placeholder = "予定やタスクを入力...";
+    } else {
+        classInputArea.classList.remove('hidden');
+        modalTitle.innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
+        document.getElementById('wp-modal-base-status').classList.remove('hidden');
+        document.getElementById('wp-modal-time-config').classList.remove('hidden');
+        
+        deleteBtn.innerHTML = '空きコマ';
+        deleteBtn.onclick = () => deleteWeeklyPlanModal();
+        deleteBtn.className = "bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
+        resetBtn.classList.remove('hidden');
+
+        appState.wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
+        appState.wpSelectedPeriod = cData && cData.sourcePeriod !== undefined ? cData.sourcePeriod : defaultPeriod;
+
+        // 初期値として、カスタムデータがなければMy時間割の内容をセット
+        let initialCls = baseCls, initialSub = baseSub, initialMemo = baseMemo;
+        if (cData && !cData.disabled) {
+            initialCls = cData.cls !== undefined ? cData.cls : baseCls;
+            initialSub = cData.sub !== undefined ? cData.sub : baseSub;
+            initialMemo = cData.memo !== undefined ? cData.memo : baseMemo;
+        }
+
+        document.getElementById('wp-modal-cls').value = initialCls;
+        document.getElementById('wp-modal-sub').value = initialSub;
+        memoInput.value = initialMemo;
+        memoInput.placeholder = "単元名や連絡事項など...";
+
+        // ショートカットボタンの生成（HTMLに要素がなくても動的に追加して確実に反映させる）
+        let shortcutsContainer = document.getElementById('wp-modal-class-shortcuts');
+        if (!shortcutsContainer) {
+            const clsInput = document.getElementById('wp-modal-cls');
+            if (clsInput) {
+                shortcutsContainer = document.createElement('div');
+                shortcutsContainer.id = 'wp-modal-class-shortcuts';
+                shortcutsContainer.className = 'flex flex-wrap gap-1 mt-1.5 hidden';
+                clsInput.parentNode.appendChild(shortcutsContainer);
+            }
+        }
+
+        if (shortcutsContainer) {
+            shortcutsContainer.innerHTML = '';
+            shortcutsContainer.classList.add('hidden');
+            
+            // ベースクラス名（My時間割）に「/」が含まれていれば分割してボタン化
+            if (baseCls && baseCls.includes('/')) {
+                const parts = baseCls.split('/');
+                let btnHtml = '';
+                parts.forEach(p => {
+                    const trimmed = p.trim();
+                    if (trimmed) {
+                        btnHtml += `<button type="button" onclick="document.getElementById('wp-modal-cls').value='${trimmed}'" class="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-xs font-bold hover:bg-blue-100 transition shadow-sm">${trimmed}</button>`;
+                    }
+                });
+                btnHtml += `<button type="button" onclick="document.getElementById('wp-modal-cls').value='${baseCls}'" class="px-3 py-1.5 bg-gray-50 text-gray-500 border border-gray-200 rounded text-xs font-bold hover:bg-gray-100 transition shadow-sm ml-1" title="元の設定に戻す"><i class="fas fa-undo"></i></button>`;
+                
+                shortcutsContainer.innerHTML = btnHtml;
+                shortcutsContainer.classList.remove('hidden');
+            }
+        }
+
+        renderWpModalButtons();
+        updateWpModalBaseStatus();
+    }
+
+    document.getElementById('weekly-plan-modal').classList.remove('hidden');
+    document.getElementById('weekly-plan-modal').classList.add('flex');
 };
