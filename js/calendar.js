@@ -8,7 +8,74 @@ export const getFormatDateStr = (date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-export const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6;
+// 祝日名を取得する計算式（春分・秋分の日の自動計算を含む）
+export const getHolidayName = (dObj) => {
+    const y = dObj.getFullYear();
+    const m = dObj.getMonth() + 1;
+    const d = dObj.getDate();
+    
+    const shunbun = Math.floor(20.69115 + 0.2421904 * (y - 2000) - Math.floor((y - 2000) / 4));
+    const shubun = Math.floor(23.09 + 0.2421904 * (y - 2000) - Math.floor((y - 2000) / 4));
+
+    const getNthDay = (nth, dow) => {
+        let firstDow = new Date(y, m - 1, 1).getDay();
+        let offset = (dow - firstDow + 7) % 7;
+        return 1 + offset + (nth - 1) * 7;
+    };
+
+    let name = "";
+    if (m === 1 && d === 1) name = "元日";
+    else if (m === 1 && d === getNthDay(2, 1)) name = "成人の日";
+    else if (m === 2 && d === 11) name = "建国記念の日";
+    else if (m === 2 && d === 23) name = "天皇誕生日";
+    else if (m === 3 && d === shunbun) name = "春分の日";
+    else if (m === 4 && d === 29) name = "昭和の日";
+    else if (m === 5 && d === 3) name = "憲法記念日";
+    else if (m === 5 && d === 4) name = "みどりの日";
+    else if (m === 5 && d === 5) name = "こどもの日";
+    else if (m === 7 && d === getNthDay(3, 1)) name = "海の日";
+    else if (m === 8 && d === 11) name = "山の日";
+    else if (m === 9 && d === getNthDay(3, 1)) name = "敬老の日";
+    else if (m === 9 && d === shubun) name = "秋分の日";
+    else if (m === 10 && d === getNthDay(2, 1)) name = "スポーツの日";
+    else if (m === 11 && d === 3) name = "文化の日";
+    else if (m === 11 && d === 23) name = "勤労感謝の日";
+
+    return name;
+};
+
+// 振替休日や国民の休日を含めて最終的な祝日を判定
+export const getHoliday = (dObj) => {
+    let name = getHolidayName(dObj);
+    if (name) return name;
+
+    const y = dObj.getFullYear();
+    const m = dObj.getMonth() + 1;
+    const d = dObj.getDate();
+    const w = dObj.getDay();
+
+    if (w !== 0) {
+        let checkDate = new Date(y, m - 1, d - 1);
+        let checkName = getHolidayName(checkDate);
+        while (checkName) {
+            if (checkDate.getDay() === 0) return "振替休日";
+            checkDate.setDate(checkDate.getDate() - 1);
+            checkName = getHolidayName(checkDate);
+        }
+    }
+
+    if (w !== 0 && w !== 6) {
+        let prev = new Date(y, m - 1, d - 1);
+        let next = new Date(y, m - 1, d + 1);
+        if (getHolidayName(prev) && getHolidayName(next)) {
+            return "国民の休日";
+        }
+    }
+    return "";
+};
+
+// 祝日の判定をアップデート
+export const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6 || getHoliday(d) !== "";
 
 export const getEventColorClass = (category) => {
     if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
@@ -80,17 +147,42 @@ export const getTtType = (dStr) => {
     const data = appState.allPlanners[dStr] || {};
     if (data.timetableType !== undefined) return data.timetableType;
     if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
+    
+    // 未設定の場合、土日や祝日ならデフォルトで「休日」にする
+    const dObj = new Date(dStr);
+    if (isHoliday(dObj)) return 'none';
+    
     return 'normal';
 };
 
 export const getBaseTimetableForDate = (dObj) => {
     if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
-    const yyyyMmDd = getFormatDateStr(dObj);
+    
+    // 比較用に時刻を0時にリセットしたタイムスタンプを取得
+    const targetTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+
     const matchedPattern = appState.globalSettings.baseTimetablePatterns.find(p => {
         let sDate = p.startDate; if (!sDate && p.startMonth) sDate = p.startMonth + "-01";
         let eDate = p.endDate; if (!eDate && p.endMonth) eDate = p.endMonth + "-31";
-        const afterStart = sDate ? yyyyMmDd >= sDate : true;
-        const beforeEnd = eDate ? yyyyMmDd <= eDate : true;
+        
+        let afterStart = true;
+        if (sDate) {
+            const parts = sDate.split('-');
+            if (parts.length === 3) {
+                const sTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime();
+                afterStart = targetTime >= sTime;
+            }
+        }
+
+        let beforeEnd = true;
+        if (eDate) {
+            const parts = eDate.split('-');
+            if (parts.length === 3) {
+                const eTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime();
+                beforeEnd = targetTime <= eTime;
+            }
+        }
+
         return afterStart && beforeEnd;
     });
     if (matchedPattern && matchedPattern.data) return matchedPattern.data;
@@ -345,8 +437,15 @@ export const renderMonthView = () => {
         const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
         const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
         const cellId = `month-cell-${dStr}`; const isSelectedClass = appState.selectedCellId === cellId ? 'cell-selected' : '';
-        const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400');
-        const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white';
+        
+        // 祝日の取得と色の設定
+        const holidayName = getHoliday(dObj);
+        const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6 || holidayName) ? 'bg-indigo-50/50' : 'bg-white';
+        const dateColorClass = isToday ? 'text-white' : (isCurrentMonth ? (dObj.getDay() === 0 || holidayName ? 'text-red-500' : (dObj.getDay() === 6 ? 'text-blue-500' : 'text-gray-800')) : 'text-gray-400');
+        const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : dateColorClass;
+        
+        // 祝日名のラベルHTML
+        let holidayHtml = holidayName && isCurrentMonth ? `<div class="absolute top-1 left-1 text-[8px] sm:text-[9px] font-bold text-red-400/90 truncate max-w-[65%] pointer-events-none">${holidayName}</div>` : '';
         
         let cellContentHtml = ''; let overCount = 0;
 
@@ -395,6 +494,7 @@ export const renderMonthView = () => {
         
         html += `
             <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                ${holidayHtml}
                 <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
                 <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                 ${overflowHtml}
@@ -543,10 +643,20 @@ export const renderWeekView = () => {
 
     for (let i = 0; i < 7; i++) {
         const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); const isHoli = isHoliday(cur);
-        const color = cur.getDay()===0 ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
-        const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white');
+        
+        // 祝日の取得と色の設定
+        const holidayName = getHoliday(cur);
+        const color = cur.getDay()===0 || holidayName ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
+        const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6 || holidayName) ? 'bg-indigo-50/50' : 'bg-white');
 
-        headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}">${cur.getDate()}</span></div>`;
+        let holidayLabel = holidayName ? `<div class="absolute top-0 left-0 w-full text-center text-[7px] sm:text-[8px] font-bold text-red-400/90 truncate px-0.5">${holidayName}</div>` : '';
+        const numColor = !isToday ? (cur.getDay()===0 || holidayName ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : '')) : '';
+
+        headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}">
+            ${holidayLabel}
+            <span class="text-[9px] pointer-events-none ${color} ${holidayName ? 'mt-2' : ''}">${DAYS_STR[cur.getDay()]}</span>
+            <span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''} ${numColor}">${cur.getDate()}</span>
+        </div>`;
 
         let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
         for (let h = 5; h < 24; h++) {
@@ -740,7 +850,17 @@ export const renderWeeklyPlanView = () => {
     let html = '<table class="w-full border-collapse min-w-[500px] sm:min-w-[600px] bg-white rounded shadow-sm border border-gray-300 table-fixed">';
     html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
     workDays.forEach(day => {
-        html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
+        // 祝日の取得と表示
+        const holidayName = getHoliday(day);
+        const dColor = holidayName ? 'text-red-500' : 'text-gray-500';
+        const wColor = holidayName ? 'text-red-500' : 'text-[#4a5f73]';
+        const bgClass = holidayName ? 'bg-red-50/30' : 'bg-gray-50';
+
+        html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgClass} relative">
+            ${holidayName ? `<div class="absolute top-0 left-0 w-full text-[7px] text-red-400/90 truncate font-bold px-0.5">${holidayName}</div>` : ''}
+            <div class="text-[8px] sm:text-[9px] ${dColor} ${holidayName ? 'mt-2' : ''}">${day.getMonth()+1}/${day.getDate()}</div>
+            <div class="text-[10px] sm:text-xs ${wColor}">${DAYS_STR[day.getDay()]}</div>
+        </th>`;
     });
     html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
     
