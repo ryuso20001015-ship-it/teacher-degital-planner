@@ -8,7 +8,6 @@ export const getFormatDateStr = (date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-// 祝日名を取得する計算式（春分・秋分の日の自動計算を含む）
 export const getHolidayName = (dObj) => {
     const y = dObj.getFullYear();
     const m = dObj.getMonth() + 1;
@@ -44,7 +43,6 @@ export const getHolidayName = (dObj) => {
     return name;
 };
 
-// 振替休日や国民の休日を含めて最終的な祝日を判定
 export const getHoliday = (dObj) => {
     let name = getHolidayName(dObj);
     if (name) return name;
@@ -74,7 +72,6 @@ export const getHoliday = (dObj) => {
     return "";
 };
 
-// 祝日の判定をアップデート
 export const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6 || getHoliday(d) !== "";
 
 export const getEventColorClass = (category) => {
@@ -148,7 +145,6 @@ export const getTtType = (dStr) => {
     if (data.timetableType !== undefined) return data.timetableType;
     if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
     
-    // 未設定の場合、土日や祝日ならデフォルトで「休日」にする
     const dObj = new Date(dStr);
     if (isHoliday(dObj)) return 'none';
     
@@ -157,10 +153,7 @@ export const getTtType = (dStr) => {
 
 export const getBaseTimetableForDate = (dObj) => {
     if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
-    
-    // 比較用に時刻を0時にリセットしたタイムスタンプを取得
     const targetTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
-
     const matchedPattern = appState.globalSettings.baseTimetablePatterns.find(p => {
         let sDate = p.startDate; if (!sDate && p.startMonth) sDate = p.startMonth + "-01";
         let eDate = p.endDate; if (!eDate && p.endMonth) eDate = p.endMonth + "-31";
@@ -173,7 +166,6 @@ export const getBaseTimetableForDate = (dObj) => {
                 afterStart = targetTime >= sTime;
             }
         }
-
         let beforeEnd = true;
         if (eDate) {
             const parts = eDate.split('-');
@@ -182,7 +174,6 @@ export const getBaseTimetableForDate = (dObj) => {
                 beforeEnd = targetTime <= eTime;
             }
         }
-
         return afterStart && beforeEnd;
     });
     if (matchedPattern && matchedPattern.data) return matchedPattern.data;
@@ -225,118 +216,6 @@ export const getPeriodClass = (dateStr, period, dObj) => {
     return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
 };
 
-
-// ==========================================
-// ボトムシート（月カレンダーセルクリック時）
-// ==========================================
-export const openMonthBottomSheet = (dStr, defaultHour = null) => {
-    window.mbsTargetDate = dStr;
-    window.mbsDefaultHour = defaultHour;
-    const dObj = new Date(dStr);
-    document.getElementById('mbs-date-title').textContent = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
-
-    const data = appState.allPlanners[dStr] || {};
-    const isHoli = isHoliday(dObj);
-    const ttType = getTtType(dStr);
-    const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
-
-    let schedHtml = '', taskHtml = '';
-    
-    if (!isHoli && ttType !== 'none') {
-        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
-        const displayPeriods = ttPeriods.slice(0, lessonCount);
-
-        displayPeriods.forEach(p => {
-            if(p.id === 'p_allday' || p.isAllDay) return;
-            const cData = getPeriodClass(dStr, p, dObj);
-            if (cData) { 
-                const colorClass = getClassColorClass(cData.cls, cData.sub);
-                let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
-                schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
-                    <div class="flex items-start justify-between gap-2 w-full">
-                        <span class="break-words font-bold flex-1">${titleHtml}</span>
-                        <span class="font-bold whitespace-nowrap shrink-0 opacity-80 mt-0.5 text-[10px]">(${p.name})</span>
-                    </div>
-                    ${memoHtml}
-                </div>`; 
-            }
-        });
-    }
-    
-    let eventsForDay = [];
-    for (const dateKey in appState.allPlanners) {
-        const events = appState.allPlanners[dateKey].events || [];
-        events.forEach(ev => {
-            const sDate = ev.start ? ev.start.split('T')[0] : dateKey;
-            const eDate = ev.end ? ev.end.split('T')[0] : sDate;
-            if (dStr >= sDate && dStr <= eDate) eventsForDay.push({ ...ev, originalDateKey: dateKey });
-        });
-    }
-
-    const uniqueEvents = []; const seenIds = new Set();
-    eventsForDay.forEach(ev => { if (!seenIds.has(ev.id)) { seenIds.add(ev.id); uniqueEvents.push(ev); } });
-
-    uniqueEvents.forEach(ev => {
-        let label = "", isMultiDay = false;
-        if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
-            const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
-            label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
-        } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
-
-        let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
-        const memoPreview = ev.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-black/10 pt-1.5 w-full">${ev.memo}</div>` : '';
-
-        schedHtml += `
-            <div class="text-xs ${badgeClass} px-2.5 py-2 rounded flex flex-col cursor-pointer transition hover:shadow-md" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
-                <div class="flex items-start gap-2 w-full">
-                    <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
-                    <span class="break-words font-bold flex-1">${ev.title}</span>
-                </div>
-                ${memoPreview}
-            </div>`; 
-    });
-
-    if (data.reminders) {
-        data.reminders.forEach(t => { 
-            const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
-            const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
-            const memoHtml = t.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200 pt-1.5 w-full ml-5">${t.memo}</div>` : '';
-            taskHtml += `<div class="text-xs flex flex-col px-2.5 py-2 ${style} cursor-pointer bg-white shadow-sm hover:shadow-md hover:bg-gray-50 border border-gray-200 rounded transition font-bold" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
-                <div class="flex items-start gap-2 w-full">
-                    <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5 text-sm" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
-                    <span class="break-words flex-1 mt-0.5">${t.title}</span>
-                </div>
-                ${memoHtml}
-            </div>`; 
-        });
-    }
-
-    let html = '';
-    if (schedHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="far fa-calendar-alt"></i> 予定・授業</div><div class="space-y-2 mb-4">${schedHtml}</div>`;
-    if (taskHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="fas fa-check-square"></i> タスク</div><div class="space-y-2">${taskHtml}</div>`;
-    if (!html) html = '<div class="text-center py-4 text-gray-400 text-xs font-bold">予定・タスクはありません</div>';
-    
-    document.getElementById('mbs-content').innerHTML = html;
-    document.getElementById('mbs-add-btn').onclick = () => { 
-        let defaultTime = null;
-        let isAllDay = true;
-        if (window.mbsDefaultHour !== null && window.mbsDefaultHour !== 'allday') {
-            defaultTime = `${String(window.mbsDefaultHour).padStart(2, '0')}:00`;
-            isAllDay = false;
-        }
-        window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); 
-        closeMonthBottomSheet(); 
-    };
-    document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
-};
-
-export const closeMonthBottomSheet = () => { 
-    const sheet = document.getElementById('month-bottom-sheet'); 
-    if (sheet) sheet.classList.add('translate-y-full'); 
-};
-
-
 // ==========================================
 // 月カレンダー（Month View）
 // ==========================================
@@ -354,7 +233,6 @@ export const renderMonthView = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const grid = document.getElementById('month-view-grid');
     
-    // その月に必要な週数（行数）を計算（月によって4〜6週になる）
     const totalWeeks = Math.ceil((daysInMonth + startOffset) / 7);
     const totalCells = totalWeeks * 7;
     grid.style.gridTemplateRows = `repeat(${totalWeeks}, minmax(0, 1fr))`;
@@ -438,13 +316,11 @@ export const renderMonthView = () => {
         const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
         const cellId = `month-cell-${dStr}`; const isSelectedClass = appState.selectedCellId === cellId ? 'cell-selected' : '';
         
-        // 祝日の取得と色の設定
         const holidayName = getHoliday(dObj);
         const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6 || holidayName) ? 'bg-indigo-50/50' : 'bg-white';
         const dateColorClass = isToday ? 'text-white' : (isCurrentMonth ? (dObj.getDay() === 0 || holidayName ? 'text-red-500' : (dObj.getDay() === 6 ? 'text-blue-500' : 'text-gray-800')) : 'text-gray-400');
         const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : dateColorClass;
         
-        // 祝日名のラベルHTML
         let holidayHtml = holidayName && isCurrentMonth ? `<div class="absolute top-1 left-1 text-[8px] sm:text-[9px] font-bold text-red-400/90 truncate max-w-[65%] pointer-events-none">${holidayName}</div>` : '';
         
         let cellContentHtml = ''; let overCount = 0;
@@ -464,8 +340,8 @@ export const renderMonthView = () => {
             }
 
             if (shouldSkip) continue;
-
             if (r >= maxRows) { overCount++; continue; }
+            
             const topPx = r * rowHeight; const isSearched = (ev && appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
 
             if (slot.type === 'multi') {
@@ -483,7 +359,17 @@ export const renderMonthView = () => {
             } else if (slot.type === 'class') {
                 const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
                 let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center justify-between cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold truncate text-[9px]">${titleHtml}</span><span class="font-bold opacity-70 shrink-0 ml-0.5 text-[7px]">(${p.name})</span></div>`;
+                
+                // 【スマホ表示改善】「1時間目」等の文字を短縮し、PCでは「(1限)」として右端に表示する
+                const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
+                
+                cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center justify-between cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
+                    <div class="flex items-center truncate min-w-0">
+                        <span class="sm:hidden font-bold opacity-70 shrink-0 mr-0.5 text-[7px]">${shortPeriodName}</span>
+                        <span class="font-bold truncate text-[8px] sm:text-[9px]">${titleHtml}</span>
+                    </div>
+                    <span class="hidden sm:inline font-bold opacity-70 shrink-0 ml-0.5 text-[7px]">(${p.name})</span>
+                </div>`;
             } else if (slot.type === 'task') {
                 const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                 const style = ev.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
@@ -644,7 +530,6 @@ export const renderWeekView = () => {
     for (let i = 0; i < 7; i++) {
         const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); const isHoli = isHoliday(cur);
         
-        // 祝日の取得と色の設定
         const holidayName = getHoliday(cur);
         const color = cur.getDay()===0 || holidayName ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
         const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6 || holidayName) ? 'bg-indigo-50/50' : 'bg-white');
@@ -686,7 +571,19 @@ export const renderWeekView = () => {
             if (item.isClass) {
                 const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
                 let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><div class="flex items-center justify-between gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[9px] truncate">${titleHtml}</span><span class="font-bold text-[7px] opacity-80 shrink-0 ml-0.5">(${p.name || ''})</span></div></div>`;
+                
+                // 【スマホ表示改善】
+                const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
+                
+                colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')">
+                    <div class="flex items-center justify-between gap-0.5 w-full truncate pointer-events-none">
+                        <div class="flex items-center truncate min-w-0">
+                            <span class="sm:hidden font-bold opacity-70 shrink-0 mr-0.5 text-[7px]">${shortPeriodName}</span>
+                            <span class="font-bold text-[8px] sm:text-[9px] truncate">${titleHtml}</span>
+                        </div>
+                        <span class="hidden sm:inline font-bold text-[7px] opacity-80 shrink-0 ml-0.5">(${p.name || ''})</span>
+                    </div>
+                </div>`;
             } else {
                 const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                 const isSearched = (appState.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
@@ -728,10 +625,17 @@ export const renderAgendaView = () => {
                 if (cData) { 
                     let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                     let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
+                    
+                    // 【スマホ表示改善】
+                    const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
+                    
                     schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
                         <div class="flex items-start justify-between gap-1.5 w-full">
-                            <span class="font-bold break-words flex-1">${titleHtml}</span>
-                            <span class="font-bold whitespace-nowrap shrink-0 opacity-80 mt-0.5 text-[9px]">(${p.name})</span>
+                            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                                <span class="sm:hidden font-bold w-auto whitespace-nowrap shrink-0 opacity-80 text-[10px]">${shortPeriodName}</span>
+                                <span class="font-bold break-words truncate">${titleHtml}</span>
+                            </div>
+                            <span class="hidden sm:inline font-bold whitespace-nowrap shrink-0 opacity-80 mt-0.5 text-[9px]">(${p.name})</span>
                         </div>
                         ${memoHtml}
                     </div>`; 
@@ -846,24 +750,23 @@ export const renderWeeklyPlanView = () => {
     for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
     const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-    // colgroup を追加して列幅を均等に固定（日によって授業数が違っても列幅が崩れないようにする）
-    let html = '<table class="w-full border-collapse min-w-[500px] sm:min-w-[600px] bg-white rounded shadow-sm border border-gray-300 table-fixed">';
-    html += '<colgroup><col style="width: 2.5rem;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"><col style="width: 19.5%;"></colgroup>';
+    // 【スマホ対応】横スクロールなしで1画面に収まるように table-layout: fixed と min-width を調整
+    let html = '<table class="w-full border-collapse bg-white rounded shadow-sm border border-gray-300 table-fixed" style="table-layout: fixed; min-width: 100%;">';
+    html += '<colgroup><col style="width: 2rem;" class="sm:w-[2.5rem]"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"></colgroup>';
     html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 bg-gray-50 sticky-col z-10"></th>';
     workDays.forEach(day => {
-        // 祝日の取得と表示
         const holidayName = getHoliday(day);
         const dColor = holidayName ? 'text-red-500' : 'text-gray-500';
         const wColor = holidayName ? 'text-red-500' : 'text-[#4a5f73]';
         const bgClass = holidayName ? 'bg-red-50/30' : 'bg-gray-50';
 
-        html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgClass} relative">
-            ${holidayName ? `<div class="absolute top-0 left-0 w-full text-[7px] text-red-400/90 truncate font-bold px-0.5">${holidayName}</div>` : ''}
-            <div class="text-[8px] sm:text-[9px] ${dColor} ${holidayName ? 'mt-2' : ''}">${day.getMonth()+1}/${day.getDate()}</div>
-            <div class="text-[10px] sm:text-xs ${wColor}">${DAYS_STR[day.getDay()]}</div>
+        html += `<th class="border-b border-r border-gray-300 p-0 sm:p-0.5 text-center font-bold ${bgClass} relative">
+            ${holidayName ? `<div class="absolute top-0 left-0 w-full text-[6px] sm:text-[7px] text-red-400/90 truncate font-bold px-0.5">${holidayName}</div>` : ''}
+            <div class="text-[8px] sm:text-[9px] ${dColor} ${holidayName ? 'mt-1.5 sm:mt-2' : ''}">${day.getMonth()+1}/${day.getDate()}</div>
+            <div class="text-[9px] sm:text-xs ${wColor}">${DAYS_STR[day.getDay()]}</div>
         </th>`;
     });
-    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
+    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0 text-center text-[7px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
     
     const ttOrder = ['normal', 'short', 'special', 'test'];
 
@@ -884,14 +787,14 @@ export const renderWeeklyPlanView = () => {
         });
         optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
 
-        html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+        html += `<td class="border-b border-r border-gray-200 p-0 sm:p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[7px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
     });
-    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0 text-center text-[7px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
     workDays.forEach(day => {
         const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {}; const ttType = getTtType(dStr);
         let maxLessons = 0; if (ttType !== 'none') maxLessons = appState.globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
-        html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+        html += `<td class="border-b border-r border-gray-200 p-0 sm:p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[7px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
             <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
             ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
         </select></td>`;
@@ -916,11 +819,11 @@ export const renderWeeklyPlanView = () => {
     rowsToRender.push({ type: 'special', id: 'sp_after_school', name: '放' });
 
     for (let r of rowsToRender) {
-        const rowClass = r.type === 'special' ? 'h-8 sm:h-10' : 'h-16 sm:h-20';
+        const rowClass = r.type === 'special' ? 'h-7 sm:h-10' : 'h-14 sm:h-20';
         html += `<tr class="${rowClass}">`;
         
         if (r.type === 'special') {
-            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
+            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 7px;" class="sm:text-[8px]">${r.name}</span></div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
                 const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
@@ -933,30 +836,30 @@ export const renderWeeklyPlanView = () => {
                 
                 if (isCut) {
                     bgClass = "bg-gray-100 text-gray-400";
-                    btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
+                    btnContent = `<div class="font-bold text-[8px] sm:text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban sm:mr-1"></i><span class="hidden sm:inline">カット</span></div>`;
                     borderClass = "border border-dashed border-gray-300";
                 } else if (memo) {
                     bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
                     borderClass = "border border-yellow-200 shadow-sm";
-                    btnContent = `<div class="text-[9px] sm:text-[10px] truncate w-full px-1 whitespace-normal leading-tight">${memo}</div>`;
+                    btnContent = `<div class="text-[7px] sm:text-[10px] truncate w-full px-0.5 sm:px-1 whitespace-normal leading-tight">${memo}</div>`;
                 } else {
-                    btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
+                    btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus sm:mr-0.5"></i></div>`;
                 }
                 
                 html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button></div></td>`;
             }
         } else {
             const pIdx = r.index;
-            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
+            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[8px] sm:text-[10px] sticky-col z-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
             
             for (let dIdx = 0; dIdx < 5; dIdx++) {
                 const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = appState.allPlanners[dStr] || {};
                 const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
-                // 授業数カットで空きになっている部分を灰色の背景・×印にして列幅を保持
+                // カットされている部分
                 if (!p || pIdx >= lessonCount) { 
-                    html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative bg-gray-100"><div class="absolute inset-[1px]"><div class="relative w-full h-full rounded-sm flex flex-col justify-center items-center bg-gray-100 text-gray-400 border border-dashed border-gray-300 opacity-70"><i class="fas fa-times text-gray-300 text-xs"></i></div></div></td>`; 
+                    html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative bg-gray-100"><div class="absolute inset-[1px]"><div class="relative w-full h-full rounded-sm flex flex-col justify-center items-center bg-gray-100 text-gray-400 border border-dashed border-gray-300 opacity-70"><i class="fas fa-times text-gray-300 text-[10px] sm:text-xs"></i></div></div></td>`; 
                     continue; 
                 }
 
@@ -990,7 +893,9 @@ export const renderWeeklyPlanView = () => {
 
                 const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                 const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-transparent text-gray-400";
-                const labelHtml = `<div class="absolute top-0 right-0 px-1 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-bl ${isChanged ? 'border-l border-b ' + labelColorClass : labelColorClass} z-10 leading-none">(${DAYS_STR[sourceDay]}${sourcePeriod})</div>`;
+                
+                // 【スマホ表示改善】「(月1)」などの右上のラベルはスマホでは非表示にしてスペースを節約する
+                const labelHtml = `<div class="absolute top-0 right-0 px-0.5 sm:px-1 py-0.5 text-[6px] sm:text-[9px] font-bold rounded-bl ${isChanged ? 'border-l border-b ' + labelColorClass : labelColorClass} z-10 leading-none hidden sm:block">(${DAYS_STR[sourceDay]}${sourcePeriod})</div>`;
 
                 if (isExcluded) {
                     btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
@@ -998,25 +903,26 @@ export const renderWeeklyPlanView = () => {
                     const colorClass = getClassColorClass(displayCls, displaySub);
                     bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                     const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
-                    let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[7px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
+                    let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[6px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
                     let mainContent = '', techCountHtml = '';
 
+                    // 【スマホ表示改善】文字サイズを落とし、行間を詰める
                     if (displayCls || displaySub) {
-                        mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
+                        mainContent = `<div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight">${displayCls}</div><div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight mt-0.5 sm:mt-0">${displaySub}</div>${memoHtml}`;
                         if (displaySub.trim() === '技術') {
                             const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                             let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                            techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
+                            techCountHtml = `<div class="absolute bottom-0 right-0 px-1 py-0.5 text-[7px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                         }
                     } else if (displayMemo) {
-                        mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
-                    } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
+                        mainContent = `<div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight whitespace-normal">${displayMemo}</div>`;
+                    } else { mainContent = `<div class="text-[7px] sm:text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
 
-                    btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
+                    btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-1 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
                     borderClass = "border border-[#4a5f73]/50 shadow-sm";
                 } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
-                html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button></div></td>`;
+                html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button type="button" class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button></div></td>`;
             }
         }
         html += `</tr>`;
@@ -1223,7 +1129,6 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
         const modalTitle = document.getElementById('wp-modal-title');
         const memoInput = document.getElementById('wp-modal-memo');
 
-        // エラー防止のための安全チェック
         if (!classInputArea || !deleteBtn || !resetBtn || !modalTitle || !memoInput) return;
 
         const dObj = new Date(dateStr);
@@ -1234,7 +1139,6 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
         const data = appState.allPlanners[dateStr] || {};
         const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
 
-        // ベース（My時間割）の情報を取得
         const baseTt = getBaseTimetableForDate(dObj) || {};
         let baseCls = "", baseSub = "", baseMemo = "";
         let bData = null;
@@ -1295,7 +1199,6 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             memoInput.value = initialMemo;
             memoInput.placeholder = "単元名や連絡事項など...";
 
-            // ショートカットボタンの生成（HTMLに要素がなくても動的に追加して確実に反映させる）
             let shortcutsContainer = document.getElementById('wp-modal-class-shortcuts');
             if (!shortcutsContainer && clsInput) {
                 shortcutsContainer = document.createElement('div');
@@ -1308,7 +1211,6 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
                 shortcutsContainer.innerHTML = '';
                 shortcutsContainer.classList.add('hidden');
                 
-                // ベースクラス名（My時間割）に「/」が含まれていれば分割してボタン化
                 if (baseCls && baseCls.includes('/')) {
                     const parts = baseCls.split('/');
                     let btnHtml = '';
@@ -1325,8 +1227,8 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
                 }
             }
 
-            if (typeof window.renderWpModalButtons === 'function') window.renderWpModalButtons();
-            if (typeof window.updateWpModalBaseStatus === 'function') window.updateWpModalBaseStatus();
+            renderWpModalButtons();
+            updateWpModalBaseStatus();
         }
 
         const modalEl = document.getElementById('weekly-plan-modal');
@@ -1338,3 +1240,32 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
         console.error("ポップアップの表示中にエラーが発生しました:", e);
     }
 };
+
+// ==========================================
+// 【重要】HTMLから呼び出せるように確実にグローバルに登録する
+// ==========================================
+if (typeof window !== 'undefined') {
+    window.changeMonthView = changeMonthView;
+    window.renderMonthView = renderMonthView;
+    window.changeWeekView = changeWeekView;
+    window.renderWeekView = renderWeekView;
+    window.renderAgendaView = renderAgendaView;
+    window.changeWeeklyPlanView = changeWeeklyPlanView;
+    window.renderWeeklyPlanView = renderWeeklyPlanView;
+    window.updateWeeklyPlanPeriods = updateWeeklyPlanPeriods;
+    window.saveWeeklyPlan = saveWeeklyPlan;
+    
+    // 週案簿ポップアップ関連
+    window.openWeeklyPlanModal = openWeeklyPlanModal;
+    window.closeWeeklyPlanModal = closeWeeklyPlanModal;
+    window.saveWeeklyPlanModal = saveWeeklyPlanModal;
+    window.deleteWeeklyPlanModal = deleteWeeklyPlanModal;
+    window.resetWeeklyPlanModal = resetWeeklyPlanModal;
+    window.toggleCutWeeklyPlanModal = toggleCutWeeklyPlanModal;
+    window.renderWpModalButtons = renderWpModalButtons;
+    window.changeWpModalSource = changeWpModalSource;
+    window.updateWpModalBaseStatus = updateWpModalBaseStatus;
+
+    window.openMonthBottomSheet = openMonthBottomSheet;
+    window.closeMonthBottomSheet = closeMonthBottomSheet;
+}
