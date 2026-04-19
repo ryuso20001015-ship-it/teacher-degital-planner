@@ -880,7 +880,7 @@ window.removeSettingsPattern = removeSettingsPattern;
 window.addTtPeriod = addTtPeriod;
 window.removeTtPeriod = removeTtPeriod;
 
-// メモ関連
+// メモ関連（Memoモジュールの関数を紐付け）
 window.toggleMemoSidebar = Memo.toggleMemoSidebar;
 window.selectMemoFilter = Memo.selectMemoFilter;
 window.changeMemoSort = Memo.changeMemoSort;
@@ -909,6 +909,7 @@ import {
     toggleCutWeeklyPlanModal, renderWpModalButtons, changeWpModalSource, updateWpModalBaseStatus
 } from './calendar.js';
 
+window.openWeeklyPlanModal = openWeeklyPlanModal;
 window.closeWeeklyPlanModal = closeWeeklyPlanModal;
 window.saveWeeklyPlanModal = saveWeeklyPlanModal;
 window.deleteWeeklyPlanModal = deleteWeeklyPlanModal;
