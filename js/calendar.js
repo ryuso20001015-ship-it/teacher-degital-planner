@@ -1338,32 +1338,3 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
         console.error("ポップアップの表示中にエラーが発生しました:", e);
     }
 };
-
-// ==========================================
-// 全ての関数を window に明示的に紐付けてエラーを防止する
-// ==========================================
-if (typeof window !== 'undefined') {
-    window.changeMonthView = changeMonthView;
-    window.renderMonthView = renderMonthView;
-    window.changeWeekView = changeWeekView;
-    window.renderWeekView = renderWeekView;
-    window.renderAgendaView = renderAgendaView;
-    window.changeWeeklyPlanView = changeWeeklyPlanView;
-    window.renderWeeklyPlanView = renderWeeklyPlanView;
-    window.updateWeeklyPlanPeriods = updateWeeklyPlanPeriods;
-    window.saveWeeklyPlan = saveWeeklyPlan;
-    
-    // 週案簿ポップアップ関連
-    window.openWeeklyPlanModal = openWeeklyPlanModal;
-    window.closeWeeklyPlanModal = closeWeeklyPlanModal;
-    window.saveWeeklyPlanModal = saveWeeklyPlanModal;
-    window.deleteWeeklyPlanModal = deleteWeeklyPlanModal;
-    window.resetWeeklyPlanModal = resetWeeklyPlanModal;
-    window.toggleCutWeeklyPlanModal = toggleCutWeeklyPlanModal;
-    window.renderWpModalButtons = renderWpModalButtons;
-    window.changeWpModalSource = changeWpModalSource;
-    window.updateWpModalBaseStatus = updateWpModalBaseStatus;
-
-    window.openMonthBottomSheet = openMonthBottomSheet;
-    window.closeMonthBottomSheet = closeMonthBottomSheet;
-}

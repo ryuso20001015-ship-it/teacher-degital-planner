@@ -902,19 +902,3 @@ window.setMemoTool = Memo.setMemoTool;
 window.setMemoColor = Memo.setMemoColor;
 window.setMemoLineWidth = Memo.setMemoLineWidth;
 window.clearMemoCanvas = Memo.clearMemoCanvas;
-
-// 週案簿モーダル（calendar.jsから紐付け）
-import { 
-    closeWeeklyPlanModal, saveWeeklyPlanModal, deleteWeeklyPlanModal, resetWeeklyPlanModal,
-    toggleCutWeeklyPlanModal, renderWpModalButtons, changeWpModalSource, updateWpModalBaseStatus
-} from './calendar.js';
-
-window.openWeeklyPlanModal = openWeeklyPlanModal;
-window.closeWeeklyPlanModal = closeWeeklyPlanModal;
-window.saveWeeklyPlanModal = saveWeeklyPlanModal;
-window.deleteWeeklyPlanModal = deleteWeeklyPlanModal;
-window.resetWeeklyPlanModal = resetWeeklyPlanModal;
-window.toggleCutWeeklyPlanModal = toggleCutWeeklyPlanModal;
-window.renderWpModalButtons = renderWpModalButtons;
-window.changeWpModalSource = changeWpModalSource;
-window.updateWpModalBaseStatus = updateWpModalBaseStatus;
