@@ -8,6 +8,7 @@ export const getFormatDateStr = (date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
+// 祝日名を取得する計算式
 export const getHolidayName = (dObj) => {
     const y = dObj.getFullYear();
     const m = dObj.getMonth() + 1;
@@ -144,36 +145,22 @@ export const getTtType = (dStr) => {
     const data = appState.allPlanners[dStr] || {};
     if (data.timetableType !== undefined) return data.timetableType;
     if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
-    
     const dObj = new Date(dStr);
     if (isHoliday(dObj)) return 'none';
-    
     return 'normal';
 };
 
 export const getBaseTimetableForDate = (dObj) => {
     if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) return {1:{},2:{},3:{},4:{},5:{}};
     const targetTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+
     const matchedPattern = appState.globalSettings.baseTimetablePatterns.find(p => {
         let sDate = p.startDate; if (!sDate && p.startMonth) sDate = p.startMonth + "-01";
         let eDate = p.endDate; if (!eDate && p.endMonth) eDate = p.endMonth + "-31";
-        
         let afterStart = true;
-        if (sDate) {
-            const parts = sDate.split('-');
-            if (parts.length === 3) {
-                const sTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime();
-                afterStart = targetTime >= sTime;
-            }
-        }
+        if (sDate) { const parts = sDate.split('-'); if (parts.length === 3) { const sTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime(); afterStart = targetTime >= sTime; } }
         let beforeEnd = true;
-        if (eDate) {
-            const parts = eDate.split('-');
-            if (parts.length === 3) {
-                const eTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime();
-                beforeEnd = targetTime <= eTime;
-            }
-        }
+        if (eDate) { const parts = eDate.split('-'); if (parts.length === 3) { const eTime = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]).getTime(); beforeEnd = targetTime <= eTime; } }
         return afterStart && beforeEnd;
     });
     if (matchedPattern && matchedPattern.data) return matchedPattern.data;
@@ -200,41 +187,137 @@ export const getPeriodClass = (dateStr, period, dObj) => {
         if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
     } else {
         let bData = null;
-        if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
-            bData = baseTt[dObj.getDay()][period.name];
-        } else {
-            const fallbackName = `${sourcePeriod}限`;
-            if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][fallbackName]) {
-                bData = baseTt[dObj.getDay()][fallbackName];
-            }
-        }
-        if (bData) {
-            cls = bData.cls || ""; sub = bData.sub || ""; memo = bData.memo || ""; isBase = true;
-        }
+        if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) bData = baseTt[dObj.getDay()][period.name];
+        else { const fallbackName = `${sourcePeriod}限`; if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][fallbackName]) bData = baseTt[dObj.getDay()][fallbackName]; }
+        if (bData) { cls = bData.cls || ""; sub = bData.sub || ""; memo = bData.memo || ""; isBase = true; }
     }
     if (!cls && !sub && !memo) return null;
     return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
 };
 
 // ==========================================
+// ボトムシート（月カレンダーセルクリック時）
+// ==========================================
+export const openMonthBottomSheet = (dStr, defaultHour = null) => {
+    window.mbsTargetDate = dStr; window.mbsDefaultHour = defaultHour;
+    const dObj = new Date(dStr);
+    document.getElementById('mbs-date-title').textContent = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
+
+    const data = appState.allPlanners[dStr] || {};
+    const isHoli = isHoliday(dObj);
+    const ttType = getTtType(dStr);
+    const ttPeriods = ttType !== 'none' ? appState.globalSettings.timetables[ttType].periods : [];
+
+    let schedHtml = '', taskHtml = '';
+    
+    if (!isHoli && ttType !== 'none') {
+        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+        const displayPeriods = ttPeriods.slice(0, lessonCount);
+
+        displayPeriods.forEach(p => {
+            if(p.id === 'p_allday' || p.isAllDay) return;
+            const cData = getPeriodClass(dStr, p, dObj);
+            if (cData) { 
+                const colorClass = getClassColorClass(cData.cls, cData.sub);
+                let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
+                const safeName = (p.name || '').replace(/'/g, "\\'");
+                
+                // スマホ時は(1限)を非表示
+                schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${safeName}')">
+                    <div class="flex items-start justify-between gap-2 w-full">
+                        <span class="break-words font-bold flex-1">${titleHtml}</span>
+                        <span class="hidden sm:inline font-bold whitespace-nowrap shrink-0 opacity-80 mt-0.5 text-[10px]">(${p.name})</span>
+                    </div>
+                    ${memoHtml}
+                </div>`; 
+            }
+        });
+    }
+    
+    let eventsForDay = [];
+    for (const dateKey in appState.allPlanners) {
+        const events = appState.allPlanners[dateKey].events || [];
+        events.forEach(ev => {
+            const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
+            if (dStr >= sDate && dStr <= eDate) eventsForDay.push({ ...ev, originalDateKey: dateKey });
+        });
+    }
+
+    const uniqueEvents = []; const seenIds = new Set();
+    eventsForDay.forEach(ev => { if (!seenIds.has(ev.id)) { seenIds.add(ev.id); uniqueEvents.push(ev); } });
+
+    uniqueEvents.forEach(ev => {
+        let label = "", isMultiDay = false;
+        if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
+            const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
+            label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
+        } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
+
+        let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
+        const memoPreview = ev.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-black/10 pt-1.5 w-full">${ev.memo}</div>` : '';
+
+        schedHtml += `
+            <div class="text-xs ${badgeClass} px-2.5 py-2 rounded flex flex-col cursor-pointer transition hover:shadow-md" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
+                <div class="flex items-start gap-2 w-full">
+                    <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
+                    <span class="break-words font-bold flex-1">${ev.title}</span>
+                </div>
+                ${memoPreview}
+            </div>`; 
+    });
+
+    if (data.reminders) {
+        data.reminders.forEach(t => { 
+            const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+            const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
+            const memoHtml = t.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200 pt-1.5 w-full ml-5">${t.memo}</div>` : '';
+            taskHtml += `<div class="text-xs flex flex-col px-2.5 py-2 ${style} cursor-pointer bg-white shadow-sm hover:shadow-md hover:bg-gray-50 border border-gray-200 rounded transition font-bold" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
+                <div class="flex items-start gap-2 w-full">
+                    <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5 text-sm" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
+                    <span class="break-words flex-1 mt-0.5">${t.title}</span>
+                </div>
+                ${memoHtml}
+            </div>`; 
+        });
+    }
+
+    let html = '';
+    if (schedHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="far fa-calendar-alt"></i> 予定・授業</div><div class="space-y-2 mb-4">${schedHtml}</div>`;
+    if (taskHtml) html += `<div class="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1 border-b border-gray-200 pb-1"><i class="fas fa-check-square"></i> タスク</div><div class="space-y-2">${taskHtml}</div>`;
+    if (!html) html = '<div class="text-center py-4 text-gray-400 text-xs font-bold">予定・タスクはありません</div>';
+    
+    document.getElementById('mbs-content').innerHTML = html;
+    document.getElementById('mbs-add-btn').onclick = () => { 
+        let defaultTime = null; let isAllDay = true;
+        if (window.mbsDefaultHour !== null && window.mbsDefaultHour !== 'allday') { defaultTime = `${String(window.mbsDefaultHour).padStart(2, '0')}:00`; isAllDay = false; }
+        window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); closeMonthBottomSheet(); 
+    };
+    document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
+};
+
+export const closeMonthBottomSheet = () => { 
+    const sheet = document.getElementById('month-bottom-sheet'); 
+    if (sheet) sheet.classList.add('translate-y-full'); 
+};
+
+
+// ==========================================
 // 月カレンダー（Month View）
 // ==========================================
 export const changeMonthView = (offset) => { 
-    appState.calendarDisplayDate.setMonth(appState.calendarDisplayDate.getMonth() + offset); 
-    renderMonthView(); 
+    appState.calendarDisplayDate.setMonth(appState.calendarDisplayDate.getMonth() + offset); renderMonthView(); 
 };
 
 export const renderMonthView = () => {
-    const year = appState.calendarDisplayDate.getFullYear();
-    const month = appState.calendarDisplayDate.getMonth();
+    const year = appState.calendarDisplayDate.getFullYear(); const month = appState.calendarDisplayDate.getMonth();
     document.getElementById('month-view-title').textContent = `${year}年 ${month + 1}月`;
     
     const startDay = new Date(year, month, 1).getDay(); const startOffset = startDay === 0 ? 6 : startDay - 1; 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const grid = document.getElementById('month-view-grid');
     
-    const totalWeeks = Math.ceil((daysInMonth + startOffset) / 7);
-    const totalCells = totalWeeks * 7;
+    const totalWeeks = Math.ceil((daysInMonth + startOffset) / 7); const totalCells = totalWeeks * 7;
     grid.style.gridTemplateRows = `repeat(${totalWeeks}, minmax(0, 1fr))`;
     
     const searchWord = document.getElementById('month-search-input').value.toLowerCase();
@@ -306,7 +389,6 @@ export const renderMonthView = () => {
             });
         }
         (data.reminders || []).forEach(t => dayItems.push({ type: 'task', event: t }));
-
         dayItems.forEach(item => { let row = 0; while(allDaySlots[i][row] !== undefined) row++; allDaySlots[i][row] = item; });
     }
 
@@ -320,7 +402,6 @@ export const renderMonthView = () => {
         const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6 || holidayName) ? 'bg-indigo-50/50' : 'bg-white';
         const dateColorClass = isToday ? 'text-white' : (isCurrentMonth ? (dObj.getDay() === 0 || holidayName ? 'text-red-500' : (dObj.getDay() === 6 ? 'text-blue-500' : 'text-gray-800')) : 'text-gray-400');
         const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : dateColorClass;
-        
         let holidayHtml = holidayName && isCurrentMonth ? `<div class="absolute top-1 left-1 text-[8px] sm:text-[9px] font-bold text-red-400/90 truncate max-w-[65%] pointer-events-none">${holidayName}</div>` : '';
         
         let cellContentHtml = ''; let overCount = 0;
@@ -329,9 +410,8 @@ export const renderMonthView = () => {
             const slot = allDaySlots[i][r]; if (!slot) continue;
             const ev = slot.event; let shouldSkip = false;
 
-            if (slot.type === 'class') {
-                if (filterCat === 'work_club' || filterCat === 'private') shouldSkip = true;
-            } else {
+            if (slot.type === 'class') { if (filterCat === 'work_club' || filterCat === 'private') shouldSkip = true; } 
+            else {
                 const cat = ev.category || 'work'; 
                 if (filterCat === 'work_club' && cat !== 'work' && cat !== 'club') shouldSkip = true;
                 if (filterCat === 'private' && cat !== 'private') shouldSkip = true;
@@ -359,15 +439,11 @@ export const renderMonthView = () => {
             } else if (slot.type === 'class') {
                 const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
                 let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                const safeName = p.name ? p.name.replace(/'/g, "\\'") : '';
                 
-                // 【スマホ表示改善】「1時間目」等の文字を短縮し、PCでは「(1限)」として右端に表示する
-                const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
-                
-                cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center justify-between cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
-                    <div class="flex items-center truncate min-w-0">
-                        <span class="sm:hidden font-bold opacity-70 shrink-0 mr-0.5 text-[7px]">${shortPeriodName}</span>
-                        <span class="font-bold truncate text-[8px] sm:text-[9px]">${titleHtml}</span>
-                    </div>
+                // スマホ時は (1限) などを隠し、テキストサイズを小さくする
+                cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center justify-between cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${safeName}')">
+                    <span class="font-bold truncate text-[8px] sm:text-[9px]">${titleHtml}</span>
                     <span class="hidden sm:inline font-bold opacity-70 shrink-0 ml-0.5 text-[7px]">(${p.name})</span>
                 </div>`;
             } else if (slot.type === 'task') {
@@ -571,16 +647,11 @@ export const renderWeekView = () => {
             if (item.isClass) {
                 const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
                 let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                
-                // 【スマホ表示改善】
-                const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
+                const safeName = p.name ? p.name.replace(/'/g, "\\'") : '';
                 
                 colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')">
                     <div class="flex items-center justify-between gap-0.5 w-full truncate pointer-events-none">
-                        <div class="flex items-center truncate min-w-0">
-                            <span class="sm:hidden font-bold opacity-70 shrink-0 mr-0.5 text-[7px]">${shortPeriodName}</span>
-                            <span class="font-bold text-[8px] sm:text-[9px] truncate">${titleHtml}</span>
-                        </div>
+                        <span class="font-bold text-[8px] sm:text-[9px] truncate">${titleHtml}</span>
                         <span class="hidden sm:inline font-bold text-[7px] opacity-80 shrink-0 ml-0.5">(${p.name || ''})</span>
                     </div>
                 </div>`;
@@ -625,16 +696,9 @@ export const renderAgendaView = () => {
                 if (cData) { 
                     let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                     let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
-                    
-                    // 【スマホ表示改善】
-                    const shortPeriodName = p.name ? p.name.replace(/[^0-9]/g, '') : '';
-                    
                     schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
                         <div class="flex items-start justify-between gap-1.5 w-full">
-                            <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                                <span class="sm:hidden font-bold w-auto whitespace-nowrap shrink-0 opacity-80 text-[10px]">${shortPeriodName}</span>
-                                <span class="font-bold break-words truncate">${titleHtml}</span>
-                            </div>
+                            <span class="font-bold break-words flex-1">${titleHtml}</span>
                             <span class="hidden sm:inline font-bold whitespace-nowrap shrink-0 opacity-80 mt-0.5 text-[9px]">(${p.name})</span>
                         </div>
                         ${memoHtml}
@@ -750,9 +814,9 @@ export const renderWeeklyPlanView = () => {
     for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
     const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-    // 【スマホ対応】横スクロールなしで1画面に収まるように table-layout: fixed と min-width を調整
-    let html = '<table class="w-full border-collapse bg-white rounded shadow-sm border border-gray-300 table-fixed" style="table-layout: fixed; min-width: 100%;">';
-    html += '<colgroup><col style="width: 2rem;" class="sm:w-[2.5rem]"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"><col style="width: 20%;"></colgroup>';
+    // 【スマホ対応】横スクロールなしで1画面に収まるように table-fixed と min-w-full を設定
+    let html = '<table class="w-full border-collapse min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
+    html += '<colgroup><col class="w-6 sm:w-10"><col style="width: 18.8%;"><col style="width: 18.8%;"><col style="width: 18.8%;"><col style="width: 18.8%;"><col style="width: 18.8%;"></colgroup>';
     html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 bg-gray-50 sticky-col z-10"></th>';
     workDays.forEach(day => {
         const holidayName = getHoliday(day);
@@ -819,7 +883,7 @@ export const renderWeeklyPlanView = () => {
     rowsToRender.push({ type: 'special', id: 'sp_after_school', name: '放' });
 
     for (let r of rowsToRender) {
-        const rowClass = r.type === 'special' ? 'h-7 sm:h-10' : 'h-14 sm:h-20';
+        const rowClass = r.type === 'special' ? 'h-7 sm:h-10' : 'h-12 sm:h-20';
         html += `<tr class="${rowClass}">`;
         
         if (r.type === 'special') {
@@ -846,7 +910,8 @@ export const renderWeeklyPlanView = () => {
                     btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus sm:mr-0.5"></i></div>`;
                 }
                 
-                html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button></div></td>`;
+                const safeName = r.name ? r.name.replace(/'/g, "\\'") : '';
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center align-middle relative"><button type="button" class="w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${r.id}', '${safeName}')">${btnContent}</button></td>`;
             }
         } else {
             const pIdx = r.index;
@@ -859,7 +924,7 @@ export const renderWeeklyPlanView = () => {
 
                 // カットされている部分
                 if (!p || pIdx >= lessonCount) { 
-                    html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative bg-gray-100"><div class="absolute inset-[1px]"><div class="relative w-full h-full rounded-sm flex flex-col justify-center items-center bg-gray-100 text-gray-400 border border-dashed border-gray-300 opacity-70"><i class="fas fa-times text-gray-300 text-[10px] sm:text-xs"></i></div></div></td>`; 
+                    html += `<td class="border-b border-r border-gray-200 p-0.5 text-center align-middle relative bg-gray-100"><div class="w-full h-full rounded-sm flex flex-col justify-center items-center bg-gray-100 text-gray-400 border border-dashed border-gray-300 opacity-70"><i class="fas fa-times text-gray-300 text-[10px] sm:text-xs"></i></div></td>`; 
                     continue; 
                 }
 
@@ -903,26 +968,27 @@ export const renderWeeklyPlanView = () => {
                     const colorClass = getClassColorClass(displayCls, displaySub);
                     bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                     const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
-                    let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[6px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
+                    let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[6px] sm:text-[8px] opacity-70 truncate px-0 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
                     let mainContent = '', techCountHtml = '';
 
-                    // 【スマホ表示改善】文字サイズを落とし、行間を詰める
+                    // 【スマホ表示改善】文字サイズを落とし、行間を詰める、はみ出しを防ぐ
                     if (displayCls || displaySub) {
-                        mainContent = `<div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight">${displayCls}</div><div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight mt-0.5 sm:mt-0">${displaySub}</div>${memoHtml}`;
+                        mainContent = `<div class="font-bold text-[7px] sm:text-xs ${textColor} truncate px-0 w-full leading-tight sm:leading-tight">${displayCls}</div><div class="font-bold text-[7px] sm:text-xs ${textColor} truncate px-0 w-full leading-tight sm:leading-tight mt-0.5 sm:mt-0">${displaySub}</div>${memoHtml}`;
                         if (displaySub.trim() === '技術') {
                             const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                             let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                            techCountHtml = `<div class="absolute bottom-0 right-0 px-1 py-0.5 text-[7px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
+                            techCountHtml = `<div class="absolute bottom-0 right-0 px-0.5 py-0.5 text-[6px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                         }
                     } else if (displayMemo) {
-                        mainContent = `<div class="font-bold text-[8px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-none sm:leading-tight whitespace-normal">${displayMemo}</div>`;
-                    } else { mainContent = `<div class="text-[7px] sm:text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
+                        mainContent = `<div class="font-bold text-[7px] sm:text-xs ${textColor} line-clamp-2 px-0 w-full leading-tight sm:leading-tight whitespace-normal">${displayMemo}</div>`;
+                    } else { mainContent = `<div class="text-[6px] sm:text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
 
-                    btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-1 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
+                    btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-0.5 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
                     borderClass = "border border-[#4a5f73]/50 shadow-sm";
                 } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
-                html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button type="button" class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button></div></td>`;
+                const safeName = p.name ? p.name.replace(/'/g, "\\'") : '';
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center align-middle relative h-12 sm:h-20"><button type="button" class="w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${safeName}')">${btnContent}</button></td>`;
             }
         }
         html += `</tr>`;
@@ -1057,9 +1123,10 @@ export const toggleCutWeeklyPlanModal = () => {
     if (isCurrentlyCut) {
         delete appState.allPlanners[targetDateStr].classes[targetPeriodId]; 
     } else {
+        const memoInput = document.getElementById('wp-modal-memo');
         appState.allPlanners[targetDateStr].classes[targetPeriodId] = {
             isCut: true,
-            memo: document.getElementById('wp-modal-memo') ? document.getElementById('wp-modal-memo').value.trim() : ""
+            memo: memoInput ? memoInput.value.trim() : ""
         };
     }
 
@@ -1129,7 +1196,10 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
         const modalTitle = document.getElementById('wp-modal-title');
         const memoInput = document.getElementById('wp-modal-memo');
 
-        if (!classInputArea || !deleteBtn || !resetBtn || !modalTitle || !memoInput) return;
+        if (!classInputArea || !deleteBtn || !resetBtn || !modalTitle || !memoInput) {
+            console.error("ポップアップに必要なHTML要素が見つかりません。index.htmlが最新か確認してください。");
+            return;
+        }
 
         const dObj = new Date(dateStr);
         const dayOfWeek = dObj.getDay(); 
@@ -1163,7 +1233,8 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             if (timeConfigEl) timeConfigEl.classList.add('hidden');
             
             deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
-            deleteBtn.onclick = () => { if (typeof window.toggleCutWeeklyPlanModal === 'function') window.toggleCutWeeklyPlanModal(); };
+            // 【修正】HTML側のonclickを動的に書き換えるのではなく、JS側で確実に関数を呼び出す
+            deleteBtn.setAttribute('onclick', 'window.toggleCutWeeklyPlanModal()');
             deleteBtn.className = "bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
             
             resetBtn.classList.add('hidden');
@@ -1178,7 +1249,8 @@ export const openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             if (timeConfigEl) timeConfigEl.classList.remove('hidden');
             
             deleteBtn.innerHTML = '空きコマ';
-            deleteBtn.onclick = () => { if (typeof window.deleteWeeklyPlanModal === 'function') window.deleteWeeklyPlanModal(); };
+            // 【修正】HTML側のonclickを動的に書き換えるのではなく、JS側で確実に関数を呼び出す
+            deleteBtn.setAttribute('onclick', 'window.deleteWeeklyPlanModal()');
             deleteBtn.className = "bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
             resetBtn.classList.remove('hidden');
 
@@ -1255,7 +1327,7 @@ if (typeof window !== 'undefined') {
     window.updateWeeklyPlanPeriods = updateWeeklyPlanPeriods;
     window.saveWeeklyPlan = saveWeeklyPlan;
     
-    // 週案簿ポップアップ関連
+    // 週案簿ポップアップ関連の関数を「すべて」確実に登録
     window.openWeeklyPlanModal = openWeeklyPlanModal;
     window.closeWeeklyPlanModal = closeWeeklyPlanModal;
     window.saveWeeklyPlanModal = saveWeeklyPlanModal;
