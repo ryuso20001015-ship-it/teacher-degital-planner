@@ -30,23 +30,16 @@ export const MEMO_CATEGORIES = [
     { id: 'other', name: 'その他', icon: 'fas fa-folder', color: 'text-gray-500' }
 ];
 
-
 // --- 状態管理（アプリ全体で共有する変数） ---
-// ※ 他のファイルから書き換えやすいように、一つのオブジェクトにまとめます
 export const appState = {
-    // データ群
     allPlanners: {}, 
     globalSettings: {},
     allMemos: [],
     allFolders: [],
-    
-    // メモの状態
     currentMemoFilter: 'all', 
     currentMemoFolderId: null, 
     editingMemoId: null,
     currentMemoSort: 'updatedAt_desc',
-    
-    // 表示とUIの状態
     tempSettings: null, 
     currentView: 'month', 
     currentDateObj: new Date(), 
@@ -57,22 +50,34 @@ export const appState = {
     editTarget: null, 
     currentModalMode: 'schedule',
     searchedItemId: null,
-    
-    // 週案簿用モーダルの状態
     wpModalTarget: { targetDateStr: null, targetPeriodId: null, targetPeriodName: null },
     wpSelectedDay: 1,
     wpSelectedPeriod: 1,
-
-    // Undo / Redo 用
     undoStack: [],
     redoStack: []
 };
 
+// --- 設定データの初期化と強力な安全対策 ---
+let loadedSettings = null;
+try {
+    const lsData = safeGetItem('teacher_planner_settings');
+    if (lsData) {
+        loadedSettings = JSON.parse(lsData);
+    }
+} catch (e) {
+    console.error("設定の読み込みに失敗しました", e);
+}
 
-// --- 設定データの初期化 ---
-appState.globalSettings = JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES };
-appState.globalSettings.displayMode = 'auto';
+appState.globalSettings = loadedSettings || {};
 
+// ★ 対策1：timetablesが存在しない、または空の場合は必ずデフォルトをセットする
+if (!appState.globalSettings.timetables || Object.keys(appState.globalSettings.timetables).length === 0) {
+    appState.globalSettings.timetables = DEFAULT_TIMETABLES;
+}
+
+appState.globalSettings.displayMode = appState.globalSettings.displayMode || 'auto';
+
+// ★ 対策2：baseTimetablePatternsが存在しない場合も必ずデフォルトをセットする
 if (!appState.globalSettings.baseTimetablePatterns || appState.globalSettings.baseTimetablePatterns.length === 0) {
     const oldBaseTt = appState.globalSettings.baseTimetable || {1:{},2:{},3:{},4:{},5:{}};
     appState.globalSettings.baseTimetablePatterns = [
