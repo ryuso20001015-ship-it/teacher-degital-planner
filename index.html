@@ -286,7 +286,7 @@
 
     <!-- 授業用 モーダル (月・週・週案簿から共通で呼び出し) -->
     <div id="weekly-plan-modal" class="fixed inset-0 bg-black/40 z-[120] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeWeeklyPlanModal()">
-        <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-w-sm modal-animate relative border border-gray-200">
+        <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-sm modal-animate relative border border-gray-200">
             <h3 id="wp-modal-title" class="font-bold text-[#4a5f73] text-sm mb-3 text-center border-b border-gray-200 pb-1.5"><i class="fas fa-chalkboard-teacher mr-1"></i>授業予定</h3>
             <div id="wp-modal-time-config" class="mb-4">
                 <div class="flex items-center gap-1 mb-2">
@@ -418,6 +418,12 @@
                         <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
                             <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
+                        </div>
+                    </button>
+                    <button onclick="window.applyBaseTimetableToWeek()" class="ml-2 flex flex-col items-center justify-center bg-green-50 text-green-600 hover:bg-green-100 px-2 py-0.5 rounded transition border border-green-200 shadow-sm" title="今週にMy時間割を反映する">
+                        <span class="text-[9px] font-bold leading-none mb-0.5">時間割</span>
+                        <div class="flex items-center gap-1 leading-none">
+                            <i class="fas fa-magic text-[10px]"></i><span class="text-xs font-bold">反映</span>
                         </div>
                     </button>
                 </div>
@@ -709,7 +715,12 @@
         };
 
         let allPlanners = {}; 
-        let globalSettings = JSON.parse(safeGetItem('teacher_planner_settings')) || { timetables: DEFAULT_TIMETABLES };
+        let globalSettings = JSON.parse(safeGetItem('teacher_planner_settings'));
+        if (!globalSettings) {
+            globalSettings = { timetables: DEFAULT_TIMETABLES };
+        } else if (!globalSettings.timetables) {
+            globalSettings.timetables = DEFAULT_TIMETABLES;
+        }
         globalSettings.displayMode = 'auto';
         
         if (!globalSettings.baseTimetablePatterns || globalSettings.baseTimetablePatterns.length === 0) {
@@ -821,6 +832,7 @@
                     }
                     if (data.settings) {
                         globalSettings = data.settings;
+                        if (!globalSettings.timetables) globalSettings.timetables = DEFAULT_TIMETABLES;
                         safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
                         changed = true;
                         window.updateDisplayMode(); 
@@ -1737,21 +1749,35 @@
             return {1:{},2:{},3:{},4:{},5:{}};
         };
 
+        // My時間割（ベース時間割）と個別データ（空設定含む）を適切にフォールバックさせるように修正
         const getPeriodClass = (dateStr, period, dObj) => {
             const data = allPlanners[dateStr] || {};
             let cls = "", sub = "", memo = "", isBase = false;
             let sourceDay = dObj.getDay(), sourcePeriod = parseInt(period.name.replace('限','')) || 1;
             const baseTt = getBaseTimetableForDate(dObj);
 
+            let hasCustom = false;
+
             if (data.classes && data.classes[period.id]) {
                 const cData = data.classes[period.id];
-                if (cData.disabled) return null; 
-                cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
-                if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
-            } else if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
-                const baseData = baseTt[dObj.getDay()][period.name];
-                cls = baseData.cls; sub = baseData.sub; memo = baseData.memo || ""; isBase = true;
+                if (cData.disabled) return null; // 空きコマとして設定されている場合
+                
+                // 値が1つでも入力されていれば個別設定を採用
+                if (cData.cls || cData.sub || cData.memo) {
+                    cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
+                    if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                    hasCustom = true;
+                }
             }
+            
+            // 個別設定がない、または「空のまま保存された」場合は、My時間割をフォールバックとして使用
+            if (!hasCustom && baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
+                const baseData = baseTt[dObj.getDay()][period.name];
+                if (baseData) {
+                    cls = baseData.cls || ""; sub = baseData.sub || ""; memo = baseData.memo || ""; isBase = true;
+                }
+            }
+
             if (!cls && !sub && !memo) return null;
             return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
         };
@@ -1765,7 +1791,7 @@
             const data = allPlanners[dStr] || {};
             const isHoli = isHoliday(dObj);
             const ttType = getTtType(dStr);
-            const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+            const ttPeriods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods : [];
 
             let schedHtml = '', taskHtml = '';
             
@@ -2491,6 +2517,64 @@
 
         window.changeWeeklyPlanView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeeklyPlanView(); };
 
+        window.applyBaseTimetableToWeek = () => {
+            if (!confirm("今週の週案簿に、設定されているMy時間割の授業を一括で反映しますか？\n（すでに個別設定されている授業や空きコマ設定は上書きされず、未設定のコマのみ反映されます）")) return;
+            
+            window.saveStateToHistory();
+            const d = new Date(calendarDisplayDate);
+            const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
+            const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
+            
+            let isChanged = false;
+
+            for (let i = 0; i < 5; i++) {
+                const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
+                const dStr = getFormatDateStr(cur);
+                const dObj = new Date(dStr);
+                const ttType = getTtType(dStr);
+                
+                if (ttType === 'none' || isHoliday(dObj)) continue;
+
+                if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
+                if (!allPlanners[dStr].classes) allPlanners[dStr].classes = {};
+
+                const ttPeriods = globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay);
+                const lessonCount = allPlanners[dStr].lessonCount !== undefined ? allPlanners[dStr].lessonCount : ttPeriods.length;
+                const baseTt = getBaseTimetableForDate(dObj);
+
+                ttPeriods.slice(0, lessonCount).forEach((p, pIdx) => {
+                    const cData = allPlanners[dStr].classes[p.id];
+                    // すでにカスタム設定がある場合や、明示的にカット（disabled）されている場合はスキップ
+                    if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
+
+                    // My時間割にデータがあるか確認
+                    if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][p.name]) {
+                        const bData = baseTt[dObj.getDay()][p.name];
+                        if (bData && (bData.cls || bData.sub || bData.memo)) {
+                            allPlanners[dStr].classes[p.id] = {
+                                cls: bData.cls || "",
+                                sub: bData.sub || "",
+                                memo: bData.memo || "",
+                                sourceDay: dObj.getDay(),
+                                sourcePeriod: pIdx + 1,
+                                disabled: false
+                            };
+                            isChanged = true;
+                        }
+                    }
+                });
+            }
+
+            if (isChanged) {
+                safeSetItem(LS_KEY, JSON.stringify(allPlanners)); 
+                window.saveToFirebase(); 
+                window.renderCurrentView();
+                alert("My時間割のデータを今週の週案簿に反映しました。");
+            } else {
+                alert("反映するデータがありませんでした。（すでに設定済み、またはMy時間割が未設定です）");
+            }
+        };
+
         const renderWeeklyPlanView = () => {
             const d = new Date(calendarDisplayDate);
             const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
@@ -2611,8 +2695,10 @@
 
                         if (data.classes && data.classes[p.id]) {
                             const cData = data.classes[p.id];
-                            currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
-                            if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                            if (cData.cls || cData.sub || cData.memo) {
+                                currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
+                                if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                            }
                             if (cData.disabled) isExcluded = true;
                         }
 
