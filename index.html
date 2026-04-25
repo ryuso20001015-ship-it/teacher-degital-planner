@@ -98,7 +98,6 @@
         .mode-mobile header { padding: 0.25rem 0.5rem; }
         .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
         .mode-mobile .calendar-cell { min-height: 45px; }
-        .mode-mobile #month-search-input { width: 70px; font-size: 0.6rem; padding-left: 1.5rem; }
 
         /* スマホ用: 月カレンダー・週カレンダー等の文字サイズをさらに小さく */
         .mode-mobile .text-\\[8px\\] { font-size: 5px !important; }
@@ -352,28 +351,32 @@
         <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="month-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[90px] sm:w-[110px] text-center shrink-0">YYYY年 M月</h2>
-                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <h2 id="month-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider shrink-0 mr-1 sm:mr-2">YYYY年 M月</h2>
+                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm shrink-0" title="今日に戻る">
                         <span class="text-[8px] sm:text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
                             <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] sm:text-[9px] font-bold ml-0.5"></span>
                         </div>
                     </button>
-                    <div class="ml-1 sm:ml-3 flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-1 min-w-0" style="-webkit-overflow-scrolling: touch;">
-                        <button id="filter-btn-all" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-work_club" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('work_club')">仕事</button>
-                        <button id="filter-btn-jugyo" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-private" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('private')">プライベート</button>
-                    </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
+                
+                <div class="flex items-center gap-2 shrink-0 order-2 sm:order-none ml-auto sm:ml-0">
                     <div class="relative">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[70px] sm:w-[180px]">
+                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[90px] sm:w-[180px]">
                         <div id="month-search-results" class="absolute top-full left-auto right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
+                    </div>
+                </div>
+
+                <div class="w-full sm:w-auto flex-1 min-w-0 order-3 sm:order-none flex mt-1 sm:mt-0">
+                    <div class="flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar w-full" style="-webkit-overflow-scrolling: touch;">
+                        <button id="filter-btn-all" class="flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 whitespace-nowrap text-center" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-work_club" class="flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent whitespace-nowrap text-center" onclick="window.setCalendarFilter('work_club')">仕事</button>
+                        <button id="filter-btn-jugyo" class="flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent whitespace-nowrap text-center" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-private" class="flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent whitespace-nowrap text-center" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                 </div>
             </div>
@@ -389,9 +392,9 @@
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="week-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="week-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider shrink-0 mr-1 sm:mr-2">YYYY年 M月</h2>
+                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
                         <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
@@ -423,9 +426,9 @@
         <div id="view-weekly-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeWeeklyPlanView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="weekly-plan-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeWeeklyPlanView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="weekly-plan-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider shrink-0 mr-1 sm:mr-2">YYYY年 M月</h2>
+                    <button onclick="window.changeWeeklyPlanView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.changeWeeklyPlanView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
                         <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
@@ -756,9 +759,9 @@
                 const btn = document.getElementById(`filter-btn-${id}`);
                 if(btn) {
                     if(id === filter) {
-                        btn.className = 'px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0 whitespace-nowrap';
+                        btn.className = 'flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 whitespace-nowrap text-center';
                     } else {
-                        btn.className = 'px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap';
+                        btn.className = 'flex-1 sm:flex-none px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent whitespace-nowrap text-center';
                     }
                 }
             });
@@ -782,6 +785,50 @@
         let undoStack = [];
         let redoStack = [];
         const MAX_HISTORY = 20;
+
+        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        const getJapaneseHoliday = (date) => {
+            const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate(), w = date.getDay();
+            if (y < 2000) return null; 
+            const shunbun = Math.floor(20.8431 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+            const shubun = Math.floor(23.2488 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+
+            if (m === 1 && d === 1) return "元日";
+            if (m === 1 && w === 1 && d >= 8 && d <= 14) return "成人の日";
+            if (m === 2 && d === 11) return "建国記念の日";
+            if (m === 2 && d === 23) return "天皇誕生日";
+            if (m === 3 && d === shunbun) return "春分の日";
+            if (m === 4 && d === 29) return "昭和の日";
+            if (m === 5 && d === 3) return "憲法記念日";
+            if (m === 5 && d === 4) return "みどりの日";
+            if (m === 5 && d === 5) return "こどもの日";
+            if (m === 7 && w === 1 && d >= 15 && d <= 21) return "海の日";
+            if (m === 8 && d === 11) return "山の日";
+            if (m === 9 && w === 1 && d >= 15 && d <= 21) return "敬老の日";
+            if (m === 9 && d === shubun) return "秋分の日";
+            if (m === 10 && w === 1 && d >= 8 && d <= 14) return "スポーツの日";
+            if (m === 11 && d === 3) return "文化の日";
+            if (m === 11 && d === 23) return "勤労感謝の日";
+
+            // 振替休日
+            if (w === 1) {
+                const yesterday = new Date(y, m - 1, d - 1);
+                if (getJapaneseHoliday(yesterday)) return "振替休日";
+            }
+            // 5月連休の振替（5/6の対応）
+            if (m === 5 && d === 6 && w >= 1 && w <= 3) return "振替休日";
+
+            // 国民の休日
+            if (w !== 0 && w !== 6) {
+                const yest = new Date(y, m - 1, d - 1);
+                const tom = new Date(y, m - 1, d + 1);
+                if (getJapaneseHoliday(yest) && getJapaneseHoliday(tom)) return "国民の休日";
+            }
+            return null;
+        };
+
+        const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6 || !!getJapaneseHoliday(d);
 
         const getSpecialClassesAsEvents = (dateStr) => {
             const data = allPlanners[dateStr];
@@ -952,9 +999,6 @@
         if (window.fb) initFirebase();
         else window.addEventListener('firebase-loaded', () => initFirebase());
 
-        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6;
-        
         const getEventColorClass = (category) => {
             if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
             if (category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
@@ -2216,10 +2260,24 @@
             let html = '';
             for (let i = 0; i < 42; i++) {
                 const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
+                const holidayName = getJapaneseHoliday(dObj);
+                const isHoli = isHoliday(dObj);
+
                 const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
                 const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
-                const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400');
-                const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white';
+                
+                let dateNumClass = '';
+                if (isToday) {
+                    dateNumClass = 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm';
+                } else if (holidayName || dObj.getDay() === 0) {
+                    dateNumClass = 'text-red-500';
+                } else if (dObj.getDay() === 6) {
+                    dateNumClass = 'text-blue-500';
+                } else {
+                    dateNumClass = isCurrentMonth ? 'text-gray-800' : 'text-gray-400';
+                }
+
+                const cellBgClass = (isHoli || holidayName) ? 'bg-red-50/30' : (dObj.getDay() === 6 ? 'bg-indigo-50/30' : 'bg-white');
                 
                 let cellContentHtml = ''; let overCount = 0;
 
@@ -2246,7 +2304,7 @@
                         let multiColorClass = getMultiDayColorClass(ev.category);
                         let leftPx = slot.isSegmentStart ? '2px' : '-1px';
                         let rightPx = slot.isSegmentEnd ? '2px' : '-1px';
-                        let titleHtml = slot.isSegmentStart ? `<span class="font-bold text-[9px] w-full text-left pl-1 truncate absolute z-30 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] pointer-events-none" style="width: calc(${slot.segmentLength * 100}% - 4px);">${ev.title}</span>` : '';
+                        let titleHtml = slot.isSegmentStart ? `<span class="font-bold text-[9px] w-full text-center truncate absolute z-30 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] pointer-events-none" style="width: calc(${slot.segmentLength * 100}% - 4px);">${ev.title}</span>` : '';
                         
                         cellContentHtml += `<div class="absolute flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px; left: ${leftPx}; right: ${rightPx};" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')">${titleHtml}</div>`;
                     } else if (slot.type === 'allday') {
@@ -2268,9 +2326,14 @@
                 }
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
                 
+                let holidayHtml = holidayName ? `<span class="text-[8px] sm:text-[9px] text-red-500 mr-1 truncate opacity-80 mt-0.5">${holidayName}</span>` : '';
+
                 html += `
                     <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
-                        <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
+                        <div class="absolute top-0.5 left-1 right-0.5 z-30 pointer-events-none flex justify-between items-start shrink-0">
+                            <div class="flex-1 truncate">${holidayHtml}</div>
+                            <span class="date-link ${dateNumClass} shrink-0">${dObj.getDate()}</span>
+                        </div>
                         <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                         ${overflowHtml}
                     </div>`;
@@ -2363,7 +2426,12 @@
             }
 
             let allDayHtml = `<div class="relative w-full h-full min-h-[30px] overflow-hidden"><div class="absolute inset-0 grid grid-cols-7 pointer-events-none">`;
-            for(let i=0; i<7; i++){ allDayHtml += `<div class="border-r border-gray-200 ${(weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; }
+            for(let i=0; i<7; i++){ 
+                const cur = weekDateObjs[i];
+                const holidayName = getJapaneseHoliday(cur);
+                const bgColClass = (holidayName || cur.getDay() === 0) ? 'bg-red-50/30' : (cur.getDay() === 6 ? 'bg-indigo-50/30' : 'bg-transparent');
+                allDayHtml += `<div class="border-r border-gray-200 ${bgColClass}"></div>`; 
+            }
             allDayHtml += `</div>`;
             
             let maxRow = -1;
@@ -2413,10 +2481,16 @@
 
             for (let i = 0; i < 7; i++) {
                 const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); const isHoli = isHoliday(cur);
-                const color = cur.getDay()===0 ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
-                const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white');
+                const holidayName = getJapaneseHoliday(cur);
 
-                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}">${cur.getDate()}</span></div>`;
+                let color = 'text-[#4a5f73]';
+                if (holidayName || cur.getDay() === 0) color = 'text-red-500';
+                else if (cur.getDay() === 6) color = 'text-blue-500';
+
+                const headerBg = isToday ? 'bg-blue-50' : ((holidayName || cur.getDay() === 0) ? 'bg-red-50/30' : (cur.getDay() === 6 ? 'bg-indigo-50/30' : 'bg-white'));
+                let holidayHtml = holidayName ? `<div class="text-[8px] text-red-500 truncate w-full text-center mt-0.5 px-0.5 absolute bottom-0 font-normal leading-none" style="margin-bottom:-8px;">${holidayName}</div>` : '';
+
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':color}">${cur.getDate()}</span>${holidayHtml}</div>`;
 
                 let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
                 for (let h = 5; h < 24; h++) {
@@ -2460,7 +2534,9 @@
             let gridHtml = '';
             for(let i=0; i<7; i++) { 
                 const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i);
-                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${(cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
+                const holidayName = getJapaneseHoliday(cur);
+                const bgColClass = (holidayName || cur.getDay() === 0) ? 'bg-red-50/30' : (cur.getDay() === 6 ? 'bg-indigo-50/30' : 'bg-transparent');
+                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${bgColClass}">${colsHtml[i]}</div>`; 
             }
             document.getElementById('week-view-grid').innerHTML = gridHtml;
         };
@@ -2474,6 +2550,7 @@
             dates.forEach(dStr => {
                 const data = allPlanners[dStr] || {}; const dObj = new Date(dStr);
                 const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                const holidayName = getJapaneseHoliday(dObj);
                 let schedHtml = '', taskHtml = '';
                 
                 if (!isHoli && ttType !== 'none') {
@@ -2531,7 +2608,12 @@
 
                 if (!schedHtml && !taskHtml) return;
                 count++;
-                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold text-gray-700">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal text-gray-500">(${DAYS_STR[dObj.getDay()]})</span></div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+                
+                let headerColor = 'text-gray-700';
+                if (holidayName || dObj.getDay() === 0) headerColor = 'text-red-500';
+                else if (dObj.getDay() === 6) headerColor = 'text-blue-500';
+
+                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6 || holidayName) ? 'bg-red-50/10' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${headerColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal opacity-80">(${DAYS_STR[dObj.getDay()]})</span>${holidayName ? ` <span class="text-[10px] font-normal text-red-500 ml-1 bg-red-50 px-1 py-0.5 rounded border border-red-100">${holidayName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
             document.getElementById('agenda-view-list').innerHTML = html;
@@ -2656,7 +2738,14 @@
             let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
             html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
             workDays.forEach(day => {
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
+                const holidayName = getJapaneseHoliday(day);
+                let colorClass = 'text-[#4a5f73]';
+                if (holidayName || day.getDay() === 0) colorClass = 'text-red-500';
+                else if (day.getDay() === 6) colorClass = 'text-blue-500';
+                
+                let holidayHtml = holidayName ? `<div class="text-[8px] text-red-500 font-normal truncate mt-0.5">${holidayName}</div>` : '';
+                
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold bg-gray-50 align-top"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs ${colorClass}">${DAYS_STR[day.getDay()]}</div>${holidayHtml}</th>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             
@@ -2868,6 +2957,8 @@
         };
 
         window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            window.closeMonthBottomSheet(); // ★ ボトムシートを確実に閉じる
+
             const isSpecial = periodId.startsWith('sp_');
             wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
             
