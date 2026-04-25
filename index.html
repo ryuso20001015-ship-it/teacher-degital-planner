@@ -98,9 +98,14 @@
         .mode-mobile header { padding: 0.25rem 0.5rem; }
         .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
         .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.65rem; padding: 0.2rem 0.3rem; margin-bottom: 0.15rem; line-height: 1.2; }
-        .mode-mobile .calendar-cell { min-height: 50px; }
+        .mode-mobile .calendar-cell { min-height: 45px; }
         .mode-mobile #month-search-input { width: 80px; font-size: 0.7rem; }
-        .mode-mobile #month-category-filter { font-size: 0.7rem; max-width: 90px; padding-left: 0.15rem; padding-right: 0.15rem; }
+
+        /* スマホ用: 月カレンダー・週カレンダーの文字サイズをさらに小さく */
+        .mode-mobile #month-view-grid .absolute > span { font-size: 7px !important; line-height: 1.1; }
+        .mode-mobile #month-view-grid .date-link { font-size: 8px !important; width: 14px; height: 14px; }
+        .mode-mobile #month-view-grid .absolute { border-width: 0.5px; }
+        .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
 
         .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) {
             width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important;
@@ -286,7 +291,7 @@
 
     <!-- 授業用 モーダル (月・週・週案簿から共通で呼び出し) -->
     <div id="weekly-plan-modal" class="fixed inset-0 bg-black/40 z-[120] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeWeeklyPlanModal()">
-        <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-sm modal-animate relative border border-gray-200">
+        <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-w-sm modal-animate relative border border-gray-200">
             <h3 id="wp-modal-title" class="font-bold text-[#4a5f73] text-sm mb-3 text-center border-b border-gray-200 pb-1.5"><i class="fas fa-chalkboard-teacher mr-1"></i>授業予定</h3>
             <div id="wp-modal-time-config" class="mb-4">
                 <div class="flex items-center gap-1 mb-2">
@@ -303,7 +308,8 @@
             <div id="wp-modal-class-area" class="flex gap-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200">
                 <div class="flex-1">
                     <label class="text-[9px] font-bold text-gray-500 block mb-0.5">クラス</label>
-                    <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800">
+                    <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalClsSuggest(this.value)">
+                    <div id="wp-modal-cls-suggest" class="flex gap-1 mt-1 flex-wrap hidden"></div>
                 </div>
                 <div class="flex-1">
                     <label class="text-[9px] font-bold text-gray-500 block mb-0.5">教科・内容</label>
@@ -350,19 +356,19 @@
                             <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
                         </div>
                     </button>
+                    <div class="ml-2 sm:ml-3 flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner shrink-0">
+                        <button id="filter-btn-all" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-work_club" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work_club')">仕事</button>
+                        <button id="filter-btn-jugyo" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-private" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="relative">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[120px] sm:w-[180px]">
+                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[100px] sm:w-[180px]">
                         <div id="month-search-results" class="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
                     </div>
-                    <select id="month-category-filter" onchange="this.blur(); window.renderCurrentView()" onclick="event.stopPropagation()" class="bg-white border border-gray-300 rounded px-2 py-1.5 text-xs sm:text-sm outline-none font-medium text-[#4a5f73]">
-                        <option value="all">すべて表示</option>
-                        <option value="work_club">仕事のみ表示</option>
-                        <option value="jugyo">授業のみ表示</option>
-                        <option value="private">プライベートのみ表示</option>
-                    </select>
                 </div>
             </div>
             <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
@@ -418,12 +424,6 @@
                         <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
                             <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
-                        </div>
-                    </button>
-                    <button onclick="window.applyBaseTimetableToWeek()" class="ml-2 flex flex-col items-center justify-center bg-green-50 text-green-600 hover:bg-green-100 px-2 py-0.5 rounded transition border border-green-200 shadow-sm" title="今週にMy時間割を反映する">
-                        <span class="text-[9px] font-bold leading-none mb-0.5">時間割</span>
-                        <div class="flex items-center gap-1 leading-none">
-                            <i class="fas fa-magic text-[10px]"></i><span class="text-xs font-bold">反映</span>
                         </div>
                     </button>
                 </div>
@@ -548,7 +548,7 @@
 
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
                     <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-table text-green-500 mr-1.5"></i> My時間割の設定</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">月〜金曜日の決まった授業を入力・選択しておくと、カレンダーの授業枠に自動表示されます。<br>学期ごとに適用期間を設定して切り替えることができます。</p>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">月〜金曜日の決まった授業を入力・選択しておくと、週案簿やカレンダーの授業枠に自動反映されます。<br>学期ごとに適用期間を設定して切り替えることができます。</p>
                     <div id="settings-basetimetable-container"></div>
                 </div>
 
@@ -742,6 +742,23 @@
         let editingMemoId = null;
         window.currentMemoSort = 'updatedAt_desc'; 
 
+        window.currentCalendarFilter = 'all';
+        window.setCalendarFilter = (filter) => {
+            window.currentCalendarFilter = filter;
+            const ids = ['all', 'work_club', 'jugyo', 'private'];
+            ids.forEach(id => {
+                const btn = document.getElementById(`filter-btn-${id}`);
+                if(btn) {
+                    if(id === filter) {
+                        btn.className = 'px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                    } else {
+                        btn.className = 'px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                    }
+                }
+            });
+            window.renderCurrentView();
+        };
+
         let tempSettings = null; 
         let currentView = 'month'; 
         let currentDateObj = new Date(); 
@@ -759,6 +776,33 @@
         let undoStack = [];
         let redoStack = [];
         const MAX_HISTORY = 20;
+
+        const getSpecialClassesAsEvents = (dateStr) => {
+            const data = allPlanners[dateStr];
+            if (!data || !data.classes) return [];
+            const evs = [];
+            const addSp = (id, name, sTime, eTime) => {
+                const cData = data.classes[id];
+                if (cData && cData.memo && !cData.isCut) {
+                    evs.push({
+                        id: `wp_special_${id}_${dateStr}`,
+                        title: `【${name}】${cData.memo}`,
+                        category: 'work',
+                        start: `${dateStr}T${sTime}`,
+                        end: `${dateStr}T${eTime}`,
+                        isAllDay: false,
+                        originalDateKey: dateStr,
+                        isSpecialClass: true,
+                        specialId: id,
+                        specialName: name
+                    });
+                }
+            };
+            addSp('sp_morning', '朝', '08:00', '08:30');
+            addSp('sp_noon', '昼', '12:30', '13:10');
+            addSp('sp_after_school', '放', '15:30', '16:30');
+            return evs;
+        };
 
         window.updateDisplayMode = () => {
             const isMobile = window.innerWidth <= 768;
@@ -1749,7 +1793,6 @@
             return {1:{},2:{},3:{},4:{},5:{}};
         };
 
-        // My時間割（ベース時間割）と個別データ（空設定含む）を適切にフォールバックさせるように修正
         const getPeriodClass = (dateStr, period, dObj) => {
             const data = allPlanners[dateStr] || {};
             let cls = "", sub = "", memo = "", isBase = false;
@@ -1760,9 +1803,8 @@
 
             if (data.classes && data.classes[period.id]) {
                 const cData = data.classes[period.id];
-                if (cData.disabled) return null; // 空きコマとして設定されている場合
+                if (cData.disabled) return null; 
                 
-                // 値が1つでも入力されていれば個別設定を採用
                 if (cData.cls || cData.sub || cData.memo) {
                     cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
                     if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
@@ -1770,7 +1812,6 @@
                 }
             }
             
-            // 個別設定がない、または「空のまま保存された」場合は、My時間割をフォールバックとして使用
             if (!hasCustom && baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
                 const baseData = baseTt[dObj.getDay()][period.name];
                 if (baseData) {
@@ -1819,7 +1860,8 @@
             
             let eventsForDay = [];
             for (const dateKey in allPlanners) {
-                const events = allPlanners[dateKey].events || [];
+                let events = allPlanners[dateKey].events ? [...allPlanners[dateKey].events] : [];
+                events = events.concat(getSpecialClassesAsEvents(dateKey));
                 events.forEach(ev => {
                     const sDate = ev.start ? ev.start.split('T')[0] : dateKey;
                     const eDate = ev.end ? ev.end.split('T')[0] : sDate;
@@ -1930,6 +1972,17 @@
         };
 
         window.openEditMenu = (dateStr, type, evId) => {
+            if (evId && evId.startsWith('wp_special_')) {
+                const parts = evId.split('_'); 
+                const spId = parts[2] + '_' + parts[3];
+                let spName = '朝';
+                if (spId === 'sp_noon') spName = '昼';
+                if (spId === 'sp_after_school') spName = '放';
+                window.closeMonthBottomSheet(); 
+                window.openWeeklyPlanModal(dateStr, spId, spName);
+                return;
+            }
+
             window.closeMonthBottomSheet(); 
             addModalTargetDate = dateStr; editTarget = { dateStr, idOrIndex: evId };
             const data = allPlanners[dateStr] || {};
@@ -2078,8 +2131,11 @@
             const grid = document.getElementById('month-view-grid');
             
             const searchWord = document.getElementById('month-search-input').value.toLowerCase();
-            const filterCat = document.getElementById('month-category-filter').value;
-            const maxRows = document.body.classList.contains('mode-mobile') ? 5 : 7; const rowHeight = 15;
+            const filterCat = window.currentCalendarFilter || 'all';
+            const isMobile = document.body.classList.contains('mode-mobile');
+            const maxRows = isMobile ? 4 : 6; 
+            const rowHeight = isMobile ? 12 : 15;
+            const itemHeight = isMobile ? 11 : 14;
 
             const cellDates = []; let dayCountForCalc = 1, nextDayCountForCalc = 1;
             for (let i = 0; i < 42; i++) {
@@ -2093,7 +2149,8 @@
 
             let multiDayEvents = []; let singleDayAllDayEvents = {};  let singleDayTimeEvents = {};   
             for (const dateKey in allPlanners) {
-                const events = allPlanners[dateKey].events || [];
+                let events = allPlanners[dateKey].events ? [...allPlanners[dateKey].events] : [];
+                events = events.concat(getSpecialClassesAsEvents(dateKey));
                 events.forEach(ev => {
                     const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
                     if (sDate !== eDate) multiDayEvents.push({ ...ev, sDate, eDate, originalDateKey: dateKey });
@@ -2182,29 +2239,29 @@
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: 14px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'time') {
                         let label = ev.start ? ev.start.split('T').pop().substring(0,5) : "";
                         let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
                     } else if (slot.type === 'class') {
                         const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
                     } else if (slot.type === 'task') {
                         const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = ev.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition" style="top: ${topPx}px; height: 14px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
                     }
                 }
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
                 
                 html += `
-                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
                         <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
                         <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                         ${overflowHtml}
@@ -2238,7 +2295,8 @@
             let multiDayEvents = []; let singleDayAllDayEvents = {};  let timeEventsByDay = Array(7).fill(null).map(() => []);
 
             for (const dateKey in allPlanners) {
-                const events = allPlanners[dateKey].events || [];
+                let events = allPlanners[dateKey].events ? [...allPlanners[dateKey].events] : [];
+                events = events.concat(getSpecialClassesAsEvents(dateKey));
                 events.forEach(ev => {
                     const sDate = ev.start ? ev.start.split('T')[0] : dateKey; const eDate = ev.end ? ev.end.split('T')[0] : sDate;
                     if (eDate >= viewStartDateStr && sDate <= viewEndDateStr) {
@@ -2303,7 +2361,10 @@
             let maxRow = -1;
             for(let i=0; i<7; i++){ allDaySlots[i].forEach((slot, r) => { if(slot) maxRow = Math.max(maxRow, r); }); }
             
-            const ALLDAY_ROW_HEIGHT = 15;
+            const isMobile = document.body.classList.contains('mode-mobile');
+            const ALLDAY_ROW_HEIGHT = isMobile ? 12 : 15;
+            const itemHeight = isMobile ? 11 : 13;
+
             for(let r = 0; r <= maxRow; r++) {
                 for(let c = 0; c < 7; c++) {
                     const slot = allDaySlots[c][r]; if (!slot) continue;
@@ -2314,19 +2375,19 @@
                             const ev = slot.event; let multiColorClass = getMultiDayColorClass(ev.category);
                             const leftPct = (c / 7) * 100; const widthPct = (slot.segmentLength / 7) * 100;
                             const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                            allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         const ev = slot.event; let bgColorClass = getEventColorClass(ev.category);
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
                         const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'task') {
                         const t = slot.event; const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
                         const isSearched = (window.searchedItemId === t.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: 13px; z-index: 10;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${weekDates[c]}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${weekDates[c]}', 'task', '${t.id}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
                     }
                 }
             }
@@ -2377,11 +2438,11 @@
                     if (item.isClass) {
                         const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div></div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openMonthBottomSheet('${curStr}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
                     }
                 });
                 colsHtml[i] = colContent;
@@ -2415,7 +2476,7 @@
                         if (cData) { 
                             let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                             let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
-                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                                 <div class="flex items-start gap-1.5 w-full">
                                     <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-80 mt-0.5">${p.name}</span>
                                     <span class="font-bold break-words flex-1">${titleHtml}</span>
@@ -2426,8 +2487,10 @@
                     });
                 }
                 
-                if (data.events) {
-                    data.events.forEach(ev => {
+                if (data.events || data.classes) {
+                    let events = data.events ? [...data.events] : [];
+                    events = events.concat(getSpecialClassesAsEvents(dStr));
+                    events.forEach(ev => {
                         let label = "", isMultiDay = false;
                         if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
                             const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
@@ -2435,7 +2498,7 @@
                         } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
                         let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
                         const memoPreview = ev.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-black/10 pt-1 w-full">${ev.memo}</div>` : '';
-                        schedHtml += `<div class="text-[10px] ${badgeClass} px-2 py-1.5 rounded flex flex-col cursor-pointer transition hover:shadow-sm" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                        schedHtml += `<div class="text-[10px] ${badgeClass} px-2 py-1.5 rounded flex flex-col cursor-pointer transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
                             <div class="flex items-start gap-1.5 w-full">
                                 <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
                                 <span class="break-words font-bold flex-1">${ev.title}</span>
@@ -2449,7 +2512,7 @@
                     const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                     const style = t.completed ? 'text-gray-400 line-through' : 'text-gray-700'; 
                     const taskMemoHtml = t.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-gray-200 pt-1 w-full ml-5">${t.memo}</div>` : '';
-                    taskHtml += `<div class="text-[10px] flex flex-col px-2 py-1.5 ${style} cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded transition hover:shadow-sm" onclick="event.stopPropagation(); window.openMonthBottomSheet('${dStr}')">
+                    taskHtml += `<div class="text-[10px] flex flex-col px-2 py-1.5 ${style} cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
                         <div class="flex items-start gap-1.5 w-full">
                             <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
                             <span class="break-words flex-1 font-bold">${t.title}</span>
@@ -2480,7 +2543,7 @@
             else {
                 incompleteTasks.forEach(t => {
                     const isOverdue = t.taskDate < todayStr;
-                    incompleteHtml += `<div class="text-[10px] flex items-start gap-1.5 px-1.5 py-1.5 bg-white border ${isOverdue ? 'border-red-200 shadow-sm' : 'border-gray-200'} rounded cursor-pointer hover:bg-gray-50 transition" onclick="event.stopPropagation(); window.openMonthBottomSheet('${t.originalDateKey}')"><div class="mt-px shrink-0 cursor-pointer flex items-center justify-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${t.originalDateKey}', '${t.id}', true)"><i class="far fa-square text-gray-400 hover:text-blue-500 transition text-sm"></i></div><div class="flex flex-col flex-1 min-w-0"><div class="flex items-center gap-1 w-full"><span class="font-bold text-[#4a5f73] truncate">${t.title}</span>${isOverdue ? `<span class="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-red-200">超過</span>` : `<span class="text-[8px] bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-yellow-200">本日</span>`}</div>${t.memo ? `<div class="text-[9px] text-gray-500 truncate mt-0.5">${t.memo}</div>` : ''}<div class="text-[8px] text-gray-400 mt-0.5">${t.taskDate}</div></div></div>`;
+                    incompleteHtml += `<div class="text-[10px] flex items-start gap-1.5 px-1.5 py-1.5 bg-white border ${isOverdue ? 'border-red-200 shadow-sm' : 'border-gray-200'} rounded cursor-pointer hover:bg-gray-50 transition" onclick="event.stopPropagation(); window.openEditMenu('${t.originalDateKey}', 'task', '${t.id}')"><div class="mt-px shrink-0 cursor-pointer flex items-center justify-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${t.originalDateKey}', '${t.id}', true)"><i class="far fa-square text-gray-400 hover:text-blue-500 transition text-sm"></i></div><div class="flex flex-col flex-1 min-w-0"><div class="flex items-center gap-1 w-full"><span class="font-bold text-[#4a5f73] truncate">${t.title}</span>${isOverdue ? `<span class="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-red-200">超過</span>` : `<span class="text-[8px] bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded ml-auto shrink-0 font-bold border border-yellow-200">本日</span>`}</div>${t.memo ? `<div class="text-[9px] text-gray-500 truncate mt-0.5">${t.memo}</div>` : ''}<div class="text-[8px] text-gray-400 mt-0.5">${t.taskDate}</div></div></div>`;
                 });
             }
             document.getElementById('agenda-incomplete-tasks').innerHTML = incompleteHtml;
@@ -2517,10 +2580,7 @@
 
         window.changeWeeklyPlanView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeeklyPlanView(); };
 
-        window.applyBaseTimetableToWeek = () => {
-            if (!confirm("今週の週案簿に、設定されているMy時間割の授業を一括で反映しますか？\n（すでに個別設定されている授業や空きコマ設定は上書きされず、未設定のコマのみ反映されます）")) return;
-            
-            window.saveStateToHistory();
+        window.autoApplyBaseTimetableToWeek = () => {
             const d = new Date(calendarDisplayDate);
             const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
             const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
@@ -2544,10 +2604,8 @@
 
                 ttPeriods.slice(0, lessonCount).forEach((p, pIdx) => {
                     const cData = allPlanners[dStr].classes[p.id];
-                    // すでにカスタム設定がある場合や、明示的にカット（disabled）されている場合はスキップ
                     if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
 
-                    // My時間割にデータがあるか確認
                     if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][p.name]) {
                         const bData = baseTt[dObj.getDay()][p.name];
                         if (bData && (bData.cls || bData.sub || bData.memo)) {
@@ -2568,14 +2626,13 @@
             if (isChanged) {
                 safeSetItem(LS_KEY, JSON.stringify(allPlanners)); 
                 window.saveToFirebase(); 
-                window.renderCurrentView();
-                alert("My時間割のデータを今週の週案簿に反映しました。");
-            } else {
-                alert("反映するデータがありませんでした。（すでに設定済み、またはMy時間割が未設定です）");
             }
+            return isChanged;
         };
 
         const renderWeeklyPlanView = () => {
+            window.autoApplyBaseTimetableToWeek();
+
             const d = new Date(calendarDisplayDate);
             const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
             const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
@@ -2592,7 +2649,6 @@
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             
-            // プルダウンの並び順を固定化
             const ttOrder = ['normal', 'short', 'special', 'test'];
 
             workDays.forEach(day => {
@@ -2763,6 +2819,7 @@
                 allPlanners[dStr].timetableType = ttSelect.value; allPlanners[dStr].lessonCount = lessonCount;
                 if (!allPlanners[dStr].classes) allPlanners[dStr].classes = {};
             }
+            window.autoApplyBaseTimetableToWeek();
             safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); 
             if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
         };
@@ -2770,6 +2827,34 @@
         // ==========================================
         // ★ 週授業ポップアップ用モーダル関数群
         // ==========================================
+        window.updateWpModalClsSuggest = (clsValue) => {
+            const suggestContainer = document.getElementById('wp-modal-cls-suggest');
+            if (!clsValue || !clsValue.includes('/')) {
+                suggestContainer.classList.add('hidden');
+                suggestContainer.innerHTML = '';
+                return;
+            }
+            const classes = clsValue.split('/').map(s => s.trim()).filter(s => s);
+            if (classes.length < 2) {
+                suggestContainer.classList.add('hidden');
+                return;
+            }
+            
+            let html = '';
+            classes.forEach(c => {
+                html += `<button onclick="window.selectWpModalSuggestCls('${c}')" class="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px] font-bold hover:bg-blue-100 transition">${c}</button>`;
+            });
+            suggestContainer.innerHTML = html;
+            suggestContainer.classList.remove('hidden');
+        };
+
+        window.selectWpModalSuggestCls = (c) => {
+            const input = document.getElementById('wp-modal-cls');
+            input.value = c;
+            window.updateWpModalClsSuggest(c);
+            input.focus();
+        };
+
         window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             const isSpecial = periodId.startsWith('sp_');
             wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
@@ -2832,6 +2917,7 @@
                 }
 
                 document.getElementById('wp-modal-cls').value = initialCls;
+                window.updateWpModalClsSuggest(initialCls);
                 document.getElementById('wp-modal-sub').value = initialSub;
                 memoInput.value = initialMemo;
                 memoInput.placeholder = "単元名や連絡事項など...";
@@ -2890,6 +2976,7 @@
             }
             
             document.getElementById('wp-modal-cls').value = newCls;
+            window.updateWpModalClsSuggest(newCls);
             document.getElementById('wp-modal-sub').value = newSub;
             
             window.updateWpModalBaseStatus();
