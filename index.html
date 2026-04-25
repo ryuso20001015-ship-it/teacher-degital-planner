@@ -99,7 +99,6 @@
         .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
         .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.65rem; padding: 0.2rem 0.3rem; margin-bottom: 0.15rem; line-height: 1.2; }
         .mode-mobile .calendar-cell { min-height: 45px; }
-        .mode-mobile #month-search-input { width: 80px; font-size: 0.7rem; }
 
         /* スマホ用: 月カレンダー・週カレンダーの文字サイズをさらに小さく */
         .mode-mobile #month-view-grid .absolute > span { font-size: 7px !important; line-height: 1.1; }
@@ -137,8 +136,8 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
-    <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-4 shadow-md z-50 relative shrink-0 gap-3 border-b border-gray-800">
-        <div class="flex items-center gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0">
+    <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-2 sm:px-4 shadow-md z-50 relative shrink-0 gap-2 border-b border-gray-800">
+        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
             <div class="font-bold flex items-center gap-1.5 shrink-0 text-sm">
                 <i class="fas fa-book-open text-blue-400"></i>
                 <span class="hidden sm:inline mr-2">デジタル教師手帳</span>
@@ -162,8 +161,8 @@
                 </button>
             </div>
             
-            <div class="w-px bg-gray-600 h-6 shrink-0 mx-1"></div>
-            <div class="flex gap-2 shrink-0">
+            <div class="w-px bg-gray-600 h-6 shrink-0 mx-1 hidden sm:block"></div>
+            <div class="flex gap-1 sm:gap-2 shrink-0">
                 <button id="btn-undo" class="nav-btn flex items-center justify-center transition-opacity" onclick="window.undo()" title="一つ戻る"><i class="fas fa-undo"></i></button>
                 <button id="btn-redo" class="nav-btn flex items-center justify-center transition-opacity" onclick="window.redo()" title="一つ進む"><i class="fas fa-redo"></i></button>
             </div>
@@ -171,9 +170,17 @@
                 <i class="fas fa-cloud-upload-alt mr-0.5"></i>同期中
             </div>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-            <div class="flex gap-2 shrink-0">
-                <button id="nav-btn-settings" class="nav-btn flex items-center justify-center" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
+
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- 共通の検索ボックスを配置 -->
+            <div class="relative flex items-center">
+                <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                <input type="text" id="month-search-input" placeholder="検索" oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-6 pr-2 py-1.5 rounded-md border border-gray-600 bg-[#2a2a4a] text-white text-[10px] sm:text-xs outline-none focus:border-blue-400 focus:bg-[#32325a] transition-all w-[70px] sm:w-[120px] md:w-[160px] focus:w-[110px] sm:focus:w-[160px] placeholder-gray-400 shadow-inner">
+                <div id="month-search-results" class="absolute top-full right-0 mt-2 w-[240px] sm:w-[300px] max-h-[60vh] overflow-y-auto bg-white rounded-lg shadow-2xl border border-gray-200 z-[100] hidden custom-scrollbar text-gray-800" onclick="event.stopPropagation()"></div>
+            </div>
+
+            <div class="flex gap-1 sm:gap-2 shrink-0">
+                <button id="nav-btn-settings" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
             </div>
         </div>
     </header>
@@ -373,13 +380,6 @@
                             <option value="jugyo">授業</option>
                             <option value="private">プライベート</option>
                         </select>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[100px] sm:w-[180px]">
-                        <div id="month-search-results" class="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
                     </div>
                 </div>
             </div>
@@ -1723,7 +1723,9 @@
             document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + viewName).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('nav-btn-' + viewName).classList.add('active');
+            
+            const btnObj = document.getElementById('nav-btn-' + viewName);
+            if(btnObj) btnObj.classList.add('active');
             
             if(viewName === 'settings') {
                 initSettingsView();
@@ -2809,7 +2811,10 @@
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
                         
-                        html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button></div></td>`;
+                        // ★修正ポイント：td に h-[1px] と p-[1px] を設定し、中のボタンを h-full にすることでレイアウト崩れを防ぐ
+                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                                    <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button>
+                                 </td>`;
                     }
                 } else {
                     const pIdx = r.index;
@@ -2820,7 +2825,8 @@
                         const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
-                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-0.5 bg-gray-100 opacity-50 h-full relative"></td>`; continue; }
+                        // ★修正ポイント：空セルの td にも h-[1px] と p-[1px] を設定
+                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px]"></td>`; continue; }
 
                         const baseTt = getBaseTimetableForDate(day);
                         let baseCls = "", baseSub = "", baseMemo = "";
@@ -2871,7 +2877,9 @@
                             borderClass = "border border-[#4a5f73]/50 shadow-sm";
                         } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
-                        html += `<td class="border-b border-r border-gray-200 p-0 text-center align-middle relative"><div class="absolute inset-[1px]"><button class="relative w-full h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button></div></td>`;
+                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                                    <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button>
+                                 </td>`;
                     }
                 }
                 html += `</tr>`;
