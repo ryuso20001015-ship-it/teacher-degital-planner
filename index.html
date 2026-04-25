@@ -97,15 +97,21 @@
 
         .mode-mobile header { padding: 0.25rem 0.5rem; }
         .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
-        .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.65rem; padding: 0.2rem 0.3rem; margin-bottom: 0.15rem; line-height: 1.2; }
         .mode-mobile .calendar-cell { min-height: 45px; }
-        .mode-mobile #month-search-input { width: 80px; font-size: 0.7rem; }
+        .mode-mobile #month-search-input { width: 70px; font-size: 0.6rem; padding-left: 1.5rem; }
 
-        /* スマホ用: 月カレンダー・週カレンダーの文字サイズをさらに小さく */
-        .mode-mobile #month-view-grid .absolute > span { font-size: 7px !important; line-height: 1.1; }
-        .mode-mobile #month-view-grid .date-link { font-size: 8px !important; width: 14px; height: 14px; }
-        .mode-mobile #month-view-grid .absolute { border-width: 0.5px; }
-        .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
+        /* スマホ用: 月カレンダー・週カレンダー等の文字サイズをさらに小さく */
+        .mode-mobile .text-\\[8px\\] { font-size: 5px !important; }
+        .mode-mobile .text-\\[9px\\] { font-size: 6px !important; }
+        .mode-mobile .text-\\[10px\\] { font-size: 7px !important; }
+        .mode-mobile .text-xs { font-size: 8.5px !important; }
+        .mode-mobile .text-sm { font-size: 9.5px !important; }
+        .mode-mobile .text-base { font-size: 11px !important; }
+
+        .mode-mobile #month-view-grid .absolute > span { font-size: 5.5px !important; line-height: 1.0; letter-spacing: -0.5px; }
+        .mode-mobile #month-view-grid .date-link { font-size: 7.5px !important; width: 12px; height: 12px; }
+        .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 5.5px !important; line-height: 1.0; letter-spacing: -0.5px; }
+        .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.45rem; padding: 0.1rem 0.2rem; margin-bottom: 0.1rem; }
 
         .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) {
             width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important;
@@ -346,33 +352,33 @@
         <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="month-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[110px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm" title="今日に戻る">
-                        <span class="text-[9px] font-bold leading-none mb-0.5">本日</span>
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="month-view-title" class="text-base sm:text-lg font-bold text-[#4a5f73] tracking-wider w-[90px] sm:w-[110px] text-center shrink-0">YYYY年 M月</h2>
+                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded transition border border-blue-200 shadow-sm shrink-0" title="今日に戻る">
+                        <span class="text-[8px] sm:text-[9px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
-                            <span class="today-btn-date text-xs font-bold"></span><span class="today-btn-day text-[9px] font-bold ml-0.5"></span>
+                            <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] sm:text-[9px] font-bold ml-0.5"></span>
                         </div>
                     </button>
-                    <div class="ml-2 sm:ml-3 flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner shrink-0">
-                        <button id="filter-btn-all" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-work_club" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work_club')">仕事</button>
-                        <button id="filter-btn-jugyo" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-private" class="px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
+                    <div class="ml-1 sm:ml-3 flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-1 min-w-0" style="-webkit-overflow-scrolling: touch;">
+                        <button id="filter-btn-all" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-work_club" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('work_club')">仕事</button>
+                        <button id="filter-btn-jugyo" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-private" class="px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                     <div class="relative">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[100px] sm:w-[180px]">
-                        <div id="month-search-results" class="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
+                        <input type="text" id="month-search-input" placeholder="検索..." oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-7 pr-2 py-1.5 rounded border border-gray-300 text-xs sm:text-sm outline-none focus:border-[#4a5f73] w-[70px] sm:w-[180px]">
+                        <div id="month-search-results" class="absolute top-full left-auto right-0 mt-1 w-[240px] sm:w-[300px] max-h-48 overflow-y-auto bg-white rounded shadow-lg border border-gray-200 z-[100] hidden custom-scrollbar" onclick="event.stopPropagation()"></div>
                     </div>
                 </div>
             </div>
             <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
-                <div class="grid grid-cols-7 bg-gray-50 text-center text-xs font-bold text-[#4a5f73] py-1.5 border-b border-gray-200 shrink-0">
+                <div class="grid grid-cols-7 bg-gray-50 text-center text-[10px] sm:text-xs font-bold text-[#4a5f73] py-1.5 border-b border-gray-200 shrink-0">
                     <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-500">土</span><span class="text-red-500">日</span>
                 </div>
                 <div id="month-view-grid" class="flex-1 grid grid-cols-7 grid-rows-6 gap-[1px] bg-gray-200 min-h-0"></div>
@@ -750,9 +756,9 @@
                 const btn = document.getElementById(`filter-btn-${id}`);
                 if(btn) {
                     if(id === filter) {
-                        btn.className = 'px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                        btn.className = 'px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0 whitespace-nowrap';
                     } else {
-                        btn.className = 'px-2 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                        btn.className = 'px-2.5 py-1 text-[9px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0 whitespace-nowrap';
                     }
                 }
             });
@@ -2183,7 +2189,7 @@
                     for (let i = sIdx; i <= eIdx; i++) {
                         const weekStart = Math.floor(i / 7) * 7; const weekEnd = weekStart + 6;
                         const evWeekStart = Math.max(sIdx, weekStart); const evWeekEnd = Math.min(eIdx, weekEnd);
-                        allDaySlots[i][row] = { type: 'multi', event: ev, isSegmentStart: i === evWeekStart, segmentLength: evWeekEnd - evWeekStart + 1 };
+                        allDaySlots[i][row] = { type: 'multi', event: ev, isSegmentStart: i === evWeekStart, isSegmentEnd: i === evWeekEnd, segmentLength: evWeekEnd - evWeekStart + 1 };
                     }
                 }
             });
@@ -2237,10 +2243,12 @@
                     const topPx = r * rowHeight; const isSearched = (ev && window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
 
                     if (slot.type === 'multi') {
-                        if (slot.isSegmentStart) {
-                            let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
-                        }
+                        let multiColorClass = getMultiDayColorClass(ev.category);
+                        let leftPx = slot.isSegmentStart ? '2px' : '-1px';
+                        let rightPx = slot.isSegmentEnd ? '2px' : '-1px';
+                        let titleHtml = slot.isSegmentStart ? `<span class="font-bold text-[9px] w-full text-left pl-1 truncate absolute z-30 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] pointer-events-none" style="width: calc(${slot.segmentLength * 100}% - 4px);">${ev.title}</span>` : '';
+                        
+                        cellContentHtml += `<div class="absolute flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px; left: ${leftPx}; right: ${rightPx};" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')">${titleHtml}</div>`;
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
@@ -2261,7 +2269,7 @@
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
                 
                 html += `
-                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
                         <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
                         <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                         ${overflowHtml}
@@ -2604,8 +2612,10 @@
 
                 ttPeriods.slice(0, lessonCount).forEach((p, pIdx) => {
                     const cData = allPlanners[dStr].classes[p.id];
+                    // すでにカスタム設定がある場合や、明示的にカット（disabled）されている場合はスキップ
                     if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
 
+                    // My時間割にデータがあるか確認
                     if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][p.name]) {
                         const bData = baseTt[dObj.getDay()][p.name];
                         if (bData && (bData.cls || bData.sub || bData.memo)) {
@@ -2631,6 +2641,7 @@
         };
 
         const renderWeeklyPlanView = () => {
+            // 週案簿を開いたタイミングで、自動的にMy時間割の内容を反映・保存する
             window.autoApplyBaseTimetableToWeek();
 
             const d = new Date(calendarDisplayDate);
@@ -2649,6 +2660,7 @@
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             
+            // プルダウンの並び順を固定化
             const ttOrder = ['normal', 'short', 'special', 'test'];
 
             workDays.forEach(day => {
