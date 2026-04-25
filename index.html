@@ -777,6 +777,35 @@
         let redoStack = [];
         const MAX_HISTORY = 20;
 
+        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        // ★ 祝日APIの連携とキャッシュ機構
+        window.holidays = {};
+        const fetchHolidays = async () => {
+            try {
+                const cached = safeGetItem('jp_holidays');
+                const lastFetch = safeGetItem('jp_holidays_last_fetch');
+                const now = Date.now();
+                if (cached && lastFetch && (now - parseInt(lastFetch) < 7 * 24 * 60 * 60 * 1000)) {
+                    window.holidays = JSON.parse(cached);
+                } else {
+                    const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
+                    const data = await res.json();
+                    window.holidays = data;
+                    safeSetItem('jp_holidays', JSON.stringify(data));
+                    safeSetItem('jp_holidays_last_fetch', now.toString());
+                }
+                if (typeof window.renderCurrentView === 'function') window.renderCurrentView();
+            } catch (e) { console.error('Failed to fetch holidays:', e); }
+        };
+        fetchHolidays();
+
+        const getHolidayName = (d) => {
+            const dStr = getFormatDateStr(d);
+            return window.holidays && window.holidays[dStr] ? window.holidays[dStr] : null;
+        };
+        const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6 || !!getHolidayName(d);
+
         const getSpecialClassesAsEvents = (dateStr) => {
             const data = allPlanners[dateStr];
             if (!data || !data.classes) return [];
@@ -945,9 +974,6 @@
 
         if (window.fb) initFirebase();
         else window.addEventListener('firebase-loaded', () => initFirebase());
-
-        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        const isHoliday = (d) => d.getDay() === 0 || d.getDay() === 6;
         
         const getEventColorClass = (category) => {
             if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
@@ -1776,6 +1802,7 @@
             const data = allPlanners[dStr] || {};
             if (data.timetableType !== undefined) return data.timetableType;
             if (data.classes && Object.keys(data.classes).length > 0) return 'normal';
+            if (isHoliday(new Date(dStr))) return 'none';
             return 'normal';
         };
 
@@ -1827,7 +1854,10 @@
             window.mbsTargetDate = dStr;
             window.mbsDefaultHour = defaultHour;
             const dObj = new Date(dStr);
-            document.getElementById('mbs-date-title').textContent = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
+            const holiName = getHolidayName(dObj);
+            let dateTitle = `${dObj.getMonth()+1}月${dObj.getDate()}日 (${DAYS_STR[dObj.getDay()]})`;
+            if (holiName) dateTitle += ` <span class="text-xs text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-2">${holiName}</span>`;
+            document.getElementById('mbs-date-title').innerHTML = dateTitle;
 
             const data = allPlanners[dStr] || {};
             const isHoli = isHoliday(dObj);
@@ -2211,9 +2241,19 @@
             for (let i = 0; i < 42; i++) {
                 const dObj = cellDates[i].dateObj; const dStr = cellDates[i].dateStr;
                 const isCurrentMonth = dObj.getMonth() === month; const isToday = dStr === getFormatDateStr(new Date());
+                const holiName = getHolidayName(dObj);
+                const isSunOrHoli = dObj.getDay() === 0 || !!holiName;
+                const isSat = dObj.getDay() === 6;
+
+                let dateColor = 'text-gray-800';
+                if (isToday) dateColor = 'text-white';
+                else if (!isCurrentMonth) dateColor = 'text-gray-400';
+                else if (isSunOrHoli) dateColor = 'text-red-500';
+                else if (isSat) dateColor = 'text-blue-500';
+
                 const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
-                const dateNumClass = isToday ? 'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400');
-                const cellBgClass = (dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white';
+                const dateNumClass = isToday ? `bg-blue-500 ${dateColor} rounded-full w-5 h-5 flex items-center justify-center shadow-sm` : dateColor;
+                const cellBgClass = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white';
                 
                 let cellContentHtml = ''; let overCount = 0;
 
@@ -2260,9 +2300,14 @@
                 }
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
                 
+                const holiHtml = holiName && isCurrentMonth ? `<span class="text-[8px] text-red-500 font-bold ml-1 mt-0.5 truncate flex-1">${holiName}</span>` : '';
+                
                 html += `
                     <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
-                        <div class="absolute top-0.5 right-0.5 z-30 pointer-events-none text-right text-[10px] font-bold flex justify-end shrink-0"><span class="date-link ${dateNumClass}">${dObj.getDate()}</span></div>
+                        <div class="absolute top-0.5 left-0.5 right-0.5 z-30 pointer-events-none flex justify-between shrink-0 h-5">
+                            <div class="w-[calc(100%-20px)] overflow-hidden">${holiHtml}</div>
+                            <span class="date-link ${dateNumClass} text-[10px] font-bold shrink-0 ml-auto flex items-center justify-center">${dObj.getDate()}</span>
+                        </div>
                         <div class="absolute left-0 right-0 z-20 pointer-events-none" style="top: 18px; bottom: 0;">${cellContentHtml}</div>
                         ${overflowHtml}
                     </div>`;
@@ -2355,7 +2400,10 @@
             }
 
             let allDayHtml = `<div class="relative w-full h-full min-h-[30px] overflow-hidden"><div class="absolute inset-0 grid grid-cols-7 pointer-events-none">`;
-            for(let i=0; i<7; i++){ allDayHtml += `<div class="border-r border-gray-200 ${(weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; }
+            for(let i=0; i<7; i++){ 
+                const isHoliOrWknd = weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6 || !!getHolidayName(weekDateObjs[i]);
+                allDayHtml += `<div class="border-r border-gray-200 ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; 
+            }
             allDayHtml += `</div>`;
             
             let maxRow = -1;
@@ -2404,11 +2452,16 @@
             let colsHtml = Array(7).fill('');
 
             for (let i = 0; i < 7; i++) {
-                const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); const isHoli = isHoliday(cur);
-                const color = cur.getDay()===0 ? 'text-red-500' : (cur.getDay()===6 ? 'text-blue-500' : 'text-[#4a5f73]');
-                const headerBg = isToday ? 'bg-blue-50' : ((cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white');
+                const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); 
+                const holiName = getHolidayName(cur);
+                const isSunOrHoli = cur.getDay() === 0 || !!holiName;
+                const isSat = cur.getDay() === 6;
+                const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
+                const headerBg = isToday ? 'bg-blue-50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white');
 
-                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':''}">${cur.getDate()}</span></div>`;
+                const holiHtml = holiName ? `<div class="text-[8px] sm:text-[9px] text-red-500 font-bold truncate w-full text-center px-0.5 leading-none mt-0.5" title="${holiName}">${holiName}</div>` : '';
+
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':color}">${cur.getDate()}</span>${holiHtml}</div>`;
 
                 let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
                 for (let h = 5; h < 24; h++) {
@@ -2420,7 +2473,7 @@
                 let combinedEvents = [];
                 const data = allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
 
-                if (!isHoli && ttType !== 'none') {
+                if (!isHoliday(cur) && ttType !== 'none') {
                     const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                     ttPeriods.slice(0, lessonCount).forEach(p => {
                         if (p.id === 'p_allday' || p.isAllDay) return;
@@ -2452,7 +2505,8 @@
             let gridHtml = '';
             for(let i=0; i<7; i++) { 
                 const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i);
-                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${(cur.getDay() === 0 || cur.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
+                const isHoliOrWknd = cur.getDay() === 0 || cur.getDay() === 6 || !!getHolidayName(cur);
+                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
             }
             document.getElementById('week-view-grid').innerHTML = gridHtml;
         };
@@ -2523,7 +2577,13 @@
 
                 if (!schedHtml && !taskHtml) return;
                 count++;
-                html += `<div id="agenda-date-${dStr}" class="${(dObj.getDay() === 0 || dObj.getDay() === 6) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold text-gray-700">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal text-gray-500">(${DAYS_STR[dObj.getDay()]})</span></div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+                
+                const holiName = getHolidayName(dObj);
+                const isSunOrHoli = dObj.getDay() === 0 || !!holiName;
+                const isSat = dObj.getDay() === 6;
+                const textColor = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-gray-700');
+                
+                html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
             document.getElementById('agenda-view-list').innerHTML = html;
@@ -2645,7 +2705,13 @@
             let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
             html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
             workDays.forEach(day => {
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold text-[#4a5f73] bg-gray-50"><div class="text-[8px] sm:text-[9px] text-gray-500">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs">${DAYS_STR[day.getDay()]}</div></th>`;
+                const holiName = getHolidayName(day);
+                const isSunOrHoli = day.getDay() === 0 || !!holiName;
+                const isSat = day.getDay() === 6;
+                const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
+                const bgHoli = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50';
+
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}"><div class="text-[8px] sm:text-[9px] ${color}">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs ${color}">${DAYS_STR[day.getDay()]}</div>${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}</th>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             
