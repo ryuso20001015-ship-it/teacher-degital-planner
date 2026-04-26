@@ -593,6 +593,26 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ★ データバックアップ・復元 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mt-5 mb-5">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-database text-purple-500 mr-1.5"></i> バックアップと復元</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">すべてのデータ（予定、設定、メモなど）をファイルとしてバックアップしたり、バックアップファイルから復元したりできます。</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="window.exportData()" class="flex-1 px-3 py-2 bg-purple-50 text-purple-700 rounded text-xs font-bold hover:bg-purple-100 transition border border-purple-200 shadow-sm flex items-center justify-center gap-1.5">
+                            <i class="fas fa-download"></i> データをバックアップ
+                        </button>
+                        
+                        <div class="flex-1 relative">
+                            <input type="file" id="import-file" accept=".json" class="hidden" onchange="window.importData(event)">
+                            <button onclick="document.getElementById('import-file').click()" class="w-full px-3 py-2 bg-white text-gray-700 rounded text-xs font-bold hover:bg-gray-50 transition border border-gray-300 shadow-sm flex items-center justify-center gap-1.5">
+                                <i class="fas fa-upload"></i> バックアップから復元
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1980,10 +2000,17 @@
                 window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); 
                 window.closeMonthBottomSheet(); 
             };
+            document.getElementById('month-bottom-sheet').style.transform = '';
             document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
         };
 
-        window.closeMonthBottomSheet = () => { const sheet = document.getElementById('month-bottom-sheet'); if (sheet) sheet.classList.add('translate-y-full'); };
+        window.closeMonthBottomSheet = () => { 
+            const sheet = document.getElementById('month-bottom-sheet'); 
+            if (sheet) {
+                sheet.style.transform = '';
+                sheet.classList.add('translate-y-full'); 
+            }
+        };
 
         window.openAddMenu = (dateStr, defaultTime = null, isAllDay = true) => {
             addModalTargetDate = dateStr; editTarget = null;
@@ -3453,6 +3480,62 @@
             alert("設定を保存しました。");
         };
 
+        window.exportData = () => {
+            const data = {
+                planners: allPlanners,
+                settings: globalSettings,
+                memos: allMemos,
+                folders: allFolders,
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const dateStr = getFormatDateStr(new Date()).replace(/-/g, '');
+            a.download = `teacher_planner_backup_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        window.importData = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (confirm('選択したファイルからデータを復元しますか？\n現在のデータはすべて上書きされます。')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.planners && data.settings) {
+                            allPlanners = data.planners;
+                            globalSettings = data.settings;
+                            allMemos = data.memos || [];
+                            allFolders = data.folders || [];
+                            
+                            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+                            safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
+                            safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                            safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+                            
+                            window.saveToFirebase();
+                            alert('データの復元が完了しました。画面を再読み込みします。');
+                            location.reload();
+                        } else {
+                            alert('ファイルの形式が正しくありません。');
+                        }
+                    } catch (err) {
+                        alert('ファイルの読み込みに失敗しました。');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            event.target.value = ''; // Reset
+        };
+
         window.handleMonthSearch = () => {
             window.renderCurrentView(); 
             
@@ -3699,6 +3782,44 @@
             swipeStartX = null;
             isSwiping = false;
         });
+
+        // ★ 月・週カレンダーボトムシートの下スワイプで閉じる処理
+        const bottomSheet = document.getElementById('month-bottom-sheet');
+        let sheetStartY = 0;
+        let sheetCurrentY = 0;
+        let isSheetSwiping = false;
+
+        if (bottomSheet) {
+            bottomSheet.addEventListener('touchstart', (e) => {
+                const content = document.getElementById('mbs-content');
+                // コンテンツ部分のスクロールが途中ならスワイプ判定しない
+                if (e.target.closest('#mbs-content') && content.scrollTop > 0) return;
+                sheetStartY = e.touches[0].clientY;
+                isSheetSwiping = true;
+                bottomSheet.style.transition = 'none';
+            }, { passive: true });
+
+            bottomSheet.addEventListener('touchmove', (e) => {
+                if (!isSheetSwiping) return;
+                sheetCurrentY = e.touches[0].clientY;
+                const diffY = sheetCurrentY - sheetStartY;
+                if (diffY > 0) {
+                    bottomSheet.style.transform = `translateY(${diffY}px)`;
+                }
+            }, { passive: true });
+
+            bottomSheet.addEventListener('touchend', (e) => {
+                if (!isSheetSwiping) return;
+                isSheetSwiping = false;
+                bottomSheet.style.transition = 'transform 0.3s ease-out';
+                const diffY = sheetCurrentY - sheetStartY;
+                if (diffY > 100) {
+                    window.closeMonthBottomSheet();
+                } else {
+                    bottomSheet.style.transform = 'translateY(0)';
+                }
+            });
+        }
 
         // 初期化処理の呼び出し
         initDataSync();
