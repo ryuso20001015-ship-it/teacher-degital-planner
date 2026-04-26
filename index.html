@@ -323,6 +323,12 @@
                     <input type="text" id="wp-modal-sub" list="sub-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800">
                 </div>
             </div>
+            <div id="wp-modal-special-area" class="hidden mb-2 bg-gray-50 p-2 rounded border border-gray-200">
+                <div class="flex-1">
+                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5">予定</label>
+                    <input type="text" id="wp-modal-sp-title" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" placeholder="朝礼、学年集会など...">
+                </div>
+            </div>
             <div class="mb-4 bg-gray-50 p-2 rounded border border-gray-200">
                 <label class="text-[9px] font-bold text-gray-500 block mb-0.5">授業メモ・予定</label>
                 <textarea id="wp-modal-memo" rows="2" class="w-full bg-transparent px-0.5 py-0.5 text-xs outline-none resize-none font-bold text-gray-700 placeholder-gray-400" placeholder="単元名や連絡事項など..."></textarea>
@@ -828,10 +834,11 @@
             const evs = [];
             const addSp = (id, name, sTime, eTime) => {
                 const cData = data.classes[id];
-                if (cData && cData.memo && !cData.isCut) {
+                if (cData && (cData.title || cData.memo) && !cData.isCut) {
+                    let evTitle = cData.title ? cData.title : (cData.memo || "予定あり");
                     evs.push({
                         id: `wp_special_${id}_${dateStr}`,
-                        title: `【${name}】${cData.memo}`,
+                        title: `【${name}】${evTitle}`,
                         category: 'work',
                         start: `${dateStr}T${sTime}`,
                         end: `${dateStr}T${eTime}`,
@@ -839,7 +846,8 @@
                         originalDateKey: dateStr,
                         isSpecialClass: true,
                         specialId: id,
-                        specialName: name
+                        specialName: name,
+                        memo: cData.memo || ""
                     });
                 }
             };
@@ -1296,11 +1304,12 @@
             
             currentFolders.forEach(folder => {
                 html += `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm hover:shadow-md hover:bg-blue-100 cursor-pointer transition flex items-center gap-2 h-12 group relative" onclick="window.enterFolder('${folder.id}')">
-                        <i class="fas fa-folder text-blue-400 text-lg"></i>
-                        <h3 class="font-bold text-[#4a5f73] truncate text-sm flex-1">${folder.name}</h3>
-                        <button onclick="event.stopPropagation(); window.deleteFolder('${folder.id}')" class="absolute right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition p-1.5 bg-white/80 rounded"><i class="fas fa-trash-alt text-xs"></i></button>
-                    </div>
+            <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
+                <div class="grid grid-cols-7 bg-gray-50 text-center text-xs font-bold text-[#4a5f73] py-1.5 border-b border-gray-200 shrink-0">
+                    <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-500">土</span><span class="text-red-500">日</span>
+                </div>
+                <div id="month-view-grid" class="flex-1 grid grid-cols-7 grid-rows-6 gap-[1px] bg-gray-200 min-h-0 overflow-hidden"></div>
+            </div>
                 `;
             });
 
@@ -2297,23 +2306,23 @@
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'time') {
                         let label = ev.start ? ev.start.split('T').pop().substring(0,5) : "";
                         let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
                     } else if (slot.type === 'class') {
                         const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
                     } else if (slot.type === 'task') {
                         const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = ev.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
                     }
                 }
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
@@ -2321,7 +2330,7 @@
                 const holiHtml = holiName && isCurrentMonth ? `<span class="text-[8px] text-red-500 font-bold ml-1 mt-0.5 truncate flex-1">${holiName}</span>` : '';
                 
                 html += `
-                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
                         <div class="absolute top-0.5 left-0.5 right-0.5 z-30 pointer-events-none flex justify-between shrink-0 h-5">
                             <div class="w-[calc(100%-20px)] overflow-hidden">${holiHtml}</div>
                             <span class="date-link ${dateNumClass} text-[10px] font-bold shrink-0 ml-auto flex items-center justify-center">${dObj.getDate()}</span>
@@ -2794,6 +2803,7 @@
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
                         const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
                         const isCut = cData.isCut;
+                        const title = cData.title || "";
                         const memo = cData.memo || "";
                         
                         let btnContent = "";
@@ -2803,10 +2813,14 @@
                             bgClass = "bg-gray-100 text-gray-400";
                             btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
                             borderClass = "border border-dashed border-gray-300";
-                        } else if (memo) {
+                        } else if (title) {
                             bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
                             borderClass = "border border-yellow-200 shadow-sm";
-                            btnContent = `<div class="text-[9px] sm:text-[10px] truncate w-full px-1 whitespace-normal leading-tight">${memo}</div>`;
+                            btnContent = `<div class="text-[9px] sm:text-[10px] font-bold truncate w-full px-1 whitespace-normal leading-tight">${title}</div>`;
+                        } else if (memo) {
+                            bgClass = "bg-gray-50 text-gray-400 hover:bg-gray-100";
+                            borderClass = "border border-gray-200";
+                            btnContent = `<div class="text-[10px] text-gray-400 w-full text-center"><i class="fas fa-comment-dots"></i></div>`;
                         } else {
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
@@ -2966,6 +2980,7 @@
 
             if (isSpecial) {
                 classInputArea.classList.add('hidden');
+                document.getElementById('wp-modal-special-area').classList.remove('hidden');
                 modalTitle.innerHTML = `<i class="fas fa-sun mr-1"></i>${periodName}の予定`;
                 document.getElementById('wp-modal-base-status').classList.add('hidden');
                 document.getElementById('wp-modal-time-config').classList.add('hidden');
@@ -2976,11 +2991,13 @@
                 
                 resetBtn.classList.add('hidden');
                 
+                document.getElementById('wp-modal-sp-title').value = cData ? (cData.title || "") : "";
                 memoInput.value = cData ? (cData.memo || "") : "";
-                memoInput.placeholder = "予定やタスクを入力...";
+                memoInput.placeholder = "メモの内容（一覧には表示されません）";
 
             } else {
                 classInputArea.classList.remove('hidden');
+                document.getElementById('wp-modal-special-area').classList.add('hidden');
                 modalTitle.innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
                 document.getElementById('wp-modal-base-status').classList.remove('hidden');
                 document.getElementById('wp-modal-time-config').classList.remove('hidden');
@@ -3102,6 +3119,7 @@
             if (isSpecial) {
                 const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
                 allPlanners[targetDateStr].classes[targetPeriodId] = {
+                    title: document.getElementById('wp-modal-sp-title').value.trim(),
                     memo: memo,
                     isCut: currentData.isCut || false
                 };
@@ -3133,8 +3151,10 @@
             
             const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
             const memo = document.getElementById('wp-modal-memo').value.trim();
+            const title = document.getElementById('wp-modal-sp-title').value.trim();
 
             allPlanners[targetDateStr].classes[targetPeriodId] = {
+                title: title,
                 memo: memo,
                 isCut: !currentData.isCut
             };
