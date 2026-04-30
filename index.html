@@ -28,7 +28,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
         body { font-family: 'Noto Sans JP', sans-serif; background-color: #1a1a2e; overflow: hidden; font-size: 0.875rem; }
-        
         main { touch-action: pan-y; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -39,10 +38,7 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 
-        .draw-toolbar-base { 
-            transition: max-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease; 
-            max-width: 0; opacity: 0; overflow: hidden; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; pointer-events: none; white-space: nowrap;
-        }
+        .draw-toolbar-base { transition: max-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease; max-width: 0; opacity: 0; overflow: hidden; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; pointer-events: none; white-space: nowrap; }
         .toolbar-visible { max-width: 500px !important; opacity: 1 !important; margin-left: 0.25rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; border-width: 1px !important; pointer-events: auto !important; }
 
         .nav-btn { padding: 0.35rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #1f2937; background-color: #ffffff; border: 1px solid #d1d5db; transition: all 0.2s; white-space: nowrap; }
@@ -52,26 +48,15 @@
         .calendar-cell { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; transition: all 0.1s; cursor: pointer; }
         .calendar-cell:hover { background-color: #f8fafc; }
         .cell-selected { background-color: #eff6ff !important; box-shadow: inset 0 0 0 2px #3b82f6; z-index: 10; }
+        .slot-selected { box-shadow: inset 0 0 0 2px #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1) !important; transition: all 0.2s; }
 
-        .slot-selected { 
-            box-shadow: inset 0 0 0 2px #3b82f6 !important; 
-            background-color: rgba(59, 130, 246, 0.1) !important; 
-            transition: all 0.2s; 
-        }
-
-        .schedule-badge, .task-badge {
-            font-size: 0.6rem; padding: 0.05rem 0.15rem; border-radius: 0.125rem; margin-bottom: 0.1rem; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; transition: opacity 0.2s;
-        }
+        .schedule-badge, .task-badge { font-size: 0.6rem; padding: 0.05rem 0.15rem; border-radius: 0.125rem; margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; transition: opacity 0.2s; }
         .schedule-badge:hover, .task-badge:hover { opacity: 0.7; }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
 
-        .timeline-bg {
-            background-image: linear-gradient(to bottom, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #f3f4f6 1px, transparent 1px);
-            background-size: 100% calc(100% / 19), 100% calc(100% / 38);
-        }
+        .timeline-bg { background-image: linear-gradient(to bottom, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #f3f4f6 1px, transparent 1px); background-size: 100% calc(100% / 19), 100% calc(100% / 38); }
         
         .cat-jugyo { background-color: #d1fae5; border-left: 3px solid #10b981; color: #065f46; }
         .cat-work { background-color: #fee2e2; border-left: 2px solid #ef4444; color: #991b1b; }
@@ -83,37 +68,20 @@
 
         .mode-mobile-icon { display: none; }
         .mode-mobile .mode-mobile-icon { display: block !important; }
-
-        .mode-mobile main {
-            padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)) !important;
-        }
-
-        .mode-mobile #main-nav-group {
-            position: fixed; bottom: 0; left: 0; right: 0; width: 100%; z-index: 9999; border-radius: 0;
-            padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom)) 0.5rem; justify-content: space-around;
-            background-color: #1a1a2e; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); flex-wrap: nowrap; gap: 0.5rem;
-        }
+        .mode-mobile main { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)) !important; }
+        .mode-mobile #main-nav-group { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; z-index: 9999; border-radius: 0; padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom)) 0.5rem; justify-content: space-around; background-color: #1a1a2e; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); flex-wrap: nowrap; gap: 0.5rem; }
         .mode-mobile #main-nav-group .nav-btn { flex: 1; font-size: 0.65rem; padding: 0.35rem 0; border-radius: 0.5rem; }
-
         .mode-mobile header { padding: 0.25rem 0.5rem; }
         .mode-mobile .nav-btn:not(#main-nav-group .nav-btn) { padding: 0.3rem 0.6rem; }
         .mode-mobile .schedule-badge, .mode-mobile .task-badge { font-size: 0.65rem; padding: 0.2rem 0.3rem; margin-bottom: 0.15rem; line-height: 1.2; }
         .mode-mobile .calendar-cell { min-height: 45px; }
-
         .mode-mobile #month-view-grid .absolute > span { font-size: 7px !important; line-height: 1.1; }
         .mode-mobile #month-view-grid .date-link { font-size: 8px !important; width: 14px; height: 14px; }
         .mode-mobile #month-view-grid .absolute { border-width: 0.5px; }
         .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
+        .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
 
-        .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) {
-            width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important;
-            border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
-            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important;
-        }
-
-        #memo-edit-content:empty::before {
-            content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block;
-        }
+        #memo-edit-content:empty::before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
 
         /* ★ メモのリッチテキスト（箇条書き・段落番号・インデント・区切り線）対応用CSS ★ */
         #memo-edit-content ul { list-style-type: disc !important; padding-left: 2em !important; margin: 1em 0 !important; }
@@ -126,6 +94,9 @@
         .color-palette-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
         .color-cell { width: 15px; height: 15px; cursor: pointer; border: 1px solid #e5e7eb; border-radius: 2px; transition: transform 0.1s ease; }
         .color-cell:hover { border-color: #000; transform: scale(1.3); position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        /* ★ 単元計画用テーブルのセルハイライト */
+        td[contenteditable="true"]:focus { outline: none; background-color: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; }
 
         @media print {
             body > *:not(#memo-edit-modal) { display: none !important; }
@@ -163,6 +134,9 @@
                 </button>
                 <button id="nav-btn-weekly-plan" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('weekly-plan')">
                     <i class="fas fa-chalkboard-teacher mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週案簿</span>
+                </button>
+                <button id="nav-btn-unit-plan" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('unit-plan')">
+                    <i class="fas fa-map mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">単元計画</span>
                 </button>
                 <button id="nav-btn-agenda" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('agenda')">
                     <i class="fas fa-list-ul mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">一覧</span>
@@ -323,17 +297,26 @@
             </div>
             <div id="wp-modal-base-status" class="bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all mb-4"></div>
 
-            <div id="wp-modal-class-area" class="flex gap-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200">
-                <div class="flex-1">
-                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5">クラス</label>
-                    <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalClsSuggest(this.value)">
-                    <div id="wp-modal-cls-suggest" class="flex gap-1 mt-1 flex-wrap hidden"></div>
+            <div id="wp-modal-class-area" class="flex flex-col gap-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200">
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">クラス</label>
+                        <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalClsSuggest(this.value); window.updateWpModalUnitPlanOptions();" onchange="window.updateWpModalUnitPlanOptions()">
+                        <div id="wp-modal-cls-suggest" class="flex gap-1 mt-1 flex-wrap hidden"></div>
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">教科・内容</label>
+                        <input type="text" id="wp-modal-sub" list="sub-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalUnitPlanOptions()" onchange="window.updateWpModalUnitPlanOptions()">
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5">教科・内容</label>
-                    <input type="text" id="wp-modal-sub" list="sub-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800">
+                <!-- ★ 単元計画連携エリア -->
+                <div id="wp-modal-unit-plan-area" class="mt-2 border-t border-gray-200 pt-2">
+                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5"><i class="fas fa-link mr-1"></i>単元計画との連携</label>
+                    <select id="wp-modal-unit-plan-select" class="w-full bg-white border border-gray-300 rounded px-1 py-1 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800 shadow-sm" onchange="window.updateWpModalUnitPlanPreview()"></select>
+                    <div id="wp-modal-unit-plan-preview" class="text-[9px] text-gray-600 mt-1.5 hidden bg-white border border-gray-200 rounded p-1.5 whitespace-pre-wrap leading-relaxed shadow-inner"></div>
                 </div>
             </div>
+
             <div id="wp-modal-special-area" class="hidden mb-2 bg-gray-50 p-2 rounded border border-gray-200">
                 <div class="flex-1">
                     <label class="text-[9px] font-bold text-gray-500 block mb-0.5">予定</label>
@@ -381,7 +364,6 @@
                         </div>
                     </button>
                     
-                    <!-- PC用フィルターボタン -->
                     <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
                         <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-work_club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work_club')">仕事</button>
@@ -389,7 +371,6 @@
                         <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                     
-                    <!-- スマホ用フィルターセレクトボックス -->
                     <div class="flex sm:hidden ml-2 items-center shrink-0">
                         <select id="mobile-filter-select" onchange="window.setCalendarFilter(this.value)" class="bg-gray-100 border border-gray-300 text-[#4a5f73] text-[10px] font-bold rounded px-1.5 py-1 outline-none">
                             <option value="all">全て</option>
@@ -460,6 +441,31 @@
             
             <div id="weekly-plan-animation-area" class="flex-1 flex flex-col min-h-0 w-full bg-gray-50 relative">
                 <div class="flex-1 overflow-auto p-1.5 sm:p-3 custom-scrollbar flex flex-col w-full h-full" id="weekly-plan-container"></div>
+            </div>
+        </div>
+        
+        <!-- ★ View 9: 単元計画 -->
+        <div id="view-unit-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
+            <div class="bg-white p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-10 sticky top-0 shrink-0 gap-2">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm sm:text-base font-bold text-[#4a5f73] shrink-0"><i class="fas fa-map mr-1.5 text-[#4a5f73]"></i> 単元計画</h2>
+                    <!-- ★ 学年選択に変更 -->
+                    <select id="unit-plan-grade-select" onchange="window.renderUnitPlanView()" class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white ml-2">
+                        <option value="1">1年生</option>
+                        <option value="2">2年生</option>
+                        <option value="3">3年生</option>
+                    </select>
+                    <select id="unit-plan-subject-select" onchange="window.renderUnitPlanView()" class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white"></select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="unit-plan-progress" class="text-xs font-bold text-gray-600 hidden sm:block"></div>
+                    <button onclick="window.saveUnitPlan()" class="px-3 py-1.5 bg-[#4a5f73] text-white rounded text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
+                <div id="unit-plan-container" class="min-w-[800px] w-full p-2 sm:p-4 pb-20">
+                    <!-- Table will be injected here -->
+                </div>
             </div>
         </div>
 
@@ -820,6 +826,8 @@
 
         let allMemos = [];
         let allFolders = [];
+        let allUnitPlans = safeGetItem('teacher_planner_unit_plans') ? JSON.parse(safeGetItem('teacher_planner_unit_plans')) : {};
+
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
             { id: 'guidance', name: '生徒指導', icon: 'fas fa-user-graduate', color: 'text-green-500' },
@@ -914,7 +922,6 @@
                 document.execCommand(window.currentColorCommand, false, applyColor);
             }
             
-            // ★ 設定した色をボタンのインジケーターに反映
             const indicator = document.getElementById(`indicator-${window.currentColorCommand}`);
             if (indicator) {
                 indicator.style.backgroundColor = applyColor;
@@ -1125,10 +1132,16 @@
                         safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
                         changed = true;
                     }
+                    if (data.unitPlans) {
+                        allUnitPlans = data.unitPlans;
+                        safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+                        changed = true;
+                    }
 
                     if (changed) {
                         window.renderCurrentView(); 
                         if (currentView === 'memo') window.renderMemoList();
+                        if (currentView === 'unit-plan') window.renderUnitPlanView();
                     }
                 } else {
                     if (!isLinkedDevice) window.saveToFirebase();
@@ -1152,6 +1165,7 @@
                     settings: JSON.parse(JSON.stringify(globalSettings)),
                     memos: JSON.parse(JSON.stringify(allMemos)),
                     folders: JSON.parse(JSON.stringify(allFolders)),
+                    unitPlans: JSON.parse(JSON.stringify(allUnitPlans)),
                     updatedAt: now
                 };
                 await window.fb.setDoc(docRef, payload);
@@ -1276,6 +1290,8 @@
             if (localMemos) { try { allMemos = JSON.parse(localMemos); } catch(e){} }
             const localFolders = safeGetItem('teacher_planner_folders');
             if (localFolders) { try { allFolders = JSON.parse(localFolders); } catch(e){} }
+            const localUnitPlans = safeGetItem('teacher_planner_unit_plans');
+            if (localUnitPlans) { try { allUnitPlans = JSON.parse(localUnitPlans); } catch(e){} }
 
             const thirtyDays = 30 * 24 * 60 * 60 * 1000;
             const now = Date.now();
@@ -2020,6 +2036,7 @@
             else if (currentView === 'agenda') renderAgendaView();
             else if (currentView === 'weekly-plan') renderWeeklyPlanView();
             else if (currentView === 'memo') renderMemoList();
+            else if (currentView === 'unit-plan') window.renderUnitPlanView();
         };
 
         window.handleStartTimeChange = () => {
@@ -2051,7 +2068,7 @@
         
         document.addEventListener('click', (e) => { 
             if (!document.body.contains(e.target)) return;
-            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal')) {
+            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal') && !e.target.closest('#custom-color-palette')) {
                 window.clearCellSelection(); 
             } 
             const searchResults = document.getElementById('month-search-results');
@@ -2127,7 +2144,13 @@
             }
 
             if (!cls && !sub && !memo) return null;
-            return { cls, sub, memo, isBase, sourceDay, sourcePeriod };
+            
+            let unitPlanIdx = null;
+            if (data.classes && data.classes[period.id] && data.classes[period.id].unitPlanIdx !== undefined) {
+                unitPlanIdx = data.classes[period.id].unitPlanIdx;
+            }
+
+            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx };
         };
 
         window.openMonthBottomSheet = (dStr, defaultHour = null) => {
@@ -2765,7 +2788,13 @@
                     ttPeriods.slice(0, lessonCount).forEach(p => {
                         if (p.id === 'p_allday' || p.isAllDay) return;
                         const cData = getPeriodClass(curStr, p, cur);
-                        if (cData) combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData });
+                        if (cData && !cData.disabled && !cData.isCut) {
+                            let unitPlanLabel = "";
+                            if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
+                                unitPlanLabel = `<span class="text-[7px] bg-blue-100 text-blue-700 px-0.5 rounded ml-1 leading-none shrink-0 border border-blue-200">第${parseInt(cData.unitPlanIdx)+1}時</span>`;
+                            }
+                            combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData, badge: unitPlanLabel });
+                        }
                     });
                 }
                 timeEventsByDay[i].forEach(ev => combinedEvents.push({ isClass: false, drawStart: ev.drawStart, drawEnd: ev.drawEnd, ev: ev }));
@@ -2778,7 +2807,7 @@
                     if (item.isClass) {
                         const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span></div></div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
@@ -2814,7 +2843,7 @@
                     ttPeriods.slice(0, lessonCount).forEach(p => {
                         if (p.id === 'p_allday' || p.isAllDay) return;
                         const cData = getPeriodClass(dStr, p, dObj);
-                        if (cData) { 
+                        if (cData && !cData.disabled && !cData.isCut) { 
                             let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                             let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
                             schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
@@ -2897,6 +2926,47 @@
         };
 
 
+        const calculateCumulativeHoursForUnitPlan = (targetGrade, targetSub) => {
+            if (!targetGrade || !targetSub) return 0;
+            const today = new Date();
+            const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+            const startDate = new Date(year, 3, 1); 
+            
+            const classCounts = {};
+            
+            let curDate = new Date(startDate);
+            while (curDate <= today) {
+                const dStr = getFormatDateStr(curDate);
+                if (!isHoliday(curDate)) {
+                    const data = allPlanners[dStr] || {}; 
+                    const ttType = getTtType(dStr);
+                    if (ttType !== 'none') {
+                        const ttPeriods = globalSettings.timetables[ttType].periods;
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                        ttPeriods.slice(0, lessonCount).forEach(p => {
+                            if (p.id === 'p_allday' || p.isAllDay) return;
+                            const cData = getPeriodClass(dStr, p, curDate);
+                            if (cData && !cData.disabled) {
+                                const isCut = (data.classes && data.classes[p.id] && data.classes[p.id].isCut);
+                                if (!isCut) {
+                                    const cls = String(cData.cls).trim();
+                                    const sub = String(cData.sub).trim();
+                                    if ((cls.startsWith(targetGrade) || cls.includes(`${targetGrade}年`)) && sub === targetSub) {
+                                        classCounts[cls] = (classCounts[cls] || 0) + 1;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+            
+            let maxCount = 0;
+            Object.values(classCounts).forEach(c => { if (c > maxCount) maxCount = c; });
+            return maxCount;
+        };
+
         const calculateTechCountsForWeek = (startOfWeek) => {
             const friday = new Date(startOfWeek); friday.setDate(friday.getDate() + 4);
             const year = friday.getMonth() >= 3 ? friday.getFullYear() : friday.getFullYear() - 1;
@@ -2913,7 +2983,7 @@
                         ttPeriods.slice(0, lessonCount).forEach(p => {
                             if (p.id === 'p_allday' || p.isAllDay) return;
                             const cData = getPeriodClass(dStr, p, curDate);
-                            if (cData && String(cData.sub).trim() === '技術') {
+                            if (cData && String(cData.sub).trim() === '技術' && !cData.disabled && !cData.isCut) {
                                 const cls = String(cData.cls).trim();
                                 if (cls) { counts[cls] = (counts[cls] || 0) + 1; lessonCountMap[`${dStr}_${p.id}`] = counts[cls]; }
                             }
@@ -3216,6 +3286,96 @@
             window.updateWpModalClsSuggest(c);
             input.focus();
         };
+        
+        window.updateWpModalUnitPlanOptions = () => {
+            const cls = document.getElementById('wp-modal-cls').value.trim();
+            const sub = document.getElementById('wp-modal-sub').value.trim();
+            const select = document.getElementById('wp-modal-unit-plan-select');
+            const preview = document.getElementById('wp-modal-unit-plan-preview');
+            
+            let grade = null;
+            if (cls.startsWith('1') || cls.includes('1年')) grade = '1';
+            else if (cls.startsWith('2') || cls.includes('2年')) grade = '2';
+            else if (cls.startsWith('3') || cls.includes('3年')) grade = '3';
+
+            if (!grade || !sub) {
+                select.innerHTML = '<option value="">(クラス・教科を選択してください)</option>';
+                select.disabled = true;
+                preview.classList.add('hidden');
+                return;
+            }
+
+            const planKey = `${grade}_${sub}`;
+            if (!allUnitPlans[planKey] || !allUnitPlans[planKey].plans || allUnitPlans[planKey].plans.length === 0) {
+                select.innerHTML = '<option value="">(単元計画が登録されていません)</option>';
+                select.disabled = true;
+                preview.classList.add('hidden');
+                return;
+            }
+
+            const plans = allUnitPlans[planKey].plans;
+            let html = '<option value="">(連携しない)</option>';
+            
+            // 該当クラスの現在の進捗を計算してデフォルト選択にする
+            const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub);
+            let targetIdx = null;
+            
+            // 既に選択されている値がある場合はそれを優先
+            const existingData = allPlanners[wpModalTarget.targetDateStr]?.classes?.[wpModalTarget.targetPeriodId];
+            if (existingData && existingData.unitPlanIdx !== undefined && existingData.unitPlanIdx !== "") {
+                targetIdx = parseInt(existingData.unitPlanIdx);
+            } else if (currentCount < plans.length) {
+                targetIdx = currentCount; // 未実施の最初の時間
+            }
+
+            plans.forEach((p, idx) => {
+                let text = `第${p.hour}時`;
+                if (p.task) text += ` : ${p.task.replace(/\n/g, ' ').substring(0, 15)}...`;
+                const isSelected = idx === targetIdx ? 'selected' : '';
+                html += `<option value="${idx}" ${isSelected}>${text}</option>`;
+            });
+
+            select.innerHTML = html;
+            select.disabled = false;
+            window.updateWpModalUnitPlanPreview();
+        };
+
+        window.updateWpModalUnitPlanPreview = () => {
+            const select = document.getElementById('wp-modal-unit-plan-select');
+            const preview = document.getElementById('wp-modal-unit-plan-preview');
+            const cls = document.getElementById('wp-modal-cls').value.trim();
+            const sub = document.getElementById('wp-modal-sub').value.trim();
+            
+            let grade = null;
+            if (cls.startsWith('1') || cls.includes('1年')) grade = '1';
+            else if (cls.startsWith('2') || cls.includes('2年')) grade = '2';
+            else if (cls.startsWith('3') || cls.includes('3年')) grade = '3';
+
+            if (!grade || !sub || !select.value) {
+                preview.classList.add('hidden');
+                return;
+            }
+
+            const planKey = `${grade}_${sub}`;
+            const idx = parseInt(select.value);
+            const plan = allUnitPlans[planKey].plans[idx];
+            
+            if (plan) {
+                let html = '';
+                if (plan.task) html += `<div class="font-bold text-gray-700 mb-1"><i class="fas fa-bullseye mr-1"></i>${plan.task}</div>`;
+                if (plan.activity) html += `<div><span class="font-bold text-gray-500 mr-1">活動:</span>${plan.activity}</div>`;
+                
+                if (html) {
+                    preview.innerHTML = html;
+                    preview.classList.remove('hidden');
+                } else {
+                    preview.classList.add('hidden');
+                }
+            } else {
+                preview.classList.add('hidden');
+            }
+        };
+
 
         window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             window.closeMonthBottomSheet();
@@ -3290,6 +3450,7 @@
 
                 window.renderWpModalButtons();
                 window.updateWpModalBaseStatus();
+                window.updateWpModalUnitPlanOptions();
             }
 
             document.getElementById('weekly-plan-modal').classList.remove('hidden');
@@ -3346,6 +3507,7 @@
             document.getElementById('wp-modal-sub').value = newSub;
             
             window.updateWpModalBaseStatus();
+            window.updateWpModalUnitPlanOptions();
         };
 
         window.updateWpModalBaseStatus = () => {
@@ -3384,6 +3546,7 @@
             } else {
                 const cls = document.getElementById('wp-modal-cls').value.trim();
                 const sub = document.getElementById('wp-modal-sub').value.trim();
+                const unitPlanIdx = document.getElementById('wp-modal-unit-plan-select').value;
                 
                 allPlanners[targetDateStr].classes[targetPeriodId] = {
                     cls: cls,
@@ -3391,6 +3554,7 @@
                     memo: memo,
                     sourceDay: wpSelectedDay,
                     sourcePeriod: wpSelectedPeriod,
+                    unitPlanIdx: unitPlanIdx,
                     disabled: false
                 };
             }
@@ -4051,6 +4215,279 @@
                 }
             });
         }
+
+        // コピペ対応イベントリスナーを登録
+        document.addEventListener('paste', (e) => {
+            // contenteditable="true" が付与されている td (単元計画のセルなど) か確認
+            const td = e.target.closest('td[contenteditable="true"]');
+            if (td && currentView === 'unit-plan') {
+                e.preventDefault();
+                
+                // クリップボードのテキストデータを取得
+                const clipboardData = e.clipboardData || window.clipboardData;
+                const pastedText = clipboardData.getData('text/plain');
+                
+                // 行ごとに分割 (CRLF または LF)
+                const rows = pastedText.trim().split(/\r\n|\n|\r/);
+                
+                // 単一セルの場合はそのままテキストを挿入
+                if (rows.length === 1 && rows[0].indexOf('\t') === -1) {
+                    document.execCommand("insertText", false, pastedText);
+                    return;
+                }
+                
+                // テーブルとして処理
+                const startRowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
+                const startColIdx = parseInt(td.getAttribute('data-col-idx'), 10);
+                
+                if (isNaN(startRowIdx) || isNaN(startColIdx)) return;
+                
+                const cls = document.getElementById('unit-plan-grade-select').value;
+                const sub = document.getElementById('unit-plan-subject-select').value;
+                const planKey = `${cls}_${sub}`;
+                if (!allUnitPlans[planKey]) return;
+                
+                const plans = allUnitPlans[planKey].plans;
+                let isChanged = false;
+
+                for (let r = 0; r < rows.length; r++) {
+                    const rowText = rows[r];
+                    const cells = rowText.split('\t'); // タブ区切り
+                    
+                    const targetRowIdx = startRowIdx + r;
+                    // 必要なら行を追加
+                    if (targetRowIdx >= plans.length) {
+                        plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
+                        isChanged = true;
+                    }
+                    
+                    const p = plans[targetRowIdx];
+                    
+                    for (let c = 0; c < cells.length; c++) {
+                        const cellText = cells[c];
+                        const targetColIdx = startColIdx + c;
+                        
+                        // カラム番号の対応 (0: task, 1: activity, 2: note)
+                        if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
+                        else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
+                        else if (targetColIdx === 2) { p.note = cellText; isChanged = true; }
+                    }
+                }
+                
+                if (isChanged) {
+                    window.renderUnitPlanView(); // 画面を再描画してペースト結果を反映
+                }
+            }
+        });
+
+        // テーブル全体のフォーカス制御補助
+        window.focusNextCell = (rowIdx, colIdx) => {
+            const nextTd = document.querySelector(`td[data-row-idx="${rowIdx}"][data-col-idx="${colIdx}"]`);
+            if (nextTd) nextTd.focus();
+        };
+
+        window.renderUnitPlanView = () => {
+            const clsSelect = document.getElementById('unit-plan-grade-select');
+            const subSelect = document.getElementById('unit-plan-subject-select');
+            
+            if (subSelect.options.length === 0) {
+                document.querySelectorAll('#sub-list option').forEach(opt => {
+                    subSelect.add(new Option(opt.value, opt.value));
+                });
+            }
+
+            const cls = clsSelect.value;
+            const sub = subSelect.value;
+            if(!cls || !sub) return;
+
+            const planKey = `${cls}_${sub}`;
+            if (!allUnitPlans[planKey]) {
+                const totalHours = cls === '3' ? 17 : 35;
+                const defaultPlans = [];
+                for(let i=1; i<=totalHours; i++) {
+                    defaultPlans.push({ hour: i, task: "", activity: "", note: "" });
+                }
+                allUnitPlans[planKey] = { plans: defaultPlans };
+            }
+
+            const plans = allUnitPlans[planKey].plans;
+            const cumulativeHours = calculateCumulativeHoursForUnitPlan(cls, sub);
+            
+            document.getElementById('unit-plan-progress').innerHTML = `進捗: <span class="text-blue-600 text-sm">${cumulativeHours}</span> / ${plans.length} 時間`;
+
+            let html = `
+            <table class="w-full border-collapse bg-white shadow-sm border border-[#2e5d4b]" id="unit-plan-table">
+                <thead>
+                    <tr class="bg-[#2e5d4b] text-white text-xs">
+                        <th class="border border-[#2e5d4b] p-2 w-12 text-center">時数</th>
+                        <!-- 進捗帯列 1〜6組 -->
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">1組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">2組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">3組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">4組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">5組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">6組</th>
+                        <th class="border border-[#2e5d4b] p-2 w-[25%] text-left">学習課題</th>
+                        <th class="border border-[#2e5d4b] p-2 w-[30%] text-left">活動内容</th>
+                        <th class="border border-[#2e5d4b] p-2 w-auto text-left">指導上の留意点・評価ポイント</th>
+                        <th class="border border-[#2e5d4b] p-2 w-10 text-center"><i class="fas fa-cog"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            // クラス別の進捗を計算する
+            const classProgress = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            const today = new Date();
+            const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+            const startDate = new Date(year, 3, 1);
+            let curDate = new Date(startDate);
+            
+            while (curDate <= today) {
+                const dStr = getFormatDateStr(curDate);
+                if (!isHoliday(curDate)) {
+                    const data = allPlanners[dStr] || {}; 
+                    const ttType = getTtType(dStr);
+                    if (ttType !== 'none') {
+                        const ttPeriods = globalSettings.timetables[ttType].periods;
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                        ttPeriods.slice(0, lessonCount).forEach(period => {
+                            if (period.id === 'p_allday' || period.isAllDay) return;
+                            const cData = getPeriodClass(dStr, period, curDate);
+                            if (cData && !cData.disabled && !cData.isCut) {
+                                const cCls = String(cData.cls).trim();
+                                const cSub = String(cData.sub).trim();
+                                if ((cCls.startsWith(cls) || cCls.includes(`${cls}年`)) && cSub === sub) {
+                                    // 1組から6組を判定
+                                    let kumiMatch = cCls.match(/(\d+)組/);
+                                    let kumi = null;
+                                    if (kumiMatch) {
+                                        kumi = parseInt(kumiMatch[1]);
+                                    } else {
+                                        let dashMatch = cCls.match(/-\s*(\d+)/);
+                                        if (dashMatch) kumi = parseInt(dashMatch[1]);
+                                    }
+                                    if (kumi >= 1 && kumi <= 6) {
+                                        if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
+                                            const uIdx = parseInt(cData.unitPlanIdx) + 1; // unitPlanIdxは0-indexed
+                                            if (uIdx > classProgress[kumi]) classProgress[kumi] = uIdx;
+                                        } else {
+                                            classProgress[kumi]++;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+
+            plans.forEach((p, idx) => {
+                const isDone = (idx + 1) <= cumulativeHours;
+                const bgClass = isDone ? 'bg-blue-50/50' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30');
+                
+                let progressCells = '';
+                for (let k = 1; k <= 6; k++) {
+                    const currentHour = idx + 1;
+                    const maxHour = classProgress[k];
+                    
+                    // 背景色として帯を表現
+                    let cellBg = '';
+                    if (currentHour <= maxHour) {
+                        // 完了済みの時数は帯の背景色をつける (ここでは淡い青を指定)
+                        cellBg = 'bg-blue-200/60';
+                    }
+                    
+                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-top ${cellBg}"></td>`;
+                }
+
+                html += `
+                <tr class="${bgClass} border-b border-gray-200 text-xs text-gray-800 transition hover:bg-gray-100 group">
+                    <td class="border-r border-gray-200 p-2 text-center font-bold text-gray-600 align-top select-none w-12">
+                        ${p.hour}
+                    </td>
+                    ${progressCells}
+                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="0" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
+                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="1" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
+                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="2" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
+                    <td class="p-1 align-middle text-center w-10 select-none">
+                        <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            
+            html += `
+                <div class="mt-3 flex justify-center">
+                    <button onclick="window.addUnitPlanRow('${planKey}')" class="px-4 py-1.5 bg-gray-100 border border-gray-300 text-gray-600 rounded text-xs font-bold hover:bg-gray-200 transition shadow-sm"><i class="fas fa-plus mr-1"></i>行を追加</button>
+                </div>
+            `;
+
+            document.getElementById('unit-plan-container').innerHTML = html;
+        };
+
+        window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
+            if (!document.body.contains(cellElem)) return; // 再描画で消えた要素は無視
+            if (!allUnitPlans[planKey]) return;
+            const plans = allUnitPlans[planKey].plans;
+            if (plans[rowIdx]) {
+                plans[rowIdx][field] = cellElem.innerText;
+            }
+        };
+
+        window.addUnitPlanRow = (planKey) => {
+            if (!allUnitPlans[planKey]) return;
+            const plans = allUnitPlans[planKey].plans;
+            
+            // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
+            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                document.activeElement.blur();
+            }
+
+            plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
+            window.renderUnitPlanView();
+            // 追加した行が見えるように一番下までスクロール
+            setTimeout(() => {
+                const container = document.getElementById('unit-plan-container').parentElement;
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+        };
+        
+        window.removeUnitPlanRow = (planKey, idx) => {
+            if (!allUnitPlans[planKey]) return;
+            if (confirm(`第${idx + 1}時の行を削除しますか？`)) {
+                // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
+                if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                    document.activeElement.blur();
+                }
+                
+                const plans = allUnitPlans[planKey].plans;
+                plans.splice(idx, 1);
+                // 時数を振り直す
+                plans.forEach((p, i) => { p.hour = i + 1; });
+                window.renderUnitPlanView();
+            }
+        };
+
+        window.saveUnitPlan = () => {
+            const cls = document.getElementById('unit-plan-grade-select').value;
+            const sub = document.getElementById('unit-plan-subject-select').value;
+            if (!cls || !sub) return;
+            const planKey = `${cls}_${sub}`;
+            
+            // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
+            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                document.activeElement.blur();
+            }
+
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+            window.saveToFirebase();
+            window.renderUnitPlanView();
+            alert("単元計画を保存しました。");
+        };
 
         // 初期化処理の呼び出し
         initDataSync();
