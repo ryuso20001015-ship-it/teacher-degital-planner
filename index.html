@@ -101,6 +101,10 @@
         /* ★ 単元計画の矢印用CSS */
         .progress-arrow-container { position: absolute; top: 0; bottom: 0; right: 0; left: 0; pointer-events: none; z-index: 1; }
 
+        /* ★ 現在時刻線のCSS */
+        .current-time-line { position: absolute; z-index: 30; pointer-events: none; }
+        .current-time-line .w-2 { width: 6px; height: 6px; border-radius: 50%; left: -3px; }
+
         @media print {
             body > *:not(#memo-edit-modal) { display: none !important; }
             #memo-edit-modal { position: static !important; width: 100% !important; height: auto !important; display: block !important; background: white !important; }
@@ -160,7 +164,6 @@
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <!-- 共通の検索ボックスを配置 -->
             <div class="relative flex items-center">
                 <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
                 <input type="text" id="month-search-input" placeholder="検索" oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-6 pr-2 py-1.5 rounded-md border border-gray-600 bg-[#2a2a4a] text-white text-[10px] sm:text-xs outline-none focus:border-blue-400 focus:bg-[#32325a] transition-all w-[70px] sm:w-[120px] md:w-[160px] focus:w-[110px] sm:focus:w-[160px] placeholder-gray-400 shadow-inner">
@@ -832,6 +835,7 @@
 
         // ★ 単元計画用のグローバル変数追加
         window.currentUnitPlanGrade = '1';
+        window.isUnitPlanPasting = false; // ★ コピペバグ修正用のフラグ追加
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -2630,6 +2634,28 @@
             grid.innerHTML = html;
         };
 
+        // ★ 週カレンダーの現在時刻線更新
+        window.updateCurrentTimeLineInWeekView = () => {
+            if (currentView !== 'week') return;
+            const now = new Date();
+            const hour = now.getHours();
+            const min = now.getMinutes();
+            const lines = document.querySelectorAll('.current-time-line');
+            if (lines.length > 0) {
+                if (hour >= 5 && hour < 24) {
+                    const topPct = ((hour - 5) * 60 + min) / (19 * 60) * 100;
+                    lines.forEach(line => {
+                        line.style.top = `${topPct}%`;
+                        line.classList.remove('hidden');
+                    });
+                } else {
+                    lines.forEach(line => line.classList.add('hidden'));
+                }
+            }
+        };
+        // 1分ごとに更新
+        setInterval(window.updateCurrentTimeLineInWeekView, 60000);
+
         window.changeWeekView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeekView(); };
         
         const renderWeekView = () => {
@@ -2819,6 +2845,21 @@
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
                     }
                 });
+                
+                // ★ 現在時刻の赤線描画
+                if (isToday) {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    const min = now.getMinutes();
+                    if (hour >= 5 && hour < 24) {
+                        const topPct = ((hour - 5) * 60 + min) / (19 * 60) * 100;
+                        colContent += `<div class="absolute left-0 right-0 z-30 pointer-events-none flex items-center current-time-line" style="top: ${topPct}%; margin-top: -4px;">
+                            <div class="w-2 h-2 rounded-full bg-red-500 absolute -left-1"></div>
+                            <div class="h-px bg-red-500 w-full"></div>
+                        </div>`;
+                    }
+                }
+
                 colsHtml[i] = colContent;
             }
 
@@ -3367,8 +3408,7 @@
             
             if (plan) {
                 let html = '';
-                if (plan.task) html += `<div class="font-bold text-gray-700 mb-1"><i class="fas fa-bullseye mr-1"></i>${plan.task}</div>`;
-                if (plan.activity) html += `<div><span class="font-bold text-gray-500 mr-1">活動:</span>${plan.activity}</div>`;
+                if (plan.task) html += `<div class="font-bold text-gray-700"><i class="fas fa-bullseye mr-1"></i>${plan.task}</div>`;
                 
                 if (html) {
                     preview.innerHTML = html;
@@ -4285,9 +4325,12 @@
                 const plans = allUnitPlans[planKey].plans;
                 let isChanged = false;
 
+                // 最初のセルだけが空になる問題の修正:
+                // コピー元の左上のセルが空文字 ('') でない限り、そのまま代入するようにします。
                 for (let r = 0; r < parsedRows.length; r++) {
                     const rowCells = parsedRows[r];
-                    if (rowCells.length === 1 && rowCells[0] === '') continue; // ignore empty rows at the end
+                    // 最後の空行を無視
+                    if (rowCells.length === 1 && rowCells[0] === '') continue; 
                     
                     const targetRowIdx = startRowIdx + r;
                     if (targetRowIdx >= plans.length) {
@@ -4300,13 +4343,21 @@
                         const cellText = rowCells[c];
                         const targetColIdx = startColIdx + c;
                         
-                        if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
-                        else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
-                        else if (targetColIdx === 2) { p.note = cellText; isChanged = true; }
+                        // ★修正：セルテキストが存在する場合、または既存データがない場合に更新する
+                        if (cellText !== "") {
+                            if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
+                            else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
+                            else if (targetColIdx === 2) { p.note = cellText; isChanged = true; }
+                        }
                     }
                 }
                 
                 if (isChanged) {
+                    // ★ コピペ時に古いデータで上書きされるのを防ぐため、フォーカスを外して即座に保存・再描画
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    window.saveUnitPlan(false);
                     window.renderUnitPlanView();
                 }
             }
@@ -4510,7 +4561,7 @@
             }
         };
 
-        window.saveUnitPlan = () => {
+        window.saveUnitPlan = (showAlert = true) => {
             const cls = window.currentUnitPlanGrade;
             const sub = "技術";
             const planKey = `${cls}_${sub}`;
@@ -4523,7 +4574,7 @@
             safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
             window.saveToFirebase();
             window.renderUnitPlanView();
-            alert("単元計画を保存しました。");
+            if (showAlert) alert("単元計画を保存しました。");
         };
 
         // 初期化処理の呼び出し
