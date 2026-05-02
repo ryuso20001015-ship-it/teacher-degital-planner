@@ -98,6 +98,9 @@
         /* ★ 単元計画用テーブルのセルハイライト */
         td[contenteditable="true"]:focus { outline: none; background-color: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; }
 
+        /* ★ 単元計画の矢印用CSS */
+        .progress-arrow-container { position: absolute; top: 0; bottom: 0; right: 0; left: 0; pointer-events: none; z-index: 1; }
+
         @media print {
             body > *:not(#memo-edit-modal) { display: none !important; }
             #memo-edit-modal { position: static !important; width: 100% !important; height: auto !important; display: block !important; background: white !important; }
@@ -449,13 +452,12 @@
             <div class="bg-white p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-10 sticky top-0 shrink-0 gap-2">
                 <div class="flex items-center gap-2">
                     <h2 class="text-sm sm:text-base font-bold text-[#4a5f73] shrink-0"><i class="fas fa-map mr-1.5 text-[#4a5f73]"></i> 単元計画</h2>
-                    <!-- ★ 学年選択に変更 -->
-                    <select id="unit-plan-grade-select" onchange="window.renderUnitPlanView()" class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white ml-2">
-                        <option value="1">1年生</option>
-                        <option value="2">2年生</option>
-                        <option value="3">3年生</option>
-                    </select>
-                    <select id="unit-plan-subject-select" onchange="window.renderUnitPlanView()" class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-[#4a5f73] text-gray-700 bg-white"></select>
+                    <!-- ★ 学年選択をボタンに変更 -->
+                    <div class="flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner ml-2 shrink-0" id="unit-plan-grade-group">
+                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" data-grade="1" onclick="window.setUnitPlanGrade('1')">1年生</button>
+                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
+                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="unit-plan-progress" class="text-xs font-bold text-gray-600 hidden sm:block"></div>
@@ -463,7 +465,7 @@
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
-                <div id="unit-plan-container" class="min-w-[800px] w-full p-2 sm:p-4 pb-20">
+                <div id="unit-plan-container" class="min-w-[800px] w-full p-2 sm:p-4 pb-20 h-full">
                     <!-- Table will be injected here -->
                 </div>
             </div>
@@ -827,6 +829,9 @@
         let allMemos = [];
         let allFolders = [];
         let allUnitPlans = safeGetItem('teacher_planner_unit_plans') ? JSON.parse(safeGetItem('teacher_planner_unit_plans')) : {};
+
+        // ★ 単元計画用のグローバル変数追加
+        window.currentUnitPlanGrade = '1';
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -3066,169 +3071,169 @@
                 const isSunOrHoli = day.getDay() === 0 || !!holiName;
                 const isSat = day.getDay() === 6;
                 const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
-                const bgHoli = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50';
+                        const bgHoli = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50';
 
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}"><div class="text-[8px] sm:text-[9px] ${color}">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs ${color}">${DAYS_STR[day.getDay()]}</div>${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}</th>`;
-            });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
-            
-            const ttOrder = ['normal', 'short', 'special', 'test'];
-
-            workDays.forEach(day => {
-                const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
-                
-                let optionsHtml = '';
-                ttOrder.forEach(k => {
-                    if (globalSettings.timetables[k]) {
-                        optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
-                    }
-                });
-                Object.keys(globalSettings.timetables).forEach(k => {
-                    if (!ttOrder.includes(k)) {
-                        optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
-                    }
-                });
-                optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
-
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
-            });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
-            workDays.forEach(day => {
-                const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
-                const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
-                    <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
-                    ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
-                </select></td>`;
-            });
-            html += '</tr></thead><tbody>';
-
-            let maxPeriodsInWeek = 0; const weekPeriodsMap = []; 
-            for (let i = 0; i < 5; i++) {
-                const cur = workDays[i]; const dStr = getFormatDateStr(cur); const ttType = getTtType(dStr);
-                const periods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
-                weekPeriodsMap.push(periods); if (periods.length > maxPeriodsInWeek) maxPeriodsInWeek = periods.length;
-            }
-            if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
-
-            const rowsToRender = [];
-            rowsToRender.push({ type: 'special', id: 'sp_morning', name: '朝' });
-            for (let pIdx = 0; pIdx < maxPeriodsInWeek; pIdx++) {
-                rowsToRender.push({ type: 'period', index: pIdx });
-                if (pIdx === 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
-            }
-            if (maxPeriodsInWeek <= 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
-            rowsToRender.push({ type: 'special', id: 'sp_after_school', name: '放' });
-
-            for (let r of rowsToRender) {
-                const rowClass = r.type === 'special' ? 'h-8 sm:h-10' : 'h-16 sm:h-20';
-                html += `<tr class="${rowClass}">`;
-                
-                if (r.type === 'special') {
-                    html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
+                        html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}"><div class="text-[8px] sm:text-[9px] ${color}">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs ${color}">${DAYS_STR[day.getDay()]}</div>${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}</th>`;
+                    });
+                    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
                     
-                    for (let dIdx = 0; dIdx < 5; dIdx++) {
-                        const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
-                        const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
-                        const isCut = cData.isCut;
-                        const title = cData.title || "";
-                        const memo = cData.memo || "";
+                    const ttOrder = ['normal', 'short', 'special', 'test'];
+
+                    workDays.forEach(day => {
+                        const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                        const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
                         
-                        let btnContent = "";
-                        let borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
-                        
-                        if (isCut) {
-                            bgClass = "bg-gray-100 text-gray-400";
-                            btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
-                            borderClass = "border border-dashed border-gray-300";
-                        } else if (title) {
-                            bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
-                            borderClass = "border border-yellow-200 shadow-sm";
-                            btnContent = `<div class="text-[9px] sm:text-[10px] font-bold truncate w-full px-1 whitespace-normal leading-tight">${title}</div>`;
-                        } else if (memo) {
-                            bgClass = "bg-gray-50 text-gray-400 hover:bg-gray-100";
-                            borderClass = "border border-gray-200";
-                            btnContent = `<div class="text-[10px] text-gray-400 w-full text-center"><i class="fas fa-comment-dots"></i></div>`;
-                        } else {
-                            btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
-                        }
-                        
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
-                                    <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button>
-                                 </td>`;
-                    }
-                } else {
-                    const pIdx = r.index;
-                    html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
-                    
-                    for (let dIdx = 0; dIdx < 5; dIdx++) {
-                        const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
-                        const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
-                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
-
-                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px]"></td>`; continue; }
-
-                        const baseTt = getBaseTimetableForDate(day);
-                        let baseCls = "", baseSub = "", baseMemo = "";
-                        if (baseTt[day.getDay()] && baseTt[day.getDay()][p.name]) {
-                            baseCls = baseTt[day.getDay()][p.name].cls || ""; baseSub = baseTt[day.getDay()][p.name].sub || ""; baseMemo = baseTt[day.getDay()][p.name].memo || "";
-                        }
-
-                        let currentCls = "", currentSub = "", currentMemo = "", isExcluded = false, hasCustom = false;
-                        let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
-
-                        if (data.classes && data.classes[p.id]) {
-                            const cData = data.classes[p.id];
-                            if (cData.cls || cData.sub || cData.memo) {
-                                currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
-                                if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                        let optionsHtml = '';
+                        ttOrder.forEach(k => {
+                            if (globalSettings.timetables[k]) {
+                                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
                             }
-                            if (cData.disabled) isExcluded = true;
-                        }
+                        });
+                        Object.keys(globalSettings.timetables).forEach(k => {
+                            if (!ttOrder.includes(k)) {
+                                optionsHtml += `<option value="${k}" ${ttType === k ? 'selected' : ''}>${globalSettings.timetables[k].name}</option>`;
+                            }
+                        });
+                        optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
 
-                        let displayCls = hasCustom ? currentCls : baseCls, displaySub = hasCustom ? currentSub : baseSub, displayMemo = hasCustom ? currentMemo : baseMemo;
-                        let btnContent = "", borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
+                        html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+                    });
+                    html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+                    workDays.forEach(day => {
+                        const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                        let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
+                        html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+                            <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
+                            ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
+                        </select></td>`;
+                    });
+                    html += '</tr></thead><tbody>';
 
-                        const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
-                        const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
-                        const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
-
-                        if (isExcluded) {
-                            btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
-                        } else if (displayCls || displaySub || displayMemo || hasCustom) {
-                            const colorClass = getClassColorClass(displayCls, displaySub);
-                            bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
-                            const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
-                            let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[7px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
-                            let mainContent = '', techCountHtml = '';
-
-                            if (displayCls || displaySub) {
-                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
-                                if (displaySub.trim() === '技術') {
-                                    const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
-                                    let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                                    techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
-                                }
-                            } else if (displayMemo) {
-                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
-                            } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
-
-                            btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
-                            borderClass = "border border-[#4a5f73]/50 shadow-sm";
-                        } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
-
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
-                                    <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button>
-                                 </td>`;
+                    let maxPeriodsInWeek = 0; const weekPeriodsMap = []; 
+                    for (let i = 0; i < 5; i++) {
+                        const cur = workDays[i]; const dStr = getFormatDateStr(cur); const ttType = getTtType(dStr);
+                        const periods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
+                        weekPeriodsMap.push(periods); if (periods.length > maxPeriodsInWeek) maxPeriodsInWeek = periods.length;
                     }
-                }
-                html += `</tr>`;
-            }
-            html += '</tbody></table>';
-            document.getElementById('weekly-plan-container').innerHTML = html;
-        };
+                    if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
+
+                    const rowsToRender = [];
+                    rowsToRender.push({ type: 'special', id: 'sp_morning', name: '朝' });
+                    for (let pIdx = 0; pIdx < maxPeriodsInWeek; pIdx++) {
+                        rowsToRender.push({ type: 'period', index: pIdx });
+                        if (pIdx === 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
+                    }
+                    if (maxPeriodsInWeek <= 3) rowsToRender.push({ type: 'special', id: 'sp_noon', name: '昼' });
+                    rowsToRender.push({ type: 'special', id: 'sp_after_school', name: '放' });
+
+                    for (let r of rowsToRender) {
+                        const rowClass = r.type === 'special' ? 'h-8 sm:h-10' : 'h-16 sm:h-20';
+                        html += `<tr class="${rowClass}">`;
+                        
+                        if (r.type === 'special') {
+                            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
+                            
+                            for (let dIdx = 0; dIdx < 5; dIdx++) {
+                                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                                const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
+                                const isCut = cData.isCut;
+                                const title = cData.title || "";
+                                const memo = cData.memo || "";
+                                
+                                let btnContent = "";
+                                let borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
+                                
+                                if (isCut) {
+                                    bgClass = "bg-gray-100 text-gray-400";
+                                    btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
+                                    borderClass = "border border-dashed border-gray-300";
+                                } else if (title) {
+                                    bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
+                                    borderClass = "border border-yellow-200 shadow-sm";
+                                    btnContent = `<div class="text-[9px] sm:text-[10px] font-bold truncate w-full px-1 whitespace-normal leading-tight">${title}</div>`;
+                                } else if (memo) {
+                                    bgClass = "bg-gray-50 text-gray-400 hover:bg-gray-100";
+                                    borderClass = "border border-gray-200";
+                                    btnContent = `<div class="text-[10px] text-gray-400 w-full text-center"><i class="fas fa-comment-dots"></i></div>`;
+                                } else {
+                                    btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
+                                }
+                                
+                                html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                                            <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button>
+                                         </td>`;
+                            }
+                        } else {
+                            const pIdx = r.index;
+                            html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
+                            
+                            for (let dIdx = 0; dIdx < 5; dIdx++) {
+                                const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                                const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
+                                const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
+
+                                if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px]"></td>`; continue; }
+
+                                const baseTt = getBaseTimetableForDate(day);
+                                let baseCls = "", baseSub = "", baseMemo = "";
+                                if (baseTt[day.getDay()] && baseTt[day.getDay()][p.name]) {
+                                    baseCls = baseTt[day.getDay()][p.name].cls || ""; baseSub = baseTt[day.getDay()][p.name].sub || ""; baseMemo = baseTt[day.getDay()][p.name].memo || "";
+                                }
+
+                                let currentCls = "", currentSub = "", currentMemo = "", isExcluded = false, hasCustom = false;
+                                let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
+
+                                if (data.classes && data.classes[p.id]) {
+                                    const cData = data.classes[p.id];
+                                    if (cData.cls || cData.sub || cData.memo) {
+                                        currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
+                                        if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                                    }
+                                    if (cData.disabled) isExcluded = true;
+                                }
+
+                                let displayCls = hasCustom ? currentCls : baseCls, displaySub = hasCustom ? currentSub : baseSub, displayMemo = hasCustom ? currentMemo : baseMemo;
+                                let btnContent = "", borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
+
+                                const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
+                                const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
+                                const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
+
+                                if (isExcluded) {
+                                    btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
+                                } else if (displayCls || displaySub || displayMemo || hasCustom) {
+                                    const colorClass = getClassColorClass(displayCls, displaySub);
+                                    bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
+                                    const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
+                                    let memoHtml = (displayMemo && (displayCls || displaySub)) ? `<div class="text-[7px] sm:text-[8px] opacity-70 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>` : '';
+                                    let mainContent = '', techCountHtml = '';
+
+                                    if (displayCls || displaySub) {
+                                        mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoHtml}`;
+                                        if (displaySub.trim() === '技術') {
+                                            const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
+                                            let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
+                                            techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
+                                        }
+                                    } else if (displayMemo) {
+                                        mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
+                                    } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
+
+                                    btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
+                                    borderClass = "border border-[#4a5f73]/50 shadow-sm";
+                                } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
+
+                                html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                                            <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button>
+                                         </td>`;
+                            }
+                        }
+                        html += `</tr>`;
+                    }
+                    html += '</tbody></table>';
+                    document.getElementById('weekly-plan-container').innerHTML = html;
+                };
 
         window.updateWeeklyPlanPeriods = (dStr) => {
             const select = document.getElementById(`wp-tt-${dStr}`);
@@ -3288,10 +3293,10 @@
         };
         
         window.updateWpModalUnitPlanOptions = () => {
-            const cls = document.getElementById('wp-modal-cls').value.trim();
-            const sub = document.getElementById('wp-modal-sub').value.trim();
             const select = document.getElementById('wp-modal-unit-plan-select');
             const preview = document.getElementById('wp-modal-unit-plan-preview');
+            const cls = document.getElementById('wp-modal-cls').value.trim();
+            const sub = document.getElementById('wp-modal-sub').value.trim();
             
             let grade = null;
             if (cls.startsWith('1') || cls.includes('1年')) grade = '1';
@@ -3881,6 +3886,7 @@
                 settings: globalSettings,
                 memos: allMemos,
                 folders: allFolders,
+                unitPlans: allUnitPlans,
                 exportDate: new Date().toISOString()
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -4218,56 +4224,82 @@
 
         // コピペ対応イベントリスナーを登録
         document.addEventListener('paste', (e) => {
-            // contenteditable="true" が付与されている td (単元計画のセルなど) か確認
             const td = e.target.closest('td[contenteditable="true"]');
             if (td && currentView === 'unit-plan') {
                 e.preventDefault();
                 
-                // クリップボードのテキストデータを取得
                 const clipboardData = e.clipboardData || window.clipboardData;
                 const pastedText = clipboardData.getData('text/plain');
                 
-                // 行ごとに分割 (CRLF または LF)
-                const rows = pastedText.trim().split(/\r\n|\n|\r/);
-                
-                // 単一セルの場合はそのままテキストを挿入
-                if (rows.length === 1 && rows[0].indexOf('\t') === -1) {
-                    document.execCommand("insertText", false, pastedText);
+                // 改行（セル内の改行）を考慮したTSVパーサー
+                const parseTSV = (text) => {
+                    let rows = [];
+                    let currentRow = [];
+                    let currentCell = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < text.length; i++) {
+                        let char = text[i];
+                        let nextChar = text[i + 1];
+                        if (inQuotes) {
+                            if (char === '"' && nextChar === '"') {
+                                currentCell += '"'; i++;
+                            } else if (char === '"') {
+                                inQuotes = false;
+                            } else {
+                                currentCell += char;
+                            }
+                        } else {
+                            if (char === '"') {
+                                inQuotes = true;
+                            } else if (char === '\t') {
+                                currentRow.push(currentCell); currentCell = '';
+                            } else if (char === '\r' && nextChar === '\n') {
+                                currentRow.push(currentCell); rows.push(currentRow); currentRow = []; currentCell = ''; i++;
+                            } else if (char === '\n' || char === '\r') {
+                                currentRow.push(currentCell); rows.push(currentRow); currentRow = []; currentCell = '';
+                            } else {
+                                currentCell += char;
+                            }
+                        }
+                    }
+                    currentRow.push(currentCell); rows.push(currentRow);
+                    return rows;
+                };
+
+                const parsedRows = parseTSV(pastedText);
+
+                if (parsedRows.length === 1 && parsedRows[0].length === 1) {
+                    document.execCommand("insertText", false, parsedRows[0][0]);
                     return;
                 }
                 
-                // テーブルとして処理
                 const startRowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
                 const startColIdx = parseInt(td.getAttribute('data-col-idx'), 10);
-                
                 if (isNaN(startRowIdx) || isNaN(startColIdx)) return;
                 
-                const cls = document.getElementById('unit-plan-grade-select').value;
-                const sub = document.getElementById('unit-plan-subject-select').value;
+                const cls = window.currentUnitPlanGrade;
+                const sub = "技術";
                 const planKey = `${cls}_${sub}`;
                 if (!allUnitPlans[planKey]) return;
                 
                 const plans = allUnitPlans[planKey].plans;
                 let isChanged = false;
 
-                for (let r = 0; r < rows.length; r++) {
-                    const rowText = rows[r];
-                    const cells = rowText.split('\t'); // タブ区切り
+                for (let r = 0; r < parsedRows.length; r++) {
+                    const rowCells = parsedRows[r];
+                    if (rowCells.length === 1 && rowCells[0] === '') continue; // ignore empty rows at the end
                     
                     const targetRowIdx = startRowIdx + r;
-                    // 必要なら行を追加
                     if (targetRowIdx >= plans.length) {
                         plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
                         isChanged = true;
                     }
                     
                     const p = plans[targetRowIdx];
-                    
-                    for (let c = 0; c < cells.length; c++) {
-                        const cellText = cells[c];
+                    for (let c = 0; c < rowCells.length; c++) {
+                        const cellText = rowCells[c];
                         const targetColIdx = startColIdx + c;
                         
-                        // カラム番号の対応 (0: task, 1: activity, 2: note)
                         if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
                         else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
                         else if (targetColIdx === 2) { p.note = cellText; isChanged = true; }
@@ -4275,7 +4307,7 @@
                 }
                 
                 if (isChanged) {
-                    window.renderUnitPlanView(); // 画面を再描画してペースト結果を反映
+                    window.renderUnitPlanView();
                 }
             }
         });
@@ -4286,19 +4318,22 @@
             if (nextTd) nextTd.focus();
         };
 
-        window.renderUnitPlanView = () => {
-            const clsSelect = document.getElementById('unit-plan-grade-select');
-            const subSelect = document.getElementById('unit-plan-subject-select');
-            
-            if (subSelect.options.length === 0) {
-                document.querySelectorAll('#sub-list option').forEach(opt => {
-                    subSelect.add(new Option(opt.value, opt.value));
-                });
-            }
+        window.setUnitPlanGrade = (grade) => {
+            window.currentUnitPlanGrade = grade;
+            const buttons = document.querySelectorAll('.unit-plan-grade-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.grade === grade) {
+                    btn.className = 'unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                } else {
+                    btn.className = 'unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                }
+            });
+            window.renderUnitPlanView();
+        };
 
-            const cls = clsSelect.value;
-            const sub = subSelect.value;
-            if(!cls || !sub) return;
+        window.renderUnitPlanView = () => {
+            const cls = window.currentUnitPlanGrade;
+            const sub = "技術";
 
             const planKey = `${cls}_${sub}`;
             if (!allUnitPlans[planKey]) {
@@ -4392,14 +4427,17 @@
                     const currentHour = idx + 1;
                     const maxHour = classProgress[k];
                     
-                    // 背景色として帯を表現
-                    let cellBg = '';
+                    let cellContent = '';
                     if (currentHour <= maxHour) {
-                        // 完了済みの時数は帯の背景色をつける (ここでは淡い青を指定)
-                        cellBg = 'bg-blue-200/60';
+                        // 完了済みの時数は縦の線（矢印の胴体）
+                        cellContent = `<div class="absolute w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
+                        // もしこれが現在の最大進捗なら矢印の先端を下向きに描画
+                        if (currentHour === maxHour) {
+                            cellContent += `<div class="absolute border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 -bottom-[4px] z-10"></div>`;
+                        }
                     }
                     
-                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-top ${cellBg}"></td>`;
+                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-middle relative overflow-visible h-10">${cellContent}</td>`;
                 }
 
                 html += `
@@ -4411,7 +4449,7 @@
                     <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="0" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
                     <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="1" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
                     <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="2" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
-                    <td class="p-1 align-middle text-center w-10 select-none">
+                    <td class="p-1 align-middle text-center w-10 select-none z-20 relative bg-white/50">
                         <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
@@ -4473,9 +4511,8 @@
         };
 
         window.saveUnitPlan = () => {
-            const cls = document.getElementById('unit-plan-grade-select').value;
-            const sub = document.getElementById('unit-plan-subject-select').value;
-            if (!cls || !sub) return;
+            const cls = window.currentUnitPlanGrade;
+            const sub = "技術";
             const planKey = `${cls}_${sub}`;
             
             // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
