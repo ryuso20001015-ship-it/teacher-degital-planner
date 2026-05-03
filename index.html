@@ -38,9 +38,6 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 
-        .draw-toolbar-base { transition: max-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease; max-width: 0; opacity: 0; overflow: hidden; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; pointer-events: none; white-space: nowrap; }
-        .toolbar-visible { max-width: 500px !important; opacity: 1 !important; margin-left: 0.25rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; border-width: 1px !important; pointer-events: auto !important; }
-
         .nav-btn { padding: 0.35rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #1f2937; background-color: #ffffff; border: 1px solid #d1d5db; transition: all 0.2s; white-space: nowrap; }
         .nav-btn:hover { background-color: #f3f4f6; color: #000000; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .nav-btn.active { background-color: #4a5f73; color: #ffffff; border-color: #3b4c5c; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
@@ -83,7 +80,7 @@
 
         #memo-edit-content:empty::before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
 
-        /* ★ メモのリッチテキスト（箇条書き・段落番号・インデント・区切り線）対応用CSS ★ */
+        /* ★ メモのリッチテキスト対応用CSS ★ */
         #memo-edit-content ul { list-style-type: disc !important; padding-left: 2em !important; margin: 1em 0 !important; }
         #memo-edit-content ol { list-style-type: decimal !important; padding-left: 2em !important; margin: 1em 0 !important; }
         #memo-edit-content li { display: list-item !important; margin-bottom: 0.25em !important; }
@@ -165,12 +162,6 @@
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div class="relative flex items-center">
-                <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
-                <input type="text" id="month-search-input" placeholder="検索" oninput="window.handleMonthSearch()" onclick="window.handleMonthSearch(); event.stopPropagation()" class="pl-6 pr-2 py-1.5 rounded-md border border-gray-600 bg-[#2a2a4a] text-white text-[10px] sm:text-xs outline-none focus:border-blue-400 focus:bg-[#32325a] transition-all w-[70px] sm:w-[120px] md:w-[160px] focus:w-[110px] sm:focus:w-[160px] placeholder-gray-400 shadow-inner">
-                <div id="month-search-results" class="absolute top-full right-0 mt-2 w-[240px] sm:w-[300px] max-h-[60vh] overflow-y-auto bg-white rounded-lg shadow-2xl border border-gray-200 z-[100] hidden custom-scrollbar text-gray-800" onclick="event.stopPropagation()"></div>
-            </div>
-
             <div class="flex gap-1 sm:gap-2 shrink-0">
                 <button id="nav-btn-settings" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
             </div>
@@ -206,6 +197,10 @@
                     <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                             <div id="add-modal-color-indicator" class="w-2 h-2 rounded-full bg-[#4a5f73] shrink-0 transition-colors duration-200"></div>
+                            <!-- ★ タスク用チェックボックス追加 -->
+                            <div id="add-modal-task-checkbox" class="hidden shrink-0 cursor-pointer transition text-lg mt-0.5" onclick="window.toggleAddModalTaskCompleted()">
+                                <i class="far fa-square text-gray-400"></i>
+                            </div>
                             <input type="text" id="add-modal-title" class="flex-1 text-sm outline-none placeholder-gray-400 text-gray-800 font-bold" placeholder="タイトル">
                         </div>
                         <div id="fields-location" class="flex items-center gap-2 px-3 py-2">
@@ -456,13 +451,11 @@
             <div class="bg-white p-2 sm:p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-40 sticky top-0 shrink-0 gap-2">
                 <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <h2 class="text-sm sm:text-base font-bold text-[#4a5f73] shrink-0"><i class="fas fa-map mr-1.5 text-[#4a5f73]"></i> 単元計画</h2>
-                    <!-- ★ 学年選択をボタンに変更 -->
                     <div class="flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner ml-1 sm:ml-2 shrink-0" id="unit-plan-grade-group">
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" data-grade="1" onclick="window.setUnitPlanGrade('1')">1年生</button>
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
                     </div>
-                    <!-- ★ 保存ボタンをここに移動 -->
                     <button onclick="window.saveUnitPlan()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a5f73] text-white rounded text-[10px] sm:text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
                 </div>
                 <div class="flex items-center gap-3">
@@ -470,7 +463,6 @@
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
-                <!-- ★ 横幅を少しコンパクトに調整 -->
                 <div id="unit-plan-container" class="min-w-[650px] sm:min-w-[800px] w-full pb-20 h-full">
                     <!-- Table will be injected here -->
                 </div>
@@ -643,155 +635,6 @@
 
     </main>
 
-    <!-- メモ編集 モーダル -->
-    <div id="memo-edit-modal" class="fixed inset-0 z-[150] hidden bg-white flex-col">
-        <div class="flex-1 flex flex-col bg-white overflow-hidden relative w-full h-full">
-            <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2 sm:px-4 shrink-0 no-print shadow-sm z-20">
-                <div class="flex items-center gap-1 sm:gap-2">
-                    <button onclick="window.saveAndCloseMemo()" class="text-blue-500 font-bold px-2 py-1 hover:bg-blue-50 rounded transition flex items-center gap-1 text-xs sm:text-sm">
-                        <i class="fas fa-chevron-left"></i> 戻る
-                    </button>
-                    <span class="text-gray-400 text-[10px] hidden md:inline ml-2"><i class="fas fa-check"></i> 自動保存</span>
-                </div>
-                <div class="flex items-center gap-1 sm:gap-2">
-                    <button onclick="window.copyMemoText()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
-                        <i class="far fa-copy"></i> <span class="hidden sm:inline">テキストをコピー</span>
-                    </button>
-                    <button onclick="window.printMemo()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
-                        <i class="fas fa-print"></i> <span class="hidden sm:inline">メモを印刷</span>
-                    </button>
-                    <button onclick="window.deleteMemo()" class="text-red-500 font-bold px-2 py-1.5 hover:bg-red-50 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-red-200 bg-white ml-0.5 sm:ml-1">
-                        <i id="memo-delete-btn-icon" class="fas fa-trash-alt"></i> <span id="memo-delete-btn-text" class="hidden sm:inline">削除</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-1 sm:p-4 bg-gray-100 flex justify-center custom-scrollbar">
-                <div class="bg-white w-full max-w-4xl min-h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
-                    <div class="p-3 sm:p-5 pb-1.5 flex flex-col border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
-                        <div class="flex justify-between items-start w-full">
-                            <div class="flex-1 min-w-0">
-                                <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-lg sm:text-xl font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-1 mb-2">
-                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs px-1">
-                                    <div class="text-gray-400 font-bold flex items-center gap-1 shrink-0">
-                                        <i class="far fa-clock"></i> 
-                                        <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-1 py-0.5">
-                                        <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[9px] sm:text-[10px]"></span>
-                                    </div>
-                                    <div class="flex items-center gap-1 shrink-0">
-                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">カテゴリ:</span>
-                                        <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
-                                            <option value="meeting">会議</option>
-                                            <option value="guidance">生徒指導</option>
-                                            <option value="other">その他</option>
-                                            <option value="trash" hidden>ごみ箱</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex items-center gap-1 shrink-0">
-                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">保存先:</span>
-                                        <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
-                                            <option value="">(ルート)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="shrink-0 ml-3 sm:ml-4 no-print flex flex-col items-center sm:items-end">
-                                <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl transition-colors hover:bg-gray-100 text-gray-300">
-                                    <i class="fas fa-star"></i>
-                                </button>
-                                <span class="text-[9px] text-gray-400 font-bold mt-1 text-center w-full">お気に入り</span>
-                            </div>
-                        </div>
-
-                        <!-- ★ メモテキスト編集ツールバー (Word風カラーパレット対応) -->
-                        <div id="memo-text-toolbar" class="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar relative">
-                            <button onclick="document.execCommand('bold',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="太字"><i class="fas fa-bold"></i></button>
-                            <button onclick="document.execCommand('underline',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="下線"><i class="fas fa-underline"></i></button>
-                            <button onclick="document.execCommand('strikeThrough',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="取り消し線"><i class="fas fa-strikethrough"></i></button>
-                            
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            
-                            <!-- 文字色・背景色のポップアップトリガー -->
-                            <button type="button" onclick="window.toggleColorPalette('foreColor', this)" class="p-1 text-gray-600 hover:bg-gray-100 rounded transition flex flex-col items-center justify-center w-8 h-8 shrink-0" title="文字色">
-                                <div class="flex items-center justify-center gap-0.5 mt-0.5"><i class="fas fa-font text-sm"></i><i class="fas fa-caret-down text-[8px] mt-0.5 text-gray-400"></i></div>
-                                <div id="indicator-foreColor" class="w-4 h-1 bg-black rounded-sm mt-0.5 shrink-0"></div>
-                            </button>
-                            <button type="button" onclick="window.toggleColorPalette('hiliteColor', this)" class="p-1 text-gray-600 hover:bg-gray-100 rounded transition flex flex-col items-center justify-center w-8 h-8 shrink-0" title="文字背景色">
-                                <div class="flex items-center justify-center gap-0.5 mt-0.5"><i class="fas fa-fill-drip text-sm"></i><i class="fas fa-caret-down text-[8px] mt-0.5 text-gray-400"></i></div>
-                                <div id="indicator-hiliteColor" class="w-4 h-1 bg-transparent border border-gray-300 rounded-sm mt-0.5 shrink-0"></div>
-                            </button>
-
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            
-                            <button onclick="document.execCommand('insertUnorderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="箇条書き"><i class="fas fa-list-ul"></i></button>
-                            <button onclick="document.execCommand('insertOrderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="段落番号"><i class="fas fa-list-ol"></i></button>
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            <button onclick="document.execCommand('indent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="インデントを増やす"><i class="fas fa-indent"></i></button>
-                            <button onclick="document.execCommand('outdent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="インデントを減らす"><i class="fas fa-outdent"></i></button>
-                            
-                            <!-- 追加：文字の配置（左揃え・中央揃え・右揃え） -->
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            <button onclick="document.execCommand('justifyLeft',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="左揃え"><i class="fas fa-align-left"></i></button>
-                            <button onclick="document.execCommand('justifyCenter',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="中央揃え"><i class="fas fa-align-center"></i></button>
-                            <button onclick="document.execCommand('justifyRight',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="右揃え"><i class="fas fa-align-right"></i></button>
-                            
-                            <!-- 追加：区切り線 -->
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            <button type="button" onclick="document.execCommand('insertHorizontalRule', false, null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="区切り線"><i class="fas fa-minus"></i></button>
-
-                            <!-- 移動：手書きツール -->
-                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-                            <div class="flex items-center shrink-0 pb-1">
-                                <button id="memo-draw-toggle-btn" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold text-gray-600 transition flex items-center gap-1 shadow-sm shrink-0" onclick="window.toggleMemoDrawMode()">
-                                    <i class="fas fa-pencil-alt"></i> <span id="memo-draw-toggle-text" class="hidden sm:inline">手書き: OFF</span><span class="sm:hidden">手書き</span>
-                                </button>
-                                <div id="memo-drawing-toolbar" class="draw-toolbar-base flex items-center gap-0.5 bg-[#4a5f73] text-white py-1 rounded shadow-inner border border-gray-500 h-[28px] ml-1">
-                                    <button id="memo-tool-pen" class="w-6 h-6 rounded bg-gray-600 flex justify-center items-center hover:bg-gray-500 transition" onclick="window.setMemoTool('pen')" title="ペン"><i class="fas fa-pen text-[10px]"></i></button>
-                                    <button id="memo-tool-highlighter" class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('highlighter')" title="蛍光ペン"><i class="fas fa-highlighter text-[10px]"></i></button>
-                                    <button id="memo-tool-eraser" class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition" onclick="window.setMemoTool('eraser')" title="消しゴム"><i class="fas fa-eraser text-[10px]"></i></button>
-                                    <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
-                                    
-                                    <!-- ★ ペン用カラー -->
-                                    <div id="memo-pen-colors" class="flex gap-1 items-center w-14 justify-center">
-                                        <button class="w-4 h-4 rounded-full bg-black border border-white ring-1 ring-offset-0.5 ring-offset-[#4a5f73] ring-blue-300" onclick="window.setMemoColor('#000000', this, 'pen')"></button>
-                                        <button class="w-4 h-4 rounded-full bg-red-600 border border-transparent" onclick="window.setMemoColor('#dc2626', this, 'pen')"></button>
-                                        <button class="w-4 h-4 rounded-full bg-blue-600 border border-transparent" onclick="window.setMemoColor('#2563eb', this, 'pen')"></button>
-                                    </div>
-                                    <!-- ★ 蛍光ペン用カラー -->
-                                    <div id="memo-highlighter-colors" class="hidden gap-1 items-center w-14 justify-center">
-                                        <button class="w-4 h-4 rounded-full bg-yellow-300 border border-transparent ring-1 ring-offset-0.5 ring-offset-[#4a5f73] ring-blue-300" onclick="window.setMemoColor('#fde047', this, 'highlighter')"></button>
-                                        <button class="w-4 h-4 rounded-full bg-[#a3e635] border border-transparent" onclick="window.setMemoColor('#a3e635', this, 'highlighter')"></button>
-                                        <button class="w-4 h-4 rounded-full bg-[#93c5fd] border border-transparent" onclick="window.setMemoColor('#93c5fd', this, 'highlighter')"></button>
-                                    </div>
-                                    <!-- ★ 消しゴム用 -->
-                                    <div id="memo-eraser-colors" class="hidden gap-1 items-center justify-center text-[9px] text-gray-400 w-14 font-bold">
-                                        色なし
-                                    </div>
-
-                                    <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
-                                    <div class="flex gap-0.5 items-center">
-                                        <button id="memo-line-thin" class="w-5 h-5 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(2, this)" title="細い"><i class="fas fa-circle text-[4px]"></i></button>
-                                        <button id="memo-line-medium" class="w-5 h-5 flex justify-center items-center opacity-100 hover:opacity-100 transition" onclick="window.setMemoLineWidth(5, this)" title="普通"><i class="fas fa-circle text-[8px]"></i></button>
-                                        <button id="memo-line-thick" class="w-5 h-5 flex justify-center items-center opacity-50 hover:opacity-100 transition" onclick="window.setMemoLineWidth(10, this)" title="太い"><i class="fas fa-circle text-[12px]"></i></button>
-                                    </div>
-                                    <div class="w-px h-3 bg-gray-400 mx-0.5"></div>
-                                    <button class="w-6 h-6 rounded hover:bg-gray-600 flex justify-center items-center transition text-red-300" onclick="window.clearMemoCanvas()" title="全消去"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 flex flex-col relative w-full h-full min-h-[300px] overflow-hidden">
-                        <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0 overflow-y-auto break-words"></div>
-                        <canvas id="memo-drawing-canvas" class="absolute inset-0 z-10 touch-none pointer-events-none"></canvas>
-                        <!-- 追加：消しゴムカーソル -->
-                        <div id="memo-eraser-cursor" class="absolute rounded-full border border-gray-400 bg-white/50 pointer-events-none hidden z-20 transform -translate-x-1/2 -translate-y-1/2 shadow-sm backdrop-blur-[1px]"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script type="text/javascript">
         const memoryStorage = {};
         const safeGetItem = (key) => {
@@ -838,8 +681,8 @@
 
         // ★ 単元計画用のグローバル変数追加
         window.currentUnitPlanGrade = '1';
-        window.isUnitPlanPasting = false; // ★ コピペバグ修正用のフラグ追加
-        window.selectedUnitPlanCell = null; // ★ 追加：現在選択中の単元計画セル
+        window.isUnitPlanPasting = false; 
+        window.selectedUnitPlanCell = null; 
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -991,6 +834,7 @@
         let addModalTargetDate = null;
         let editTarget = null; 
         let currentModalMode = 'schedule';
+        let currentTaskCompleted = false; // ★追加：タスクの完了状態を保持するフラグ
         
         let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null };
         let wpSelectedDay = 1;
@@ -1065,7 +909,6 @@
             } else {
                 document.body.classList.add('mode-desktop'); document.body.classList.remove('mode-mobile');
             }
-            if (typeof window.resizeMemoCanvas === 'function') setTimeout(window.resizeMemoCanvas, 100);
         };
         window.addEventListener('resize', window.updateDisplayMode);
 
@@ -1532,7 +1375,6 @@
                 const preview = plainText.replace(/\n/g, ' ').substring(0, 60) || '本文なし';
                 
                 const favIcon = memo.isFavorite ? '<i class="fas fa-star text-yellow-400"></i>' : '';
-                const hasDrawing = memo.canvasData ? '<i class="fas fa-pen-nib text-blue-400 ml-1.5 text-[10px]" title="手書きメモあり"></i>' : '';
 
                 html += `
                     <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition flex flex-col h-24 group" onclick="window.openMemoEdit('${memo.id}')">
@@ -1540,7 +1382,6 @@
                             <div class="flex items-center gap-1.5 max-w-[85%]">
                                 <i class="${cat.icon} ${cat.color} opacity-70 text-[10px]"></i>
                                 <h3 class="font-bold text-[#4a5f73] truncate text-sm flex-1">${memo.title || '無題のメモ'}</h3>
-                                ${hasDrawing}
                             </div>
                             <div class="shrink-0 text-[10px]">${favIcon}</div>
                         </div>
@@ -1673,17 +1514,6 @@
                     if (memo.isFavorite) favBtn.classList.replace('text-gray-300', 'text-yellow-400');
                     else favBtn.classList.replace('text-yellow-400', 'text-gray-300');
 
-                    memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
-                    if (memo.canvasData) {
-                        const img = new Image();
-                        img.onload = () => {
-                            if (editingMemoId === memoId) { 
-                                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
-                                memoCtx.drawImage(img, 0, 0, memoCanvas.width, memoCanvas.height);
-                            }
-                        };
-                        img.src = memo.canvasData;
-                    }
                 }
             } else {
                 titleInput.value = ''; contentInput.innerHTML = ''; 
@@ -1699,23 +1529,19 @@
                 window.updateMemoDateLabel();
 
                 favBtn.classList.replace('text-yellow-400', 'text-gray-300');
-                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
 
                 const newMemo = {
                     id: 'memo_' + Date.now() + Math.random().toString(36).substr(2, 9),
                     title: '', content: '', categoryId: defaultCat, folderId: folderSelect.value || null,
-                    isFavorite: false, createdAt: Date.now(), updatedAt: Date.now(), lastOpenedAt: Date.now(), canvasData: ''
+                    isFavorite: false, createdAt: Date.now(), updatedAt: Date.now(), lastOpenedAt: Date.now()
                 };
                 allMemos.push(newMemo);
                 editingMemoId = newMemo.id;
             }
 
-            if(isMemoDrawingMode) window.toggleMemoDrawMode();
-
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => { 
                 if(!memoId) titleInput.focus(); 
-                window.resizeMemoCanvas(); 
             }, 100);
         };
 
@@ -1741,11 +1567,6 @@
                 createTimeVal = d.getTime(); 
             }
 
-            const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.drawImage(memoCanvas, 0, 0);
-            const canvasData = tempCanvas.toDataURL('image/png', 0.5);
-
             const memo = allMemos.find(m => m.id === editingMemoId);
             if (memo) {
                 memo.title = title; 
@@ -1757,7 +1578,6 @@
                 memo.isFavorite = isFavorite; 
                 memo.createdAt = createTimeVal; 
                 memo.updatedAt = Date.now(); 
-                memo.canvasData = canvasData;
             }
 
             safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
@@ -1769,7 +1589,7 @@
             window.saveMemoLocally();
             
             const memo = allMemos.find(m => m.id === editingMemoId);
-            if (memo && !memo.title.trim() && !memo.content.trim() && isCanvasBlank(memoCanvas)) {
+            if (memo && !memo.title.trim() && !memo.content.trim()) {
                 allMemos = allMemos.filter(m => m.id !== editingMemoId);
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                 window.saveToFirebase();
@@ -1779,12 +1599,6 @@
             document.getElementById('memo-edit-modal').classList.add('hidden');
             document.getElementById('memo-edit-modal').classList.remove('flex');
             editingMemoId = null;
-        };
-
-        const isCanvasBlank = (canvas) => {
-            const context = canvas.getContext('2d', { willReadFrequently: true });
-            const pixelBuffer = new Uint32Array(context.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-            return !pixelBuffer.some(color => color !== 0);
         };
 
         window.saveMemo = () => { window.saveMemoLocally(); };
@@ -1844,153 +1658,8 @@
             setTimeout(() => window.print(), 100);
         };
 
-        let isMemoDrawing = false;
-        let isMemoDrawingMode = false;
-        let memoCurrentTool = 'pen';
-        let memoPenColor = '#000000';
-        let memoHighlighterColor = '#fde047';
-        let memoCurrentColor = '#000000';
-        let memoCurrentLineWidth = 4;
-        let memoLastX = 0, memoLastY = 0;
-        let memoCanvas = null, memoCtx = null;
-        let eraserCursor = null;
-
-        window.initMemoCanvas = () => {
-            memoCanvas = document.getElementById('memo-drawing-canvas');
-            memoCtx = memoCanvas.getContext('2d', { willReadFrequently: true });
-            eraserCursor = document.getElementById('memo-eraser-cursor');
-
-            const getMemoCoords = (e) => { 
-                const rect = memoCanvas.getBoundingClientRect(); 
-                return (e.touches && e.touches.length > 0) ? { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top } : { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
-            };
-
-            const updateEraserCursor = (e) => {
-                if (!isMemoDrawingMode || memoCurrentTool !== 'eraser') {
-                    if (eraserCursor) eraserCursor.classList.add('hidden');
-                    return;
-                }
-                const coords = getMemoCoords(e);
-                const size = memoCurrentLineWidth * 5;
-                eraserCursor.style.width = `${size}px`;
-                eraserCursor.style.height = `${size}px`;
-                eraserCursor.style.left = `${coords.x}px`;
-                eraserCursor.style.top = `${coords.y}px`;
-                eraserCursor.classList.remove('hidden');
-            };
-
-            const hideEraserCursor = () => {
-                if (eraserCursor) eraserCursor.classList.add('hidden');
-            };
-
-            const startMemoDrawing = (e) => {
-                if (!isMemoDrawingMode || (e.type === 'mousedown' && e.button !== 0)) return;
-                isMemoDrawing = true; const coords = getMemoCoords(e); memoLastX = coords.x; memoLastY = coords.y;
-                if (memoCurrentTool === 'eraser') { memoCtx.globalCompositeOperation = 'destination-out'; memoCtx.lineWidth = memoCurrentLineWidth * 5; memoCtx.fillStyle = 'rgba(0,0,0,1)'; } 
-                else if (memoCurrentTool === 'highlighter') { memoCtx.globalCompositeOperation = 'source-over'; const hex = memoCurrentColor; const rgbaColor = `rgba(${parseInt(hex.slice(1,3),16)}, ${parseInt(hex.slice(3,5),16)}, ${parseInt(hex.slice(5,7),16)}, 0.3)`; memoCtx.strokeStyle = rgbaColor; memoCtx.fillStyle = rgbaColor; memoCtx.lineWidth = memoCurrentLineWidth * 4; } 
-                else { memoCtx.globalCompositeOperation = 'source-over'; memoCtx.strokeStyle = memoCurrentColor; memoCtx.fillStyle = memoCurrentColor; memoCtx.lineWidth = memoCurrentLineWidth; }
-                memoCtx.beginPath(); memoCtx.arc(memoLastX, memoLastY, memoCtx.lineWidth / 2, 0, Math.PI * 2); memoCtx.fill(); e.preventDefault();
-                updateEraserCursor(e);
-            };
-
-            const drawMemo = (e) => { 
-                updateEraserCursor(e);
-                if (!isMemoDrawing) return; 
-                const coords = getMemoCoords(e); memoCtx.beginPath(); memoCtx.moveTo(memoLastX, memoLastY); memoCtx.lineTo(coords.x, coords.y); memoCtx.stroke(); memoLastX = coords.x; memoLastY = coords.y; e.preventDefault(); 
-            };
-            
-            const stopMemoDrawing = () => { 
-                if (isMemoDrawing) { 
-                    isMemoDrawing = false; 
-                    window.triggerAutoSaveMemo(); 
-                } 
-                hideEraserCursor();
-            };
-
-            memoCanvas.addEventListener('mousedown', startMemoDrawing); 
-            memoCanvas.addEventListener('mousemove', (e) => { updateEraserCursor(e); if (isMemoDrawing) drawMemo(e); }); 
-            memoCanvas.addEventListener('mouseup', stopMemoDrawing); 
-            memoCanvas.addEventListener('mouseout', stopMemoDrawing);
-            
-            memoCanvas.addEventListener('touchstart', startMemoDrawing, { passive: false }); 
-            memoCanvas.addEventListener('touchmove', (e) => { updateEraserCursor(e); if (isMemoDrawing) drawMemo(e); }, { passive: false }); 
-            memoCanvas.addEventListener('touchend', stopMemoDrawing); 
-            memoCanvas.addEventListener('touchcancel', stopMemoDrawing);
-        };
-
-        window.resizeMemoCanvas = () => {
-            if (!memoCanvas) return;
-            const parent = memoCanvas.parentElement; if(!parent || parent.clientWidth === 0) return;
-            const tempCanvas = document.createElement('canvas'); tempCanvas.width = memoCanvas.width; tempCanvas.height = memoCanvas.height;
-            tempCanvas.getContext('2d').drawImage(memoCanvas, 0, 0);
-            memoCanvas.width = parent.clientWidth; memoCanvas.height = parent.clientHeight;
-            memoCtx.drawImage(tempCanvas, 0, 0); memoCtx.lineCap = 'round'; memoCtx.lineJoin = 'round';
-        };
-
-        window.toggleMemoDrawMode = () => {
-            isMemoDrawingMode = !isMemoDrawingMode;
-            const btn = document.getElementById('memo-draw-toggle-btn'), tb = document.getElementById('memo-drawing-toolbar');
-            if (isMemoDrawingMode) {
-                btn.classList.replace('bg-gray-200', 'bg-blue-500'); btn.classList.replace('hover:bg-gray-300', 'hover:bg-blue-600');
-                btn.classList.replace('text-gray-600', 'text-white');
-                document.getElementById('memo-draw-toggle-text').textContent = '手書き: ON';
-                tb.classList.remove('toolbar-hidden'); tb.classList.add('toolbar-visible'); memoCanvas.classList.remove('pointer-events-none');
-            } else {
-                btn.classList.replace('bg-blue-500', 'bg-gray-200'); btn.classList.replace('hover:bg-blue-600', 'hover:bg-gray-300');
-                btn.classList.replace('text-white', 'text-gray-600');
-                document.getElementById('memo-draw-toggle-text').textContent = '手書き: OFF';
-                tb.classList.add('toolbar-hidden'); tb.classList.remove('toolbar-visible'); memoCanvas.classList.add('pointer-events-none');
-                if (eraserCursor) eraserCursor.classList.add('hidden');
-            }
-        };
-
-        window.setMemoTool = (t) => { 
-            memoCurrentTool = t; 
-            ['pen', 'highlighter', 'eraser'].forEach(tool => document.getElementById(`memo-tool-${tool}`).classList.toggle('bg-gray-600', t === tool)); 
-            
-            document.getElementById('memo-pen-colors').classList.toggle('hidden', t !== 'pen');
-            document.getElementById('memo-pen-colors').classList.toggle('flex', t === 'pen');
-            
-            document.getElementById('memo-highlighter-colors').classList.toggle('hidden', t !== 'highlighter');
-            document.getElementById('memo-highlighter-colors').classList.toggle('flex', t === 'highlighter');
-            
-            document.getElementById('memo-eraser-colors').classList.toggle('hidden', t !== 'eraser');
-            document.getElementById('memo-eraser-colors').classList.toggle('flex', t === 'eraser');
-
-            if (t === 'pen') memoCurrentColor = memoPenColor;
-            else if (t === 'highlighter') memoCurrentColor = memoHighlighterColor;
-            
-            if (t !== 'eraser' && eraserCursor) {
-                eraserCursor.classList.add('hidden');
-            }
-        };
-        
-        window.setMemoColor = (c, btn, toolType) => { 
-            memoCurrentColor = c; 
-            if (toolType === 'pen') memoPenColor = c;
-            else if (toolType === 'highlighter') memoHighlighterColor = c;
-            
-            window.setMemoTool(toolType); 
-            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white')); 
-            btn.classList.add('ring-1', 'ring-offset-0.5', 'ring-offset-[#4a5f73]', 'ring-blue-300', 'border-white'); 
-        };
-        
-        window.setMemoLineWidth = (w, btn) => { 
-            memoCurrentLineWidth = w; 
-            ['memo-line-thin', 'memo-line-medium', 'memo-line-thick'].forEach(id => document.getElementById(id).classList.replace('opacity-100', 'opacity-50')); 
-            btn.classList.replace('opacity-50', 'opacity-100'); 
-        };
-        
-        window.clearMemoCanvas = () => { 
-            if (confirm("手書きメモをすべて消去しますか？")) {
-                memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height); 
-                window.triggerAutoSaveMemo(); 
-            }
-        };
-
         document.addEventListener('DOMContentLoaded', () => {
             window.initColorPalette();
-            window.initMemoCanvas();
 
             const memoEditor = document.getElementById('memo-edit-content');
             if (memoEditor) {
@@ -2074,7 +1743,6 @@
             let changed = false;
             if (selectedCellId) { selectedCellId = null; changed = true; }
             if (selectedSlot) { selectedSlot = null; changed = true; }
-            if (window.searchedItemId) { window.searchedItemId = null; changed = true; }
             window.closeMonthBottomSheet();
             if (changed) window.renderCurrentView(); 
         };
@@ -2084,10 +1752,6 @@
             if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal') && !e.target.closest('#custom-color-palette')) {
                 window.clearCellSelection(); 
             } 
-            const searchResults = document.getElementById('month-search-results');
-            if (searchResults && !searchResults.classList.contains('hidden') && !e.target.closest('#month-search-input') && !e.target.closest('#month-search-results')) {
-                searchResults.classList.add('hidden');
-            }
         });
 
         window.changeDate = (dateParam) => {
@@ -2309,6 +1973,9 @@
             window.toggleAddModalType(); window.toggleAllDay();
 
             window.updateModalColor(); 
+            
+            currentTaskCompleted = false;
+            window.updateTaskCheckboxUI();
 
             document.getElementById('add-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('add-modal-title').focus(), 100);
@@ -2366,6 +2033,9 @@
                     if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
                     document.getElementById('add-modal-category-task').value = task.category || 'work'; 
                     document.getElementById('add-modal-memo-task').value = task.memo || '';
+                    
+                    currentTaskCompleted = !!task.completed;
+                    window.updateTaskCheckboxUI();
                 }
             }
             
@@ -2392,6 +2062,7 @@
             const isAllDay = document.getElementById('add-modal-allday').checked;
             document.getElementById('add-modal-start-time').classList.toggle('hidden', isAllDay); document.getElementById('add-modal-end-time').classList.toggle('hidden', isAllDay);
         };
+        
         window.toggleAddModalType = () => {
             currentModalMode = document.querySelector('input[name="add-type"]:checked').value;
             const isSched = currentModalMode === 'schedule';
@@ -2402,7 +2073,39 @@
             document.getElementById('fields-schedule-options').style.display = isSched ? 'block' : 'none';
             document.getElementById('fields-task-options').style.display = isSched ? 'none' : 'block';
             
+            document.getElementById('add-modal-color-indicator').style.display = isSched ? 'block' : 'none';
+            document.getElementById('add-modal-task-checkbox').style.display = isSched ? 'none' : 'block';
+            
             window.updateModalColor(); 
+        };
+
+        window.updateTaskCheckboxUI = () => {
+            const cb = document.getElementById('add-modal-task-checkbox');
+            if (cb) {
+                if (currentTaskCompleted) {
+                    cb.innerHTML = '<i class="fas fa-check-square text-blue-500"></i>';
+                } else {
+                    cb.innerHTML = '<i class="far fa-square text-gray-400"></i>';
+                }
+            }
+        };
+
+        window.toggleAddModalTaskCompleted = () => {
+            currentTaskCompleted = !currentTaskCompleted;
+            window.updateTaskCheckboxUI();
+            
+            if (editTarget && currentModalMode === 'task') {
+                const dateStr = editTarget.dateStr;
+                if (allPlanners[dateStr] && allPlanners[dateStr].reminders) {
+                    const taskObj = allPlanners[dateStr].reminders.find(t => t.id === editTarget.idOrIndex);
+                    if (taskObj) {
+                        taskObj.completed = currentTaskCompleted;
+                        safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+                        window.saveToFirebase();
+                        window.renderCurrentView();
+                    }
+                }
+            }
         };
 
         window.updateModalColor = () => {
@@ -2466,7 +2169,7 @@
                     const cat = document.getElementById('add-modal-category-task').value; 
                     const tsk = {
                         id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                        title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
+                        title, completed: currentTaskCompleted, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
                     };
                     if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
                     if (editTarget) {
@@ -2488,7 +2191,6 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const grid = document.getElementById('month-view-grid');
             
-            const searchWord = document.getElementById('month-search-input').value.toLowerCase();
             const filterCat = window.currentCalendarFilter || 'all';
             const isMobile = document.body.classList.contains('mode-mobile');
             const maxRows = isMobile ? 4 : 6; 
@@ -2597,26 +2299,25 @@
                         if (filterCat === 'work_club' && cat !== 'work' && cat !== 'club') shouldSkip = true;
                         if (filterCat === 'private' && cat !== 'private') shouldSkip = true;
                         if (filterCat === 'jugyo') shouldSkip = true;
-                        if (searchWord && !ev.title.toLowerCase().includes(searchWord) && !(ev.memo && ev.memo.toLowerCase().includes(searchWord))) shouldSkip = true;
                     }
 
                     if (shouldSkip) continue;
 
                     if (r >= maxRows) { overCount++; continue; }
-                    const topPx = r * rowHeight; const isSearched = (ev && window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-105 z-20 relative' : '';
+                    const topPx = r * rowHeight; 
 
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} transition cursor-pointer hover:brightness-95 pointer-events-auto" style="z-index: 25; top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% + ${days - 1}px - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-left truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} transition cursor-pointer hover:brightness-95 pointer-events-auto" style="z-index: 25; top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% + ${days - 1}px - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-left truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} ${isSearched} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'time') {
                         let label = ev.start ? ev.start.split('T').pop().substring(0,5) : "";
                         let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded ${isSearched} transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
                     } else if (slot.type === 'class') {
                         const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
@@ -2624,7 +2325,7 @@
                     } else if (slot.type === 'task') {
                         const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = ev.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
-                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} ${isSearched} transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
+                        cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-100 shadow-sm ${style} transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${ev.id}')"><div class="shrink-0 mr-0.5 text-[8px] flex items-center" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${ev.id}', ${!ev.completed})">${icon}</div><span class="font-bold truncate text-[9px]">${ev.title}</span></div>`;
                     }
                 }
                 let overflowHtml = overCount > 0 ? `<div class="absolute bottom-0 right-0.5 z-30 text-[9px] sm:text-[10px] font-bold text-[#4a5f73] bg-gray-100/90 px-1 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none">+${overCount}</div>` : '';
@@ -2773,20 +2474,17 @@
                         if (slot.isSegmentStart) {
                             const ev = slot.event; let multiColorClass = getMultiDayColorClass(ev.category);
                             const leftPct = (c / 7) * 100; const widthPct = (slot.segmentLength / 7) * 100;
-                            const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                            allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            allDayHtml += `<div class="absolute flex items-center bg-transparent border-b-2 cursor-pointer hover:brightness-95 transition ${multiColorClass}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         const ev = slot.event; let bgColorClass = getEventColorClass(ev.category);
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
-                        const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'task') {
                         const t = slot.event; const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
-                        const isSearched = (window.searchedItemId === t.id) ? 'ring-2 ring-blue-500 shadow-md transform scale-[1.02] z-20' : '';
-                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style} ${isSearched}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${weekDates[c]}', 'task', '${t.id}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
+                        allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${weekDates[c]}', 'task', '${t.id}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
                     }
                 }
             }
@@ -2851,8 +2549,7 @@
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
-                        const isSearched = (window.searchedItemId === ev.id) ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02] z-30' : '';
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass} ${isSearched}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
                     }
                 });
                 
@@ -3542,7 +3239,7 @@
             periodsContainer.innerHTML = periodsHtml;
         };
 
-        window.changeWpModalSource = (type, val) => {
+            window.changeWpModalSource = (type, val) => {
             if (type === 'day') wpSelectedDay = val;
             if (type === 'period') wpSelectedPeriod = val;
             
@@ -3986,108 +3683,6 @@
             event.target.value = ''; // Reset
         };
 
-        window.handleMonthSearch = () => {
-            window.renderCurrentView(); 
-            
-            const searchWord = document.getElementById('month-search-input').value.toLowerCase().trim();
-            const resultsContainer = document.getElementById('month-search-results');
-            
-            if (!searchWord) {
-                resultsContainer.classList.add('hidden');
-                return;
-            }
-
-            let resultsHtml = '';
-            let count = 0;
-
-            const sortedDates = Object.keys(allPlanners).sort();
-
-            sortedDates.forEach(dateStr => {
-                const data = allPlanners[dateStr];
-                const dObj = new Date(dateStr);
-                const dateLabel = `${dObj.getMonth()+1}/${dObj.getDate()}(${DAYS_STR[dObj.getDay()]})`;
-                
-                if (data.events) {
-                    data.events.forEach(ev => {
-                        if (ev.title.toLowerCase().includes(searchWord) || (ev.memo && ev.memo.toLowerCase().includes(searchWord))) {
-                            let timeLabel = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0,5) : "");
-                            let badgeColor = "bg-gray-100 text-gray-700 border-gray-200";
-                            if(ev.category === 'work') badgeColor = "bg-red-50 text-red-700 border-red-200";
-                            else if(ev.category === 'club') badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
-                            else if(ev.category === 'private') badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
-
-                            resultsHtml += `
-                                <div class="p-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition" onclick="event.stopPropagation(); window.goToDateFromSearch('${dateStr}', '${ev.id}')">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <span class="font-bold text-xs text-[#4a5f73] truncate pr-2">${ev.title}</span>
-                                        <span class="text-[9px] font-bold text-gray-400 whitespace-nowrap shrink-0">${dateLabel}</span>
-                                    </div>
-                                    <div class="text-[9px] text-gray-500 flex items-center gap-1 truncate">
-                                        <span class="px-1 py-0.5 rounded border ${badgeColor} font-bold leading-none">${timeLabel}</span>
-                                        <span class="truncate">${ev.memo || ''}</span>
-                                    </div>
-                                </div>
-                            `;
-                            count++;
-                        }
-                    });
-                }
-
-                if (data.reminders) {
-                    data.reminders.forEach(task => {
-                        if (task.title.toLowerCase().includes(searchWord) || (task.memo && task.memo.toLowerCase().includes(searchWord))) {
-                            const statusIcon = task.completed ? '<i class="fas fa-check-square text-blue-400 mr-1"></i>' : '<i class="far fa-square text-gray-400 mr-1"></i>';
-                            const titleStyle = task.completed ? 'line-through opacity-70' : '';
-                            resultsHtml += `
-                                <div class="p-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition" onclick="event.stopPropagation(); window.goToDateFromSearch('${dateStr}', '${task.id}')">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <span class="font-bold text-xs text-[#4a5f73] truncate pr-2 ${titleStyle}">${statusIcon}${task.title}</span>
-                                        <span class="text-[9px] font-bold text-gray-400 whitespace-nowrap shrink-0">${dateLabel}</span>
-                                    </div>
-                                    <div class="text-[9px] text-gray-500 truncate pl-3">${task.memo || ''}</div>
-                                </div>
-                            `;
-                            count++;
-                        }
-                    });
-                }
-            });
-
-            if (count === 0) {
-                resultsHtml = '<div class="p-3 text-center text-gray-400 text-[10px] font-bold">一致する予定・タスクは見つかりませんでした</div>';
-            }
-
-            resultsContainer.innerHTML = resultsHtml;
-            resultsContainer.classList.remove('hidden');
-        };
-
-        window.searchedItemId = null; 
-
-        window.goToDateFromSearch = (dateStr, itemId) => {
-            const resultsContainer = document.getElementById('month-search-results');
-            if (resultsContainer) resultsContainer.classList.add('hidden');
-            
-            const searchInput = document.getElementById('month-search-input');
-            if (searchInput) searchInput.value = '';
-            
-            const targetDate = new Date(dateStr);
-            calendarDisplayDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-            currentDateObj = new Date(targetDate);
-            
-            selectedCellId = `month-cell-${dateStr}`;
-            selectedSlot = null;
-            window.searchedItemId = itemId;
-            
-            window.switchView('month');
-            
-            setTimeout(() => {
-                const cell = document.getElementById(`month-cell-${dateStr}`);
-                if (cell) {
-                    cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
-        };
-
         let swipeStartX = 0;
         let swipeStartY = 0;
         let swipeTargetElem = null;
@@ -4100,8 +3695,6 @@
         let activeViewElem = null;
 
         document.addEventListener('touchstart', (e) => {
-            if (isMemoDrawingMode) return;
-            
             if (!document.getElementById('add-modal').classList.contains('hidden') ||
                 !document.getElementById('weekly-plan-modal').classList.contains('hidden') ||
                 !document.getElementById('memo-edit-modal').classList.contains('hidden')) {
@@ -4639,11 +4232,13 @@
                     
                     let cellContent = '';
                     if (currentHour <= maxHour) {
-                        // 完了済みの時数は縦の線（矢印の胴体）
-                        cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
-                        // もしこれが現在の最大進捗なら矢印の先端を下向きに描画
                         if (currentHour === maxHour) {
-                            cellContent += `<div class="absolute border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-t-[8px] sm:border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 -bottom-[3px] sm:-bottom-[4px] z-10"></div>`;
+                            // ★ 修正：矢印の下端がセルの真ん中に来るようにする
+                            cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-1/2 z-0"></div>`;
+                            cellContent += `<div class="absolute border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-t-[8px] sm:border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 top-1/2 z-10 translate-y-[-50%]"></div>`;
+                        } else {
+                            // 完了済みの時間：胴体はセル全体を貫通
+                            cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
                         }
                     }
                     
