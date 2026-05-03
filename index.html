@@ -453,23 +453,25 @@
         
         <!-- ★ View 9: 単元計画 -->
         <div id="view-unit-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-10 sticky top-0 shrink-0 gap-2">
-                <div class="flex items-center gap-2">
+            <div class="bg-white p-2 sm:p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-40 sticky top-0 shrink-0 gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <h2 class="text-sm sm:text-base font-bold text-[#4a5f73] shrink-0"><i class="fas fa-map mr-1.5 text-[#4a5f73]"></i> 単元計画</h2>
                     <!-- ★ 学年選択をボタンに変更 -->
-                    <div class="flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner ml-2 shrink-0" id="unit-plan-grade-group">
-                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" data-grade="1" onclick="window.setUnitPlanGrade('1')">1年生</button>
-                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
-                        <button class="unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
+                    <div class="flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner ml-1 sm:ml-2 shrink-0" id="unit-plan-grade-group">
+                        <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" data-grade="1" onclick="window.setUnitPlanGrade('1')">1年生</button>
+                        <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
+                        <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
                     </div>
+                    <!-- ★ 保存ボタンをここに移動 -->
+                    <button onclick="window.saveUnitPlan()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a5f73] text-white rounded text-[10px] sm:text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div id="unit-plan-progress" class="text-xs font-bold text-gray-600 hidden sm:block"></div>
-                    <button onclick="window.saveUnitPlan()" class="px-3 py-1.5 bg-[#4a5f73] text-white rounded text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
+                    <div id="unit-plan-progress" class="text-[10px] sm:text-xs font-bold text-gray-600"></div>
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
-                <div id="unit-plan-container" class="min-w-[800px] w-full p-2 sm:p-4 pb-20 h-full">
+                <!-- ★ 横幅を少しコンパクトに調整 -->
+                <div id="unit-plan-container" class="min-w-[650px] sm:min-w-[800px] w-full pb-20 h-full">
                     <!-- Table will be injected here -->
                 </div>
             </div>
@@ -2580,7 +2582,7 @@
                 const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
                 const dateNumClass = isToday ? `bg-blue-500 ${dateColor} rounded-full w-5 h-5 flex items-center justify-center shadow-sm` : dateColor;
                 const cellBgClass = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white';
-                const todayBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : ''; // ★ 今日の青枠強調を追加
+                const todayBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : ''; 
                 
                 let cellContentHtml = ''; let overCount = 0;
 
@@ -2606,7 +2608,7 @@
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} z-20 transition cursor-pointer hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-center truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} ${isSearched} transition cursor-pointer hover:brightness-95 pointer-events-auto" style="z-index: 25; top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% + ${days - 1}px - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-left truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
@@ -2630,7 +2632,7 @@
                 const holiHtml = holiName && isCurrentMonth ? `<span class="text-[8px] text-red-500 font-bold ml-1 mt-0.5 truncate flex-1">${holiName}</span>` : '';
                 
                 html += `
-                    <div id="${cellId}" class="calendar-cell ${cellBgClass} ${todayBorderClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} ${todayBorderClass} relative min-h-0 h-full ${isSelectedClass}" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
                         <div class="absolute top-0.5 left-0.5 right-0.5 z-30 pointer-events-none flex justify-between shrink-0 h-5">
                             <div class="w-[calc(100%-20px)] overflow-hidden">${holiHtml}</div>
                             <span class="date-link ${dateNumClass} text-[10px] font-bold shrink-0 ml-auto flex items-center justify-center">${dObj.getDate()}</span>
@@ -4531,9 +4533,9 @@
             const buttons = document.querySelectorAll('.unit-plan-grade-btn');
             buttons.forEach(btn => {
                 if (btn.dataset.grade === grade) {
-                    btn.className = 'unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
                 } else {
-                    btn.className = 'unit-plan-grade-btn px-3 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
                 }
             });
             window.renderUnitPlanView();
@@ -4560,20 +4562,20 @@
 
             let html = `
             <table class="w-full border-collapse bg-white shadow-sm border border-[#2e5d4b]" id="unit-plan-table">
-                <thead class="sticky top-0 z-20 bg-[#2e5d4b]">
-                    <tr class="bg-[#2e5d4b] text-white text-xs">
-                        <th class="border border-[#2e5d4b] p-2 w-12 text-center sticky top-0 z-20 bg-[#2e5d4b]">時数</th>
+                <thead class="sticky top-0 z-30 bg-[#2e5d4b]">
+                    <tr class="bg-[#2e5d4b] text-white text-[10px] sm:text-xs">
+                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-8 sm:w-12 text-center sticky top-0 z-30 bg-[#2e5d4b]">時数</th>
                         <!-- 進捗帯列 1〜6組 -->
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">1組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">2組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">3組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">4組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">5組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">6組</th>
-                        <th class="border border-[#2e5d4b] p-2 w-[25%] text-left sticky top-0 z-20 bg-[#2e5d4b]">学習課題</th>
-                        <th class="border border-[#2e5d4b] p-2 w-[30%] text-left sticky top-0 z-20 bg-[#2e5d4b]">活動内容</th>
-                        <th class="border border-[#2e5d4b] p-2 w-auto text-left sticky top-0 z-20 bg-[#2e5d4b]">指導上の留意点・評価ポイント</th>
-                        <th class="border border-[#2e5d4b] p-2 w-10 text-center sticky top-0 z-20 bg-[#2e5d4b]"><i class="fas fa-cog"></i></th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">1組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">2組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">3組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">4組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">5組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">6組</th>
+                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-[20%] text-left sticky top-0 z-30 bg-[#2e5d4b]">学習課題</th>
+                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-[25%] text-left sticky top-0 z-30 bg-[#2e5d4b]">活動内容</th>
+                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-auto text-left sticky top-0 z-30 bg-[#2e5d4b]">指導上の留意点・評価ポイント</th>
+                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-6 sm:w-10 text-center sticky top-0 z-30 bg-[#2e5d4b]"><i class="fas fa-cog"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -4638,26 +4640,26 @@
                     let cellContent = '';
                     if (currentHour <= maxHour) {
                         // 完了済みの時数は縦の線（矢印の胴体）
-                        cellContent = `<div class="absolute w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
+                        cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
                         // もしこれが現在の最大進捗なら矢印の先端を下向きに描画
                         if (currentHour === maxHour) {
-                            cellContent += `<div class="absolute border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 -bottom-[4px] z-10"></div>`;
+                            cellContent += `<div class="absolute border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-t-[8px] sm:border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 -bottom-[3px] sm:-bottom-[4px] z-10"></div>`;
                         }
                     }
                     
-                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-middle relative overflow-visible h-10">${cellContent}</td>`;
+                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-middle relative overflow-visible h-8 sm:h-10">${cellContent}</td>`;
                 }
 
                 html += `
-                <tr class="${bgClass} border-b border-gray-200 text-xs text-gray-800 transition hover:bg-gray-100 group">
-                    <td class="border-r border-gray-200 p-2 text-center font-bold text-gray-600 align-top select-none w-12">
+                <tr class="${bgClass} border-b border-gray-200 text-[10px] sm:text-xs text-gray-800 transition hover:bg-gray-100 group">
+                    <td class="border-r border-gray-200 p-1 sm:p-2 text-center font-bold text-gray-600 align-top select-none w-8 sm:w-12">
                         ${p.hour}
                     </td>
                     ${progressCells}
-                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="0" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
-                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="1" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
-                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="2" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
-                    <td class="p-1 align-middle text-center w-10 select-none z-20 relative bg-white/50">
+                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="0" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
+                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="1" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
+                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="2" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
+                    <td class="p-1 align-middle text-center w-6 sm:w-10 select-none z-20 relative bg-white/50">
                         <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
