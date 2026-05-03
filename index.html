@@ -4109,6 +4109,11 @@
             if (currentView !== 'month' && currentView !== 'week' && currentView !== 'weekly-plan') {
                 return;
             }
+            
+            // ★追加：ボトムシート内でのスワイプ開始ならカレンダーのスワイプをキャンセル
+            if (e.target.closest('#month-bottom-sheet')) {
+                return;
+            }
 
             swipeStartX = e.touches[0].screenX;
             swipeStartY = e.touches[0].screenY;
@@ -4140,6 +4145,11 @@
 
         document.addEventListener('touchmove', (e) => {
             if (!swipeStartX || !activeViewElem) return;
+            
+            // ★追加：ボトムシートが表示中かつシート内での操作ならカレンダーのスワイプをキャンセル
+            if (e.target.closest('#month-bottom-sheet')) {
+                return;
+            }
 
             const touchX = e.touches[0].screenX;
             const touchY = e.touches[0].screenY;
@@ -4550,20 +4560,20 @@
 
             let html = `
             <table class="w-full border-collapse bg-white shadow-sm border border-[#2e5d4b]" id="unit-plan-table">
-                <thead>
+                <thead class="sticky top-0 z-20 bg-[#2e5d4b]">
                     <tr class="bg-[#2e5d4b] text-white text-xs">
-                        <th class="border border-[#2e5d4b] p-2 w-12 text-center">時数</th>
+                        <th class="border border-[#2e5d4b] p-2 w-12 text-center sticky top-0 z-20 bg-[#2e5d4b]">時数</th>
                         <!-- 進捗帯列 1〜6組 -->
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">1組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">2組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">3組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">4組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">5組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px]">6組</th>
-                        <th class="border border-[#2e5d4b] p-2 w-[25%] text-left">学習課題</th>
-                        <th class="border border-[#2e5d4b] p-2 w-[30%] text-left">活動内容</th>
-                        <th class="border border-[#2e5d4b] p-2 w-auto text-left">指導上の留意点・評価ポイント</th>
-                        <th class="border border-[#2e5d4b] p-2 w-10 text-center"><i class="fas fa-cog"></i></th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">1組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">2組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">3組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">4組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">5組</th>
+                        <th class="border border-[#2e5d4b] p-1 w-6 text-center text-[10px] sticky top-0 z-20 bg-[#2e5d4b]">6組</th>
+                        <th class="border border-[#2e5d4b] p-2 w-[25%] text-left sticky top-0 z-20 bg-[#2e5d4b]">学習課題</th>
+                        <th class="border border-[#2e5d4b] p-2 w-[30%] text-left sticky top-0 z-20 bg-[#2e5d4b]">活動内容</th>
+                        <th class="border border-[#2e5d4b] p-2 w-auto text-left sticky top-0 z-20 bg-[#2e5d4b]">指導上の留意点・評価ポイント</th>
+                        <th class="border border-[#2e5d4b] p-2 w-10 text-center sticky top-0 z-20 bg-[#2e5d4b]"><i class="fas fa-cog"></i></th>
                     </tr>
                 </thead>
                 <tbody>
