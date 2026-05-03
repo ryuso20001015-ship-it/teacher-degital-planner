@@ -96,7 +96,8 @@
         .color-cell:hover { border-color: #000; transform: scale(1.3); position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
         /* ★ 単元計画用テーブルのセルハイライト */
-        td[contenteditable="true"]:focus { outline: none; background-color: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; }
+        .unit-plan-cell { cursor: text; outline: none; }
+        .unit-plan-cell[contenteditable="true"] { background-color: white !important; cursor: text; box-shadow: inset 0 0 0 2px #3b82f6; }
 
         /* ★ 単元計画の矢印用CSS */
         .progress-arrow-container { position: absolute; top: 0; bottom: 0; right: 0; left: 0; pointer-events: none; z-index: 1; }
@@ -836,6 +837,7 @@
         // ★ 単元計画用のグローバル変数追加
         window.currentUnitPlanGrade = '1';
         window.isUnitPlanPasting = false; // ★ コピペバグ修正用のフラグ追加
+        window.selectedUnitPlanCell = null; // ★ 追加：現在選択中の単元計画セル
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -2162,7 +2164,7 @@
             return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx };
         };
 
-        window.openMonthBottomSheet = (dStr, defaultHour = null) => {
+        window.openMonthBottomSheet = (dStr, defaultHour = null, disableTransformReset = false) => {
             window.mbsTargetDate = dStr;
             window.mbsDefaultHour = defaultHour;
             const dObj = new Date(dStr);
@@ -2265,8 +2267,13 @@
                 window.openAddMenu(window.mbsTargetDate, defaultTime, isAllDay); 
                 window.closeMonthBottomSheet(); 
             };
-            document.getElementById('month-bottom-sheet').style.transform = '';
-            document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
+            if (!disableTransformReset) {
+                document.getElementById('month-bottom-sheet').style.transform = '';
+                document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
+                document.getElementById('month-bottom-sheet').style.opacity = '1';
+            } else {
+                document.getElementById('month-bottom-sheet').classList.remove('translate-y-full');
+            }
         };
 
         window.closeMonthBottomSheet = () => { 
@@ -2573,6 +2580,7 @@
                 const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
                 const dateNumClass = isToday ? `bg-blue-500 ${dateColor} rounded-full w-5 h-5 flex items-center justify-center shadow-sm` : dateColor;
                 const cellBgClass = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white';
+                const todayBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : ''; // ★ 今日の青枠強調を追加
                 
                 let cellContentHtml = ''; let overCount = 0;
 
@@ -2622,7 +2630,7 @@
                 const holiHtml = holiName && isCurrentMonth ? `<span class="text-[8px] text-red-500 font-bold ml-1 mt-0.5 truncate flex-1">${holiName}</span>` : '';
                 
                 html += `
-                    <div id="${cellId}" class="calendar-cell ${cellBgClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
+                    <div id="${cellId}" class="calendar-cell ${cellBgClass} ${todayBorderClass} relative min-h-0 h-full ${isSelectedClass} overflow-hidden" onclick="event.stopPropagation(); window.handleMonthCellClick('${dStr}')">
                         <div class="absolute top-0.5 left-0.5 right-0.5 z-30 pointer-events-none flex justify-between shrink-0 h-5">
                             <div class="w-[calc(100%-20px)] overflow-hidden">${holiHtml}</div>
                             <span class="date-link ${dateNumClass} text-[10px] font-bold shrink-0 ml-auto flex items-center justify-center">${dObj.getDate()}</span>
@@ -2944,7 +2952,6 @@
                 const isSunOrHoli = dObj.getDay() === 0 || !!holiName;
                 const isSat = dObj.getDay() === 6;
                 const textColor = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-gray-700');
-                
                 html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
@@ -4224,49 +4231,167 @@
             isSwiping = false;
         });
 
-        // ★ 月・週カレンダーボトムシートの下スワイプで閉じる処理
+        // ★ 月・週カレンダーボトムシートの下スワイプで閉じる処理 + 左右スワイプで日付移動
         const bottomSheet = document.getElementById('month-bottom-sheet');
         let sheetStartY = 0;
+        let sheetStartX = 0;
         let sheetCurrentY = 0;
-        let isSheetSwiping = false;
+        let sheetCurrentX = 0;
+        let isSheetSwipingY = false;
+        let isSheetSwipingX = false;
+        let sheetDirectionDetermined = false;
+        let sheetContentElem = null;
 
         if (bottomSheet) {
             bottomSheet.addEventListener('touchstart', (e) => {
                 const content = document.getElementById('mbs-content');
-                // コンテンツ部分のスクロールが途中ならスワイプ判定しない
                 if (e.target.closest('#mbs-content') && content.scrollTop > 0) return;
+                
                 sheetStartY = e.touches[0].clientY;
-                isSheetSwiping = true;
+                sheetStartX = e.touches[0].clientX;
+                sheetDirectionDetermined = false;
+                isSheetSwipingY = false;
+                isSheetSwipingX = false;
+                sheetContentElem = document.getElementById('mbs-content');
+                
                 bottomSheet.style.transition = 'none';
+                if (sheetContentElem) sheetContentElem.style.transition = 'none';
             }, { passive: true });
 
             bottomSheet.addEventListener('touchmove', (e) => {
-                if (!isSheetSwiping) return;
+                if (sheetStartY === 0) return;
+                
                 sheetCurrentY = e.touches[0].clientY;
+                sheetCurrentX = e.touches[0].clientX;
                 const diffY = sheetCurrentY - sheetStartY;
-                if (diffY > 0) {
-                    bottomSheet.style.transform = `translateY(${diffY}px)`;
+                const diffX = sheetCurrentX - sheetStartX;
+
+                if (!sheetDirectionDetermined) {
+                    if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+                        sheetDirectionDetermined = true;
+                        if (Math.abs(diffX) > Math.abs(diffY)) {
+                            isSheetSwipingX = true;
+                        } else {
+                            isSheetSwipingY = true;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+
+                if (isSheetSwipingY) {
+                    if (diffY > 0) {
+                        bottomSheet.style.transform = `translateY(${diffY}px)`;
+                    }
+                } else if (isSheetSwipingX && sheetContentElem) {
+                    // X軸スワイプ時は中のコンテンツだけを動かす
+                    const translateX = diffX * 0.5;
+                    sheetContentElem.style.transform = `translateX(${translateX}px)`;
+                    sheetContentElem.style.opacity = Math.max(0.2, 1 - Math.abs(translateX) / 200);
                 }
             }, { passive: true });
 
             bottomSheet.addEventListener('touchend', (e) => {
-                if (!isSheetSwiping) return;
-                isSheetSwiping = false;
-                bottomSheet.style.transition = 'transform 0.3s ease-out';
-                const diffY = sheetCurrentY - sheetStartY;
-                if (diffY > 100) {
-                    window.closeMonthBottomSheet();
-                } else {
-                    bottomSheet.style.transform = 'translateY(0)';
+                if (!sheetDirectionDetermined) return;
+                
+                if (isSheetSwipingY) {
+                    isSheetSwipingY = false;
+                    bottomSheet.style.transition = 'transform 0.3s ease-out';
+                    const diffY = sheetCurrentY - sheetStartY;
+                    if (diffY > 100) {
+                        window.closeMonthBottomSheet();
+                    } else {
+                        bottomSheet.style.transform = 'translateY(0)';
+                    }
+                } else if (isSheetSwipingX && sheetContentElem) {
+                    isSheetSwipingX = false;
+                    const diffX = sheetCurrentX - sheetStartX;
+                    
+                    if (Math.abs(diffX) > 50 && window.mbsTargetDate) {
+                        // 左右スワイプで日付を切り替える
+                        const targetDateObj = new Date(window.mbsTargetDate);
+                        const offset = diffX > 0 ? -1 : 1; // 右スワイプ(>0)は前日、左スワイプ(<0)は翌日
+                        targetDateObj.setDate(targetDateObj.getDate() + offset);
+                        const newDateStr = getFormatDateStr(targetDateObj);
+                        
+                        const sign = diffX > 0 ? 1 : -1;
+                        sheetContentElem.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+                        sheetContentElem.style.transform = `translateX(${sign * 30}px)`; 
+                        sheetContentElem.style.opacity = '0';
+
+                        setTimeout(() => {
+                            // セル選択状態も更新
+                            if (selectedCellId) {
+                                selectedCellId = `month-cell-${newDateStr}`;
+                                if(currentView === 'month') window.renderCurrentView();
+                            }
+                            
+                            // 新しい日付でボトムシートを開き直す（アニメーションリセットを無効化）
+                            window.openMonthBottomSheet(newDateStr, window.mbsDefaultHour, true);
+                            
+                            const newContentElem = document.getElementById('mbs-content');
+                            if (newContentElem) {
+                                newContentElem.style.transition = 'none';
+                                newContentElem.style.transform = `translateX(${-sign * 20}px)`;
+                                newContentElem.style.opacity = '0';
+                                
+                                void newContentElem.offsetWidth;
+
+                                newContentElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+                                newContentElem.style.transform = 'translateX(0)';
+                                newContentElem.style.opacity = '1';
+                                
+                                setTimeout(() => {
+                                    if(newContentElem) newContentElem.style.transition = 'none';
+                                }, 200);
+                            }
+                        }, 100);
+                    } else {
+                        sheetContentElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+                        sheetContentElem.style.transform = 'translateX(0)';
+                        sheetContentElem.style.opacity = '1';
+                        setTimeout(() => {
+                            if(sheetContentElem) sheetContentElem.style.transition = 'none';
+                        }, 200);
+                    }
                 }
+                
+                sheetStartY = 0;
+                sheetStartX = 0;
             });
         }
 
+        // ★ セルがクリックされたときに選択状態にする処理
+        window.selectUnitPlanCell = (cell) => {
+            if (window.selectedUnitPlanCell) {
+                window.selectedUnitPlanCell.classList.remove('unit-plan-cell-selected');
+                window.selectedUnitPlanCell.setAttribute('contenteditable', 'false');
+            }
+            window.selectedUnitPlanCell = cell;
+            cell.classList.add('unit-plan-cell-selected');
+        };
+
+        // ★ セルがダブルクリック（またはエンターキー）で編集可能になる処理
+        window.editUnitPlanCell = (cell) => {
+            cell.setAttribute('contenteditable', 'true');
+            cell.focus();
+            
+            // 既存のカーソルを末尾に移動させる
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(cell);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        };
+
         // コピペ対応イベントリスナーを登録
         document.addEventListener('paste', (e) => {
-            const td = e.target.closest('td[contenteditable="true"]');
+            // ★修正：選択中のセル（contenteditable="false"）へのペーストにも対応
+            const td = e.target.closest('td.unit-plan-cell');
             if (td && currentView === 'unit-plan') {
                 e.preventDefault();
+                window.isUnitPlanPasting = true; // ★ ペースト処理開始フラグ
                 
                 const clipboardData = e.clipboardData || window.clipboardData;
                 const pastedText = clipboardData.getData('text/plain');
@@ -4309,18 +4434,41 @@
                 const parsedRows = parseTSV(pastedText);
 
                 if (parsedRows.length === 1 && parsedRows[0].length === 1) {
-                    document.execCommand("insertText", false, parsedRows[0][0]);
+                    // 単一セルのペーストの場合は、現在編集中のセルならそのまま挿入
+                    if (td.getAttribute('contenteditable') === 'true') {
+                        document.execCommand("insertText", false, parsedRows[0][0]);
+                    } else {
+                        // 選択状態（未編集）のセルの場合はテキストを上書き
+                        td.innerText = parsedRows[0][0];
+                        const rowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
+                        const fieldMap = {0: 'task', 1: 'activity', 2: 'note'};
+                        const colIdx = parseInt(td.getAttribute('data-col-idx'), 10);
+                        const cls = window.currentUnitPlanGrade;
+                        const sub = "技術";
+                        const planKey = `${cls}_${sub}`;
+                        if (allUnitPlans[planKey] && allUnitPlans[planKey].plans[rowIdx]) {
+                            allUnitPlans[planKey].plans[rowIdx][fieldMap[colIdx]] = parsedRows[0][0];
+                            window.saveUnitPlan(false);
+                        }
+                    }
+                    window.isUnitPlanPasting = false;
                     return;
                 }
                 
                 const startRowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
                 const startColIdx = parseInt(td.getAttribute('data-col-idx'), 10);
-                if (isNaN(startRowIdx) || isNaN(startColIdx)) return;
+                if (isNaN(startRowIdx) || isNaN(startColIdx)) {
+                    window.isUnitPlanPasting = false;
+                    return;
+                }
                 
                 const cls = window.currentUnitPlanGrade;
                 const sub = "技術";
                 const planKey = `${cls}_${sub}`;
-                if (!allUnitPlans[planKey]) return;
+                if (!allUnitPlans[planKey]) {
+                    window.isUnitPlanPasting = false;
+                    return;
+                }
                 
                 const plans = allUnitPlans[planKey].plans;
                 let isChanged = false;
@@ -4353,13 +4501,12 @@
                 }
                 
                 if (isChanged) {
-                    // ★ コピペ時に古いデータで上書きされるのを防ぐため、フォーカスを外して即座に保存・再描画
-                    if (document.activeElement) {
-                        document.activeElement.blur();
-                    }
                     window.saveUnitPlan(false);
                     window.renderUnitPlanView();
                 }
+                
+                // ★ ペースト処理終了フラグ
+                setTimeout(() => { window.isUnitPlanPasting = false; }, 50);
             }
         });
 
@@ -4497,9 +4644,9 @@
                         ${p.hour}
                     </td>
                     ${progressCells}
-                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="0" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
-                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="1" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
-                    <td class="border-r border-gray-200 p-2 align-top whitespace-pre-wrap outline-none" contenteditable="true" data-row-idx="${idx}" data-col-idx="2" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
+                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="0" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
+                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="1" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
+                    <td class="unit-plan-cell border-r border-gray-200 p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="2" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
                     <td class="p-1 align-middle text-center w-10 select-none z-20 relative bg-white/50">
                         <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
                     </td>
@@ -4516,15 +4663,31 @@
             `;
 
             document.getElementById('unit-plan-container').innerHTML = html;
+
+            // Enterキーでも編集状態になれるようにイベントリスナーを追加
+            document.querySelectorAll('.unit-plan-cell').forEach(cell => {
+                cell.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && cell.getAttribute('contenteditable') === 'false') {
+                        e.preventDefault(); // デフォルトの改行を防ぐ
+                        window.editUnitPlanCell(cell);
+                    }
+                });
+            });
         };
 
         window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
+            // ★ ペースト処理中は無視（pasteイベント側で処理するため）
+            if (window.isUnitPlanPasting) return;
+            
             if (!document.body.contains(cellElem)) return; // 再描画で消えた要素は無視
             if (!allUnitPlans[planKey]) return;
             const plans = allUnitPlans[planKey].plans;
             if (plans[rowIdx]) {
                 plans[rowIdx][field] = cellElem.innerText;
             }
+            // 編集完了後、contenteditableをfalseに戻す
+            cellElem.setAttribute('contenteditable', 'false');
+            window.saveUnitPlan(false); // ★ 変更を確定
         };
 
         window.addUnitPlanRow = (planKey) => {
@@ -4573,9 +4736,26 @@
 
             safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
             window.saveToFirebase();
-            window.renderUnitPlanView();
-            if (showAlert) alert("単元計画を保存しました。");
+            if (showAlert) {
+                window.renderUnitPlanView();
+                alert("単元計画を保存しました。");
+            }
         };
+
+        // クリックで選択を解除する処理
+        document.addEventListener('click', (e) => {
+            if (currentView === 'unit-plan') {
+                if (!e.target.closest('.unit-plan-cell')) {
+                    if (window.selectedUnitPlanCell) {
+                        window.selectedUnitPlanCell.classList.remove('unit-plan-cell-selected');
+                        if (window.selectedUnitPlanCell.getAttribute('contenteditable') === 'true') {
+                            window.selectedUnitPlanCell.blur(); // 編集状態なら確定させる
+                        }
+                        window.selectedUnitPlanCell = null;
+                    }
+                }
+            }
+        });
 
         // 初期化処理の呼び出し
         initDataSync();
