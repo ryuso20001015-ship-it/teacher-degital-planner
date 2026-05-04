@@ -197,10 +197,6 @@
                     <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                             <div id="add-modal-color-indicator" class="w-2 h-2 rounded-full bg-[#4a5f73] shrink-0 transition-colors duration-200"></div>
-                            <!-- ★ タスク用チェックボックス追加 -->
-                            <div id="add-modal-task-checkbox" class="hidden shrink-0 cursor-pointer transition text-lg mt-0.5" onclick="window.toggleAddModalTaskCompleted()">
-                                <i class="far fa-square text-gray-400"></i>
-                            </div>
                             <input type="text" id="add-modal-title" class="flex-1 text-sm outline-none placeholder-gray-400 text-gray-800 font-bold" placeholder="タイトル">
                         </div>
                         <div id="fields-location" class="flex items-center gap-2 px-3 py-2">
@@ -451,11 +447,13 @@
             <div class="bg-white p-2 sm:p-3 border-b border-gray-300 flex flex-wrap justify-between items-center z-40 sticky top-0 shrink-0 gap-2">
                 <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <h2 class="text-sm sm:text-base font-bold text-[#4a5f73] shrink-0"><i class="fas fa-map mr-1.5 text-[#4a5f73]"></i> 単元計画</h2>
+                    <!-- ★ 学年選択をボタンに変更 -->
                     <div class="flex bg-gray-100 rounded-md p-0.5 sm:p-1 items-center gap-0.5 shadow-inner ml-1 sm:ml-2 shrink-0" id="unit-plan-grade-group">
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" data-grade="1" onclick="window.setUnitPlanGrade('1')">1年生</button>
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
                     </div>
+                    <!-- ★ 保存ボタンをここに移動 -->
                     <button onclick="window.saveUnitPlan()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a5f73] text-white rounded text-[10px] sm:text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
                 </div>
                 <div class="flex items-center gap-3">
@@ -463,6 +461,7 @@
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
+                <!-- ★ 横幅を少しコンパクトに調整 -->
                 <div id="unit-plan-container" class="min-w-[650px] sm:min-w-[800px] w-full pb-20 h-full">
                     <!-- Table will be injected here -->
                 </div>
@@ -635,6 +634,112 @@
 
     </main>
 
+    <!-- メモ編集 モーダル -->
+    <div id="memo-edit-modal" class="fixed inset-0 z-[150] hidden bg-white flex-col">
+        <div class="flex-1 flex flex-col bg-white overflow-hidden relative w-full h-full">
+            <div class="h-12 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2 sm:px-4 shrink-0 no-print shadow-sm z-20">
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <button onclick="window.saveAndCloseMemo()" class="text-blue-500 font-bold px-2 py-1 hover:bg-blue-50 rounded transition flex items-center gap-1 text-xs sm:text-sm">
+                        <i class="fas fa-chevron-left"></i> 戻る
+                    </button>
+                    <span class="text-gray-400 text-[10px] hidden md:inline ml-2"><i class="fas fa-check"></i> 自動保存</span>
+                </div>
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <button onclick="window.copyMemoText()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
+                        <i class="far fa-copy"></i> <span class="hidden sm:inline">テキストをコピー</span>
+                    </button>
+                    <button onclick="window.printMemo()" class="text-[#4a5f73] font-bold px-2 py-1.5 hover:bg-gray-200 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 bg-white">
+                        <i class="fas fa-print"></i> <span class="hidden sm:inline">メモを印刷</span>
+                    </button>
+                    <button onclick="window.deleteMemo()" class="text-red-500 font-bold px-2 py-1.5 hover:bg-red-50 rounded transition text-[10px] sm:text-xs flex items-center gap-1 border border-red-200 bg-white ml-0.5 sm:ml-1">
+                        <i id="memo-delete-btn-icon" class="fas fa-trash-alt"></i> <span id="memo-delete-btn-text" class="hidden sm:inline">削除</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-1 sm:p-4 bg-gray-100 flex justify-center custom-scrollbar">
+                <div class="bg-white w-full max-w-4xl min-h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
+                    <div class="p-3 sm:p-5 pb-1.5 flex flex-col border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
+                        <div class="flex justify-between items-start w-full">
+                            <div class="flex-1 min-w-0">
+                                <input type="text" id="memo-edit-title" oninput="window.triggerAutoSaveMemo()" placeholder="メモの名前" class="w-full text-lg sm:text-xl font-bold text-[#4a5f73] outline-none placeholder-gray-300 bg-transparent border-b border-transparent focus:border-blue-300 transition-colors px-1 py-1 mb-2">
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs px-1">
+                                    <div class="text-gray-400 font-bold flex items-center gap-1 shrink-0">
+                                        <i class="far fa-clock"></i> 
+                                        <input type="date" id="memo-edit-date" onchange="window.updateMemoDateLabel(); window.triggerAutoSaveMemo()" class="bg-transparent border-b border-dashed border-gray-300 outline-none text-gray-500 hover:border-blue-400 focus:border-blue-500 transition cursor-pointer px-1 py-0.5">
+                                        <span id="memo-edit-day-of-week" class="text-gray-400 font-bold text-[9px] sm:text-[10px]"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">カテゴリ:</span>
+                                        <select id="memo-edit-category" onchange="window.updateMemoFolderOptions(); window.triggerAutoSaveMemo();" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
+                                            <option value="meeting">会議</option>
+                                            <option value="guidance">生徒指導</option>
+                                            <option value="other">その他</option>
+                                            <option value="trash" hidden>ごみ箱</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <span class="text-gray-400 font-bold text-[9px] sm:text-[10px]">保存先:</span>
+                                        <select id="memo-edit-folder" onchange="window.triggerAutoSaveMemo()" class="bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 font-bold text-[#4a5f73] cursor-pointer text-[10px] sm:text-xs">
+                                            <option value="">(ルート)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="shrink-0 ml-3 sm:ml-4 no-print flex flex-col items-center sm:items-end">
+                                <button onclick="window.toggleMemoFavorite()" id="memo-edit-fav-btn" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl transition-colors hover:bg-gray-100 text-gray-300">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <span class="text-[9px] text-gray-400 font-bold mt-1 text-center w-full">お気に入り</span>
+                            </div>
+                        </div>
+
+                        <!-- ★ メモテキスト編集ツールバー -->
+                        <div id="memo-text-toolbar" class="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar relative">
+                            <button onclick="document.execCommand('bold',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="太字"><i class="fas fa-bold"></i></button>
+                            <button onclick="document.execCommand('underline',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="下線"><i class="fas fa-underline"></i></button>
+                            <button onclick="document.execCommand('strikeThrough',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="取り消し線"><i class="fas fa-strikethrough"></i></button>
+                            
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                            
+                            <!-- 文字色・背景色のポップアップトリガー -->
+                            <button type="button" onclick="window.toggleColorPalette('foreColor', this)" class="p-1 text-gray-600 hover:bg-gray-100 rounded transition flex flex-col items-center justify-center w-8 h-8 shrink-0" title="文字色">
+                                <div class="flex items-center justify-center gap-0.5 mt-0.5"><i class="fas fa-font text-sm"></i><i class="fas fa-caret-down text-[8px] mt-0.5 text-gray-400"></i></div>
+                                <div id="indicator-foreColor" class="w-4 h-1 bg-black rounded-sm mt-0.5 shrink-0"></div>
+                            </button>
+                            <button type="button" onclick="window.toggleColorPalette('hiliteColor', this)" class="p-1 text-gray-600 hover:bg-gray-100 rounded transition flex flex-col items-center justify-center w-8 h-8 shrink-0" title="文字背景色">
+                                <div class="flex items-center justify-center gap-0.5 mt-0.5"><i class="fas fa-fill-drip text-sm"></i><i class="fas fa-caret-down text-[8px] mt-0.5 text-gray-400"></i></div>
+                                <div id="indicator-hiliteColor" class="w-4 h-1 bg-transparent border border-gray-300 rounded-sm mt-0.5 shrink-0"></div>
+                            </button>
+
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                            
+                            <button onclick="document.execCommand('insertUnorderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="箇条書き"><i class="fas fa-list-ul"></i></button>
+                            <button onclick="document.execCommand('insertOrderedList',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="段落番号"><i class="fas fa-list-ol"></i></button>
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                            <button onclick="document.execCommand('indent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="インデントを増やす"><i class="fas fa-indent"></i></button>
+                            <button onclick="document.execCommand('outdent',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="インデントを減らす"><i class="fas fa-outdent"></i></button>
+                            
+                            <!-- 追加：文字の配置（左揃え・中央揃え・右揃え） -->
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                            <button onclick="document.execCommand('justifyLeft',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="左揃え"><i class="fas fa-align-left"></i></button>
+                            <button onclick="document.execCommand('justifyCenter',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="中央揃え"><i class="fas fa-align-center"></i></button>
+                            <button onclick="document.execCommand('justifyRight',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="右揃え"><i class="fas fa-align-right"></i></button>
+                            
+                            <!-- 追加：区切り線 -->
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                            <button type="button" onclick="document.execCommand('insertHorizontalRule', false, null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="区切り線"><i class="fas fa-minus"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col relative w-full h-full min-h-[300px] overflow-hidden">
+                        <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="absolute inset-0 w-full h-full outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0 overflow-y-auto break-words"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript">
         const memoryStorage = {};
         const safeGetItem = (key) => {
@@ -681,8 +786,8 @@
 
         // ★ 単元計画用のグローバル変数追加
         window.currentUnitPlanGrade = '1';
-        window.isUnitPlanPasting = false; 
-        window.selectedUnitPlanCell = null; 
+        window.isUnitPlanPasting = false; // ★ コピペバグ修正用のフラグ追加
+        window.selectedUnitPlanCell = null; // ★ 追加：現在選択中の単元計画セル
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -834,7 +939,6 @@
         let addModalTargetDate = null;
         let editTarget = null; 
         let currentModalMode = 'schedule';
-        let currentTaskCompleted = false; // ★追加：タスクの完了状態を保持するフラグ
         
         let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null };
         let wpSelectedDay = 1;
@@ -1973,9 +2077,6 @@
             window.toggleAddModalType(); window.toggleAllDay();
 
             window.updateModalColor(); 
-            
-            currentTaskCompleted = false;
-            window.updateTaskCheckboxUI();
 
             document.getElementById('add-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('add-modal-title').focus(), 100);
@@ -2033,9 +2134,6 @@
                     if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
                     document.getElementById('add-modal-category-task').value = task.category || 'work'; 
                     document.getElementById('add-modal-memo-task').value = task.memo || '';
-                    
-                    currentTaskCompleted = !!task.completed;
-                    window.updateTaskCheckboxUI();
                 }
             }
             
@@ -2062,7 +2160,6 @@
             const isAllDay = document.getElementById('add-modal-allday').checked;
             document.getElementById('add-modal-start-time').classList.toggle('hidden', isAllDay); document.getElementById('add-modal-end-time').classList.toggle('hidden', isAllDay);
         };
-        
         window.toggleAddModalType = () => {
             currentModalMode = document.querySelector('input[name="add-type"]:checked').value;
             const isSched = currentModalMode === 'schedule';
@@ -2073,39 +2170,7 @@
             document.getElementById('fields-schedule-options').style.display = isSched ? 'block' : 'none';
             document.getElementById('fields-task-options').style.display = isSched ? 'none' : 'block';
             
-            document.getElementById('add-modal-color-indicator').style.display = isSched ? 'block' : 'none';
-            document.getElementById('add-modal-task-checkbox').style.display = isSched ? 'none' : 'block';
-            
             window.updateModalColor(); 
-        };
-
-        window.updateTaskCheckboxUI = () => {
-            const cb = document.getElementById('add-modal-task-checkbox');
-            if (cb) {
-                if (currentTaskCompleted) {
-                    cb.innerHTML = '<i class="fas fa-check-square text-blue-500"></i>';
-                } else {
-                    cb.innerHTML = '<i class="far fa-square text-gray-400"></i>';
-                }
-            }
-        };
-
-        window.toggleAddModalTaskCompleted = () => {
-            currentTaskCompleted = !currentTaskCompleted;
-            window.updateTaskCheckboxUI();
-            
-            if (editTarget && currentModalMode === 'task') {
-                const dateStr = editTarget.dateStr;
-                if (allPlanners[dateStr] && allPlanners[dateStr].reminders) {
-                    const taskObj = allPlanners[dateStr].reminders.find(t => t.id === editTarget.idOrIndex);
-                    if (taskObj) {
-                        taskObj.completed = currentTaskCompleted;
-                        safeSetItem(LS_KEY, JSON.stringify(allPlanners));
-                        window.saveToFirebase();
-                        window.renderCurrentView();
-                    }
-                }
-            }
         };
 
         window.updateModalColor = () => {
@@ -2169,7 +2234,7 @@
                     const cat = document.getElementById('add-modal-category-task').value; 
                     const tsk = {
                         id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                        title, completed: currentTaskCompleted, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
+                        title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
                     };
                     if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
                     if (editTarget) {
@@ -3234,12 +3299,12 @@
             for(let i=1; i<=maxPeriods; i++) {
                 const isSelected = wpSelectedPeriod === i;
                 const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+                        periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
             }
             periodsContainer.innerHTML = periodsHtml;
         };
 
-            window.changeWpModalSource = (type, val) => {
+        window.changeWpModalSource = (type, val) => {
             if (type === 'day') wpSelectedDay = val;
             if (type === 'period') wpSelectedPeriod = val;
             
@@ -4232,13 +4297,11 @@
                     
                     let cellContent = '';
                     if (currentHour <= maxHour) {
+                        // 完了済みの時数は縦の線（矢印の胴体）
+                        cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
+                        // もしこれが現在の最大進捗なら矢印の先端を下向きに描画
                         if (currentHour === maxHour) {
-                            // ★ 修正：矢印の下端がセルの真ん中に来るようにする
-                            cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-1/2 z-0"></div>`;
-                            cellContent += `<div class="absolute border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-t-[8px] sm:border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 top-1/2 z-10 translate-y-[-50%]"></div>`;
-                        } else {
-                            // 完了済みの時間：胴体はセル全体を貫通
-                            cellContent = `<div class="absolute w-[4px] sm:w-[6px] bg-blue-500 left-1/2 -translate-x-1/2 top-0 bottom-0 z-0"></div>`;
+                            cellContent += `<div class="absolute border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-t-[8px] sm:border-t-[10px] border-t-blue-500 left-1/2 -translate-x-1/2 -bottom-[3px] sm:-bottom-[4px] z-10"></div>`;
                         }
                     }
                     
