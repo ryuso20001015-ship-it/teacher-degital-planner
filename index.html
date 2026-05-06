@@ -125,7 +125,7 @@
     </datalist>
 
     <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-2 sm:px-4 shadow-md z-50 relative shrink-0 gap-2 border-b border-gray-800">
-                            <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
+        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
             <div class="font-bold flex items-center gap-1.5 shrink-0 text-sm">
                 <i class="fas fa-book-open text-blue-400"></i>
                 <span class="hidden sm:inline mr-2">デジタル教師手帳</span>
@@ -4580,12 +4580,10 @@
 
             // クラスごとの進捗状況を計算
             const classProgress = {};
-            // 現在の年度開始日を計算 (4月始まり)
             const today = new Date();
             const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
             const startDate = new Date(year, 3, 1);
             
-            // 全日程を走査して、この単元計画に関連付けられた授業を抽出
             let curDate = new Date(startDate);
             while (curDate <= today) {
                 const dStr = getFormatDateStr(curDate);
@@ -4603,17 +4601,13 @@
                                 if (!isCut) {
                                     const clsStr = String(cData.cls).trim();
                                     const subStr = String(cData.sub).trim();
-                                    // この単元計画（学年・教科）に該当する授業かチェック
                                     if ((clsStr.startsWith(grade) || clsStr.includes(`${grade}年`)) && subStr === sub) {
-                                        // 既にunitPlanIdxが明示的に保存されている場合はそれを記録
                                         if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                             const idx = parseInt(cData.unitPlanIdx);
                                             if (!classProgress[clsStr]) classProgress[clsStr] = [];
                                             classProgress[clsStr].push({ date: dStr, idx: idx });
                                         } else {
-                                             // 紐付けがない場合は、単純なカウントアップとして記録 (自動連携用)
                                             if (!classProgress[clsStr]) classProgress[clsStr] = [];
-                                            // ここでは一旦 -1 として記録しておく。後で補完する
                                             classProgress[clsStr].push({ date: dStr, idx: -1 });
                                         }
                                     }
@@ -4625,31 +4619,25 @@
                 curDate.setDate(curDate.getDate() + 1);
             }
 
-            // 進捗データの整理・補完
             Object.keys(classProgress).forEach(cls => {
                 let currentIdx = 0;
                 classProgress[cls].sort((a, b) => a.date.localeCompare(b.date));
                 classProgress[cls].forEach(record => {
                     if (record.idx === -1) {
-                         // 自動カウントアップ
                          record.idx = currentIdx;
                          currentIdx++;
                     } else {
-                         // 明示的な紐付けがある場合はそれを優先し、次のカウントアップ起点を更新
                          currentIdx = record.idx + 1;
                     }
                 });
             });
 
-            // 進捗リストを作成 (時数インデックス -> 実施したクラスと日付のリスト)
             const progressByHour = {};
             Object.keys(classProgress).forEach(cls => {
                 classProgress[cls].forEach(record => {
                     if (!progressByHour[record.idx]) progressByHour[record.idx] = [];
-                    // "MM/DD"形式にフォーマット
                     const dParts = record.date.split('-');
                     const displayDate = `${parseInt(dParts[1])}/${parseInt(dParts[2])}`;
-                    // "曜日"を追加
                     const dayOfWeekStr = DAYS_STR[new Date(record.date).getDay()];
                     
                     progressByHour[record.idx].push({
@@ -4660,82 +4648,92 @@
                 });
             });
 
+            // 1組から6組までの固定列を作成
+            const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
+
             let html = `
-                <table id="unit-plan-table" class="w-full border-collapse bg-white">
+                <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed">
                     <thead class="sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-12 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 min-w-[150px] text-center">学習課題（本時の目標）</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/3 min-w-[200px] text-center">学習活動・内容</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 min-w-[150px] text-center">備考・評価・準備物</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-32 min-w-[120px] text-center">進捗（クラス別）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-10 text-center shrink-0">時</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 text-center">学習課題（本時の目標）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/3 text-center">学習活動・内容</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/5 text-center">備考・評価・準備物</th>
+            `;
+            // クラスヘッダを追加
+            classCols.forEach(clsName => {
+                html += `<th class="bg-gray-100 border border-gray-300 p-1 text-[#4a5f73] font-bold text-[10px] w-12 text-center">${clsName.split('-')[1]}組</th>`;
+            });
+            
+            html += `
                             <th class="bg-gray-100 border border-gray-300 p-2 w-8 text-center shrink-0"></th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
+            // 今日の日付文字列（比較用）
+            const todayStrForCompare = getFormatDateStr(new Date());
+
             plans.forEach((plan, idx) => {
-                // 進捗バッジの生成
-                let progressHtml = '';
-                const progressList = progressByHour[idx];
-                if (progressList && progressList.length > 0) {
-                    // クラス名でソート
-                    progressList.sort((a, b) => a.cls.localeCompare(b.cls));
-                    
-                    // クラス別にグルーピング (同じ時間に同じクラスが複数回ある場合の対応)
-                    const latestProgressByCls = {};
-                    progressList.forEach(p => {
-                        // 同じクラスで複数回実施されている場合は最新のものを保持
-                        if (!latestProgressByCls[p.cls] || latestProgressByCls[p.cls].rawDate < p.rawDate) {
-                             latestProgressByCls[p.cls] = p;
-                        }
-                    });
-                    
-                    progressHtml = `<div class="flex flex-col gap-1 w-full max-h-[80px] overflow-y-auto custom-scrollbar pr-1">`;
-                    Object.values(latestProgressByCls).forEach(p => {
-                        // 実施済みのクラスは薄い青色(bg-blue-50)で表示
-                        progressHtml += `
-                            <div class="flex items-center justify-between text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded shadow-sm">
-                                <span class="font-bold truncate max-w-[50px]">${p.cls}</span>
-                                <span class="text-gray-500 font-medium ml-1 text-[8px] whitespace-nowrap">${p.dateStr}</span>
-                            </div>
+                const progressList = progressByHour[idx] || [];
+                const latestProgressByCls = {};
+                progressList.forEach(p => {
+                    if (!latestProgressByCls[p.cls] || latestProgressByCls[p.cls].rawDate < p.rawDate) {
+                         latestProgressByCls[p.cls] = p;
+                    }
+                });
+
+                let progressColsHtml = '';
+                classCols.forEach(clsName => {
+                    const p = latestProgressByCls[clsName];
+                    if (p) {
+                        // 予定日が過去か未来か（本日を含む）で色を出し分ける
+                        // 過去は薄青色(bg-blue-50/text-blue-800)、未来・本日は薄赤色(bg-red-50/text-red-800)
+                        const isPast = p.rawDate < todayStrForCompare;
+                        const cellBgColor = isPast ? 'bg-blue-50' : 'bg-red-50';
+                        const textColor = isPast ? 'text-blue-800' : 'text-red-800';
+
+                        progressColsHtml += `
+                            <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
+                                <div class="text-[8px] ${textColor} font-bold whitespace-nowrap leading-tight">${p.dateStr}</div>
+                            </td>
                         `;
-                    });
-                    progressHtml += `</div>`;
-                } else {
-                    progressHtml = `<div class="text-[9px] text-gray-400 text-center">-</div>`;
-                }
+                    } else {
+                        progressColsHtml += `
+                            <td class="border border-gray-300 p-0.5 text-center align-middle bg-gray-50/50">
+                                <div class="text-[8px] text-gray-300">-</div>
+                            </td>
+                        `;
+                    }
+                });
 
                 html += `
                     <tr class="hover:bg-blue-50/30 transition-colors group">
-                        <td class="border border-gray-300 p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 w-12 shrink-0">${plan.hour}</td>
-                        <td class="border border-gray-300 p-0 align-top relative w-1/4 min-w-[150px]">
+                        <td class="border border-gray-300 p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
+                        <td class="border border-gray-300 p-0 align-top relative">
                             <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="0"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
                         </td>
-                        <td class="border border-gray-300 p-0 align-top relative w-1/3 min-w-[200px]">
+                        <td class="border border-gray-300 p-0 align-top relative">
                             <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="1"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${plan.activity || ''}</div>
                         </td>
-                        <td class="border border-gray-300 p-0 align-top relative w-1/4 min-w-[150px]">
+                        <td class="border border-gray-300 p-0 align-top relative">
                             <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="2"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${plan.note || ''}</div>
                         </td>
-                        <!-- ★ 進捗表示列の追加 -->
-                        <td class="border border-gray-300 p-1.5 align-top bg-gray-50/50 w-32 min-w-[120px]">
-                            ${progressHtml}
-                        </td>
-                        <td class="border border-gray-300 p-1 text-center align-middle w-8 shrink-0 bg-gray-50">
+                        ${progressColsHtml}
+                        <td class="border border-gray-300 p-1 text-center align-middle shrink-0 bg-gray-50">
                             <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition p-1 opacity-0 group-hover:opacity-100" title="この行を削除"><i class="fas fa-trash-alt text-[10px]"></i></button>
                         </td>
                     </tr>
@@ -4758,7 +4756,7 @@
                         <li>セルを一度クリックして選択し、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Delete</span> または <span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Backspace</span>キーを押すと内容を消去できます。</li>
                         <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
                         <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
-                        <li><span class="font-bold text-blue-600">NEW:</span> 週案簿で授業を登録すると、右端の「進捗」欄に実施予定日が自動で表示されます。</li>
+                        <li><span class="font-bold text-blue-600">NEW:</span> 過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示されます。</li>
                     </ul>
                 </div>
             `;
