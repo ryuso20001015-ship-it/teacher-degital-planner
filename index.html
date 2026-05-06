@@ -125,7 +125,7 @@
     </datalist>
 
     <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-2 sm:px-4 shadow-md z-50 relative shrink-0 gap-2 border-b border-gray-800">
-        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
+                            <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
             <div class="font-bold flex items-center gap-1.5 shrink-0 text-sm">
                 <i class="fas fa-book-open text-blue-400"></i>
                 <span class="hidden sm:inline mr-2">デジタル教師手帳</span>
@@ -759,7 +759,7 @@
             normal: { name: "通常日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:30"}, {id:"p_2",name:"2限",s:"09:40",e:"10:30"}, {id:"p_3",name:"3限",s:"10:40",e:"11:30"}, {id:"p_4",name:"4限",s:"11:40",e:"12:30"}, {id:"p_5",name:"5限",s:"13:30",e:"14:20"}, {id:"p_6",name:"6限",s:"14:30",e:"15:20"} ] },
             short: { name: "短縮日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:25"}, {id:"p_2",name:"2限",s:"09:35",e:"10:20"}, {id:"p_3",name:"3限",s:"10:30",e:"11:15"}, {id:"p_4",name:"4限",s:"11:25",e:"12:10"}, {id:"p_5",name:"5限",s:"13:00",e:"13:45"}, {id:"p_6",name:"6限",s:"13:55",e:"14:40"} ] },
             special: { name: "特短日課", periods: [ {id:"p_1",name:"1限",s:"08:40",e:"09:20"}, {id:"p_2",name:"2限",s:"09:30",e:"10:10"}, {id:"p_3",name:"3限",s:"10:20",e:"11:00"}, {id:"p_4",name:"4限",s:"11:10",e:"11:50"}, {id:"p_5",name:"5限",s:"12:40",e:"13:20"}, {id:"p_6",name:"6限",s:"13:30",e:"14:10"} ] },
-            test: { name: "テスト日課", periods: [ {id:"p_1",name:"1限",s:"08:50",e:"09:40"}, {id:"p_2",name:"2限",s:"09:55",e:"10:45"}, {id:"p_3",name:"11:00",e:"11:50"} ] }
+            test: { name: "テスト日課", periods: [ {id:"p_1",name:"1限",s:"08:50",e:"09:40"}, {id:"p_2",name:"2限",s:"09:55",e:"10:45"}, {id:"p_3",name:"3限",s:"11:00",e:"11:50"} ] }
         };
 
         let allPlanners = {}; 
@@ -782,10 +782,9 @@
         let allFolders = [];
         let allUnitPlans = safeGetItem('teacher_planner_unit_plans') ? JSON.parse(safeGetItem('teacher_planner_unit_plans')) : {};
 
-        // ★ 単元計画用のグローバル変数
         window.currentUnitPlanGrade = '1';
-        window.isUnitPlanPasting = false;
-        window.selectedUnitPlanCell = null;
+        window.isUnitPlanPasting = false; 
+        window.selectedUnitPlanCell = null; 
 
         const MEMO_CATEGORIES = [
             { id: 'meeting', name: '会議', icon: 'fas fa-users', color: 'text-blue-500' },
@@ -797,7 +796,6 @@
         let editingMemoId = null;
         window.currentMemoSort = 'updatedAt_desc'; 
 
-        // ★ カスタムカラーパレットの生成ロジック
         const paletteColors = [
             ['#FFFFFF', '#000000', '#E7E6E6', '#10253F', '#203864', '#C65911', '#385623', '#2E74B5', '#7030A0', '#76923C'],
             ['#F2F2F2', '#7F7F7F', '#D0CECE', '#D9E2F3', '#B4C6E7', '#F8CBAD', '#C5E0B3', '#BDD7EE', '#E2EFDA', '#E2EFDA'],
@@ -905,7 +903,6 @@
                 }
             }
         });
-
 
         window.currentCalendarFilter = 'all';
         window.setCalendarFilter = (filter) => {
@@ -1216,25 +1213,45 @@
             }
         };
 
+        // ==========================================
+        // ★ 履歴保存機能（Undo/Redoに単元計画も含めるよう拡張）
+        // ==========================================
         window.saveStateToHistory = () => {
-            undoStack.push(JSON.stringify(allPlanners));
+            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
             if (undoStack.length > MAX_HISTORY) undoStack.shift();
             redoStack = []; window.updateUndoRedoButtons();
         };
+
         window.undo = () => {
             if (undoStack.length === 0) return;
-            redoStack.push(JSON.stringify(allPlanners));
-            allPlanners = JSON.parse(undoStack.pop());
+            redoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
+            const state = JSON.parse(undoStack.pop());
+            if (state.planners) {
+                allPlanners = state.planners;
+                allUnitPlans = state.unitPlans || allUnitPlans;
+            } else {
+                allPlanners = state; // 古い形式との互換性
+            }
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
             window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
         };
+
         window.redo = () => {
             if (redoStack.length === 0) return;
-            undoStack.push(JSON.stringify(allPlanners));
-            allPlanners = JSON.parse(redoStack.pop());
+            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
+            const state = JSON.parse(redoStack.pop());
+            if (state.planners) {
+                allPlanners = state.planners;
+                allUnitPlans = state.unitPlans || allUnitPlans;
+            } else {
+                allPlanners = state;
+            }
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
             window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
         };
+
         window.updateUndoRedoButtons = () => {
             const undoBtn = document.getElementById('btn-undo'), redoBtn = document.getElementById('btn-redo');
             if (undoBtn) { undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = undoStack.length > 0 ? 'auto' : 'none'; }
@@ -2544,7 +2561,8 @@
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
                         allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:brightness-110 transition border ${bgColorClass}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[8px] truncate px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'task') {
-                        const t = slot.event; const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                        const t = slot.event;
+                        const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                         const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
                         const leftPct = (c / 7) * 100; const widthPct = (1 / 7) * 100;
                         allDayHtml += `<div class="absolute rounded-sm flex items-center shadow-sm cursor-pointer hover:bg-gray-100 transition bg-white border border-gray-200 ${style}" style="top: ${topPx}px; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); height: ${itemHeight}px; z-index: 10;" onclick="event.stopPropagation(); window.openEditMenu('${weekDates[c]}', 'task', '${t.id}')"><div class="shrink-0 cursor-pointer flex items-center justify-center pl-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${weekDates[c]}', '${t.id}', ${!t.completed})">${icon}</div><span class="font-bold text-[8px] truncate px-1">${t.title}</span></div>`;
@@ -3037,12 +3055,12 @@
                             
                             let memoAndTaskHtml = '';
                             
-                            // ★ 課題の表示形式を「第X時 〇〇」というシンプルなテキスト形式に変更（指示対応）
+                            // ★ 課題の表示形式を「第X時: 学習課題」に変更
                             if (unitPlanTask) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-700 truncate px-0.5 w-full mt-0.5 leading-tight">第${uIdxForTask}時: ${unitPlanTask}</div>`;
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
                             }
                             if (displayMemo) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] text-gray-600 truncate px-0.5 w-full mt-0.5 leading-tight">${displayMemo}</div>`;
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] text-gray-600 truncate px-0.5 w-full mt-1 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>メモ: ${displayMemo}</div>`;
                             }
 
                             let mainContent = '', techCountHtml = '';
@@ -3114,6 +3132,7 @@
                 suggestContainer.classList.add('hidden');
                 return;
             }
+            
             let html = '';
             classes.forEach(c => {
                 html += `<button onclick="window.selectWpModalSuggestCls('${c}')" class="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px] font-bold hover:bg-blue-100 transition">${c}</button>`;
@@ -3216,7 +3235,6 @@
                 preview.classList.add('hidden');
             }
         };
-
 
         window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             window.closeMonthBottomSheet();
@@ -3389,6 +3407,10 @@
                 const sub = document.getElementById('wp-modal-sub').value.trim();
                 const unitPlanIdx = document.getElementById('wp-modal-unit-plan-select').value;
                 
+                // --- 単元計画の自動シフト（繰り下げ/詰め）処理の追加開始 ---
+                const oldClassData = allPlanners[targetDateStr].classes[targetPeriodId];
+                const oldUnitPlanIdx = oldClassData ? oldClassData.unitPlanIdx : null;
+                
                 allPlanners[targetDateStr].classes[targetPeriodId] = {
                     cls: cls,
                     sub: sub,
@@ -3398,6 +3420,50 @@
                     unitPlanIdx: unitPlanIdx,
                     disabled: false
                 };
+
+                // もし、単元計画の紐付けが変更された（ずれた）場合、以降の授業を自動シフトする
+                if (oldUnitPlanIdx !== null && oldUnitPlanIdx !== undefined && unitPlanIdx !== undefined && unitPlanIdx !== null) {
+                    const oldIdx = parseInt(oldUnitPlanIdx);
+                    const newIdx = parseInt(unitPlanIdx);
+                    
+                    if (oldIdx !== newIdx) {
+                        const shiftAmount = newIdx - oldIdx; // 正なら繰り下げ、負なら詰め
+                        const targetDateObj = new Date(targetDateStr);
+                        
+                        // 対象クラス・教科の以後の授業を探してシフト
+                        const today = new Date();
+                        const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+                        const endDate = new Date(year + 1, 2, 31); // 年度末まで
+                        
+                        let curDate = new Date(targetDateObj);
+                        curDate.setDate(curDate.getDate() + 1); // 翌日から
+                        
+                        while (curDate <= endDate) {
+                            const dStr = getFormatDateStr(curDate);
+                            if (allPlanners[dStr] && allPlanners[dStr].classes) {
+                                for (const pId in allPlanners[dStr].classes) {
+                                    const cData = allPlanners[dStr].classes[pId];
+                                    if (cData && !cData.disabled && !cData.isCut && cData.cls === cls && cData.sub === sub) {
+                                        if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
+                                            const currentIdx = parseInt(cData.unitPlanIdx);
+                                            // 影響を受ける（変更対象の時数より後の）授業のみシフト
+                                            if (currentIdx > Math.min(oldIdx, newIdx)) {
+                                                 const shiftedIdx = currentIdx + shiftAmount;
+                                                 if (shiftedIdx >= 0) {
+                                                     cData.unitPlanIdx = shiftedIdx.toString();
+                                                 } else {
+                                                     cData.unitPlanIdx = ""; // 負になる場合はクリア
+                                                 }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            curDate.setDate(curDate.getDate() + 1);
+                        }
+                    }
+                }
+                // --- 単元計画の自動シフト処理の追加終了 ---
             }
             
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -4056,7 +4122,48 @@
             });
         }
 
-        // ★ セルがクリックされたときに選択状態にする処理
+        // ==========================================
+        // ★ 追加された機能の再定義（単元計画の履歴・選択・コピペ対応）
+        // ==========================================
+
+        // 履歴保存に allUnitPlans を含めるようにオーバーライド
+        window.saveStateToHistory = () => {
+            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
+            if (undoStack.length > MAX_HISTORY) undoStack.shift();
+            redoStack = []; window.updateUndoRedoButtons();
+        };
+
+        window.undo = () => {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
+            const state = JSON.parse(undoStack.pop());
+            if (state.planners) {
+                allPlanners = state.planners;
+                allUnitPlans = state.unitPlans || allUnitPlans;
+            } else {
+                allPlanners = state; // 古い形式との互換性
+            }
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
+        };
+
+        window.redo = () => {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
+            const state = JSON.parse(redoStack.pop());
+            if (state.planners) {
+                allPlanners = state.planners;
+                allUnitPlans = state.unitPlans || allUnitPlans;
+            } else {
+                allPlanners = state;
+            }
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
+        };
+
+        // セル選択と編集
         window.selectUnitPlanCell = (cell) => {
             if (window.selectedUnitPlanCell) {
                 window.selectedUnitPlanCell.classList.remove('unit-plan-cell-selected');
@@ -4066,12 +4173,10 @@
             cell.classList.add('unit-plan-cell-selected');
         };
 
-        // ★ セルがダブルクリック（またはエンターキー）で編集可能になる処理
         window.editUnitPlanCell = (cell) => {
             cell.setAttribute('contenteditable', 'true');
             cell.focus();
             
-            // 既存のカーソルを末尾に移動させる
             const range = document.createRange();
             const sel = window.getSelection();
             range.selectNodeContents(cell);
@@ -4080,384 +4185,7 @@
             sel.addRange(range);
         };
 
-        // コピペ対応イベントリスナーを登録
-        document.addEventListener('paste', (e) => {
-            // ★修正：選択中のセル（contenteditable="false"）へのペーストにも対応
-            const td = e.target.closest('td.unit-plan-cell');
-            if (td && currentView === 'unit-plan') {
-                e.preventDefault();
-                window.isUnitPlanPasting = true; // ★ ペースト処理開始フラグ
-                
-                const clipboardData = e.clipboardData || window.clipboardData;
-                const pastedText = clipboardData.getData('text/plain');
-                
-                // 改行（セル内の改行）を考慮したTSVパーサー
-                const parseTSV = (text) => {
-                    let rows = [];
-                    let currentRow = [];
-                    let currentCell = '';
-                    let inQuotes = false;
-                    for (let i = 0; i < text.length; i++) {
-                        let char = text[i];
-                        let nextChar = text[i + 1];
-                        if (inQuotes) {
-                            if (char === '"' && nextChar === '"') {
-                                currentCell += '"'; i++;
-                            } else if (char === '"') {
-                                inQuotes = false;
-                            } else {
-                                currentCell += char;
-                            }
-                        } else {
-                            if (char === '"') {
-                                inQuotes = true;
-                            } else if (char === '\t') {
-                                currentRow.push(currentCell); currentCell = '';
-                            } else if (char === '\r' && nextChar === '\n') {
-                                currentRow.push(currentCell); rows.push(currentRow); currentRow = []; currentCell = ''; i++;
-                            } else if (char === '\n' || char === '\r') {
-                                currentRow.push(currentCell); rows.push(currentRow); currentRow = []; currentCell = '';
-                            } else {
-                                currentCell += char;
-                            }
-                        }
-                    }
-                    currentRow.push(currentCell); rows.push(currentRow);
-                    return rows;
-                };
-
-                const parsedRows = parseTSV(pastedText);
-
-                if (parsedRows.length === 1 && parsedRows[0].length === 1) {
-                    // 単一セルのペーストの場合は、現在編集中のセルならそのまま挿入
-                    if (td.getAttribute('contenteditable') === 'true') {
-                        document.execCommand("insertText", false, parsedRows[0][0]);
-                    } else {
-                        // 選択状態（未編集）のセルの場合はテキストを上書き
-                        td.innerText = parsedRows[0][0];
-                        const rowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
-                        const fieldMap = {0: 'task', 1: 'activity', 2: 'note'};
-                        const colIdx = parseInt(td.getAttribute('data-col-idx'), 10);
-                        const cls = window.currentUnitPlanGrade;
-                        const sub = "技術";
-                        const planKey = `${cls}_${sub}`;
-                        if (allUnitPlans[planKey] && allUnitPlans[planKey].plans[rowIdx]) {
-                            allUnitPlans[planKey].plans[rowIdx][fieldMap[colIdx]] = parsedRows[0][0];
-                            window.saveUnitPlan(false);
-                        }
-                    }
-                    window.isUnitPlanPasting = false;
-                    return;
-                }
-                
-                const startRowIdx = parseInt(td.getAttribute('data-row-idx'), 10);
-                const startColIdx = parseInt(td.getAttribute('data-col-idx'), 10);
-                if (isNaN(startRowIdx) || isNaN(startColIdx)) {
-                    window.isUnitPlanPasting = false;
-                    return;
-                }
-                
-                const cls = window.currentUnitPlanGrade;
-                const sub = "技術";
-                const planKey = `${cls}_${sub}`;
-                if (!allUnitPlans[planKey]) {
-                    window.isUnitPlanPasting = false;
-                    return;
-                }
-                
-                const plans = allUnitPlans[planKey].plans;
-                let isChanged = false;
-
-                // 最初のセルだけが空になる問題の修正:
-                // コピー元の左上のセルが空文字 ('') でない限り、そのまま代入するようにします。
-                for (let r = 0; r < parsedRows.length; r++) {
-                    const rowCells = parsedRows[r];
-                    // 最後の空行を無視
-                    if (rowCells.length === 1 && rowCells[0] === '') continue; 
-                    
-                    const targetRowIdx = startRowIdx + r;
-                    if (targetRowIdx >= plans.length) {
-                        plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
-                        isChanged = true;
-                    }
-                    
-                    const p = plans[targetRowIdx];
-                    for (let c = 0; c < rowCells.length; c++) {
-                        const cellText = rowCells[c];
-                        const targetColIdx = startColIdx + c;
-                        
-                        // ★修正：セルテキストが存在する場合、または既存データがない場合に更新する
-                        if (cellText !== "") {
-                            if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
-                            else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
-                            else if (targetColIdx === 2) { p.note = cellText; isChanged = true; }
-                        }
-                    }
-                }
-                
-                if (isChanged) {
-                    window.saveUnitPlan(false);
-                    window.renderUnitPlanView();
-                }
-                
-                // ★ ペースト処理終了フラグ
-                setTimeout(() => { window.isUnitPlanPasting = false; }, 50);
-            }
-        });
-
-        // テーブル全体のフォーカス制御補助
-        window.focusNextCell = (rowIdx, colIdx) => {
-            const nextTd = document.querySelector(`td[data-row-idx="${rowIdx}"][data-col-idx="${colIdx}"]`);
-            if (nextTd) nextTd.focus();
-        };
-
-        window.setUnitPlanGrade = (grade) => {
-            window.currentUnitPlanGrade = grade;
-            const buttons = document.querySelectorAll('.unit-plan-grade-btn');
-            buttons.forEach(btn => {
-                if (btn.dataset.grade === grade) {
-                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
-                } else {
-                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
-                }
-            });
-            window.renderUnitPlanView();
-        };
-
-        window.renderUnitPlanView = () => {
-            const cls = window.currentUnitPlanGrade;
-            const sub = "技術";
-
-            const planKey = `${cls}_${sub}`;
-            if (!allUnitPlans[planKey]) {
-                const totalHours = cls === '3' ? 17 : 35;
-                const defaultPlans = [];
-                for(let i=1; i<=totalHours; i++) {
-                    defaultPlans.push({ hour: i, task: "", activity: "", note: "" });
-                }
-                allUnitPlans[planKey] = { plans: defaultPlans };
-            }
-
-            const plans = allUnitPlans[planKey].plans;
-            const cumulativeHours = calculateCumulativeHoursForUnitPlan(cls, sub);
-            
-            document.getElementById('unit-plan-progress').innerHTML = `進捗: <span class="text-blue-600 text-sm">${cumulativeHours}</span> / ${plans.length} 時間`;
-
-            let html = `
-            <table class="w-full border-collapse bg-white shadow-sm border border-[#2e5d4b]" id="unit-plan-table">
-                <thead class="sticky top-0 z-30 bg-[#2e5d4b]">
-                    <tr class="bg-[#2e5d4b] text-white text-[10px] sm:text-xs">
-                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-8 sm:w-12 text-center sticky top-0 z-30 bg-[#2e5d4b]">時数</th>
-                        <!-- 進捗帯列 1〜6組 -->
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">1組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">2組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">3組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">4組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">5組</th>
-                        <th class="border border-[#2e5d4b] p-1 w-5 sm:w-6 text-center text-[8px] sm:text-[10px] sticky top-0 z-30 bg-[#2e5d4b]">6組</th>
-                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-[20%] text-left sticky top-0 z-30 bg-[#2e5d4b]">学習課題</th>
-                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-[25%] text-left sticky top-0 z-30 bg-[#2e5d4b]">活動内容</th>
-                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-auto text-left sticky top-0 z-30 bg-[#2e5d4b]">指導上の留意点・評価ポイント</th>
-                        <th class="border border-[#2e5d4b] p-1 sm:p-2 w-6 sm:w-10 text-center sticky top-0 z-30 bg-[#2e5d4b]"><i class="fas fa-cog"></i></th>
-                    </tr>
-                </thead>
-                <tbody>
-            `;
-
-            // クラス別の進捗を計算する
-            const classProgress = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-            const today = new Date();
-            const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
-            const startDate = new Date(year, 3, 1);
-            let curDate = new Date(startDate);
-            
-            while (curDate <= today) {
-                const dStr = getFormatDateStr(curDate);
-                if (!isHoliday(curDate)) {
-                    const data = allPlanners[dStr] || {}; 
-                    const ttType = getTtType(dStr);
-                    if (ttType !== 'none') {
-                        const ttPeriods = globalSettings.timetables[ttType].periods;
-                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
-                        ttPeriods.slice(0, lessonCount).forEach(period => {
-                            if (period.id === 'p_allday' || period.isAllDay) return;
-                            const cData = getPeriodClass(dStr, period, curDate);
-                            if (cData && !cData.disabled && !cData.isCut) {
-                                const cCls = String(cData.cls).trim();
-                                const cSub = String(cData.sub).trim();
-                                if ((cCls.startsWith(cls) || cCls.includes(`${cls}年`)) && cSub === sub) {
-                                    // 1組から6組を判定
-                                    let kumiMatch = cCls.match(/(\d+)組/);
-                                    let kumi = null;
-                                    if (kumiMatch) {
-                                        kumi = parseInt(kumiMatch[1]);
-                                    } else {
-                                        let dashMatch = cCls.match(/-\s*(\d+)/);
-                                        if (dashMatch) kumi = parseInt(dashMatch[1]);
-                                    }
-                                    if (kumi >= 1 && kumi <= 6) {
-                                        if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
-                                            const uIdx = parseInt(cData.unitPlanIdx) + 1; // unitPlanIdxは0-indexed
-                                            if (uIdx > classProgress[kumi]) classProgress[kumi] = uIdx;
-                                        } else {
-                                            classProgress[kumi]++;
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-                }
-                curDate.setDate(curDate.getDate() + 1);
-            }
-
-            plans.forEach((p, idx) => {
-                const isDone = (idx + 1) <= cumulativeHours;
-                const bgClass = isDone ? 'bg-blue-50/50' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30');
-                
-                let progressCells = '';
-                for (let k = 1; k <= 6; k++) {
-                    const currentHour = idx + 1;
-                    const maxHour = classProgress[k];
-                    
-                    let cellContent = '';
-                    if (currentHour <= maxHour) {
-                        if (currentHour === maxHour) {
-                            // ★ 修正：現在の進捗（最大）に「・」（青い丸）を表示
-                            cellContent = `<div class="absolute w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-600 rounded-full left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 shadow-sm border border-white"></div>`;
-                        } else {
-                            // ★ 修正：完了済みの過去の時間は薄い点にする（線は表示しない）
-                            cellContent = `<div class="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-300 rounded-full left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-0"></div>`;
-                        }
-                    }
-                    
-                    progressCells += `<td class="border-r border-gray-200 p-0 text-center align-middle relative overflow-visible h-8 sm:h-10">${cellContent}</td>`;
-                }
-
-                html += `
-                <tr class="${bgClass} border-b border-gray-200 text-[10px] sm:text-xs text-gray-800 transition hover:bg-gray-100 group">
-                    <td class="border-r border-gray-200 p-1 sm:p-2 text-center font-bold text-gray-600 align-top select-none w-8 sm:w-12">
-                        ${p.hour}
-                    </td>
-                    ${progressCells}
-                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="0" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${p.task}</td>
-                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="1" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${p.activity}</td>
-                    <td class="unit-plan-cell border-r border-gray-200 p-1.5 sm:p-2 align-top whitespace-pre-wrap" contenteditable="false" data-row-idx="${idx}" data-col-idx="2" onclick="window.selectUnitPlanCell(this)" ondblclick="window.editUnitPlanCell(this)" onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${p.note}</td>
-                    <td class="p-1 align-middle text-center w-6 sm:w-10 select-none z-20 relative bg-white/50">
-                        <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                </tr>
-                `;
-            });
-
-            html += `</tbody></table>`;
-            
-            html += `
-                <div class="mt-3 flex justify-center">
-                    <button onclick="window.addUnitPlanRow('${planKey}')" class="px-4 py-1.5 bg-gray-100 border border-gray-300 text-gray-600 rounded text-xs font-bold hover:bg-gray-200 transition shadow-sm"><i class="fas fa-plus mr-1"></i>行を追加</button>
-                </div>
-            `;
-
-            document.getElementById('unit-plan-container').innerHTML = html;
-
-            // Enterキーでも編集状態になれるようにイベントリスナーを追加
-            document.querySelectorAll('.unit-plan-cell').forEach(cell => {
-                cell.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && cell.getAttribute('contenteditable') === 'false') {
-                        e.preventDefault(); // デフォルトの改行を防ぐ
-                        window.editUnitPlanCell(cell);
-                    }
-                });
-            });
-            window.applyUnitPlanSelection(); 
-        };
-
-        window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
-            // ★ ペースト処理中は無視（pasteイベント側で処理するため）
-            if (window.isUnitPlanPasting) return;
-            
-            if (!document.body.contains(cellElem)) return; // 再描画で消えた要素は無視
-            if (!allUnitPlans[planKey]) return;
-            const plans = allUnitPlans[planKey].plans;
-            if (plans[rowIdx]) {
-                plans[rowIdx][field] = cellElem.innerText;
-            }
-            // 編集完了後、contenteditableをfalseに戻す
-            cellElem.setAttribute('contenteditable', 'false');
-            window.saveUnitPlan(false); // ★ 変更を確定
-        };
-
-        window.addUnitPlanRow = (planKey) => {
-            if (!allUnitPlans[planKey]) return;
-            const plans = allUnitPlans[planKey].plans;
-            
-            // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
-            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
-                document.activeElement.blur();
-            }
-
-            plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
-            window.renderUnitPlanView();
-            // 追加した行が見えるように一番下までスクロール
-            setTimeout(() => {
-                const container = document.getElementById('unit-plan-container').parentElement;
-                container.scrollTop = container.scrollHeight;
-            }, 50);
-        };
-        
-        window.removeUnitPlanRow = (planKey, idx) => {
-            if (!allUnitPlans[planKey]) return;
-            if (confirm(`第${idx + 1}時の行を削除しますか？`)) {
-                // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
-                if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
-                    document.activeElement.blur();
-                }
-                
-                const plans = allUnitPlans[planKey].plans;
-                plans.splice(idx, 1);
-                // 時数を振り直す
-                plans.forEach((p, i) => { p.hour = i + 1; });
-                window.renderUnitPlanView();
-            }
-        };
-
-        window.saveUnitPlan = (showAlert = true) => {
-            const cls = window.currentUnitPlanGrade;
-            const sub = "技術";
-            const planKey = `${cls}_${sub}`;
-            
-            // 編集中のセルがフォーカスを失うようにして、onblurを発火させる
-            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
-                document.activeElement.blur();
-            }
-
-            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
-            window.saveToFirebase();
-            if (showAlert) {
-                window.renderUnitPlanView();
-                alert("単元計画を保存しました。");
-            }
-        };
-
-        // クリックで選択を解除する処理
-        document.addEventListener('click', (e) => {
-            if (currentView === 'unit-plan') {
-                if (!e.target.closest('.unit-plan-cell')) {
-                    if (window.selectedUnitPlanCell) {
-                        window.selectedUnitPlanCell.classList.remove('unit-plan-cell-selected');
-                        if (window.selectedUnitPlanCell.getAttribute('contenteditable') === 'true') {
-                            window.selectedUnitPlanCell.blur(); // 編集状態なら確定させる
-                        }
-                        window.selectedUnitPlanCell = null;
-                    }
-                }
-            }
-        });
-
-        // ==========================================
-        // ★ 単元計画の複数選択＆コピペ対応イベント
-        // ==========================================
-
+        // 複数選択用の変数とロジック
         let _isSelectingUnitPlan = false;
         let _selectionStart = null;
         let _selectionEnd = null;
@@ -4485,12 +4213,21 @@
                 const cell = e.target.closest('.unit-plan-cell');
                 if (cell) {
                     if (cell.getAttribute('contenteditable') === 'true') return;
+                    
+                    const r = parseInt(cell.getAttribute('data-row-idx'));
+                    const c = parseInt(cell.getAttribute('data-col-idx'));
+
+                    // Shiftキーを押しながらのクリック対応
+                    if (e.shiftKey && _selectionStart) {
+                        _selectionEnd = { r, c };
+                        window.applyUnitPlanSelection();
+                        e.preventDefault(); // 不要なテキスト選択を防止
+                        return;
+                    }
+
                     _isSelectingUnitPlan = true;
-                    _selectionStart = {
-                        r: parseInt(cell.getAttribute('data-row-idx')),
-                        c: parseInt(cell.getAttribute('data-col-idx'))
-                    };
-                    _selectionEnd = { ..._selectionStart };
+                    _selectionStart = { r, c };
+                    _selectionEnd = { r, c };
                     window.applyUnitPlanSelection();
                 } else {
                     if (!e.target.closest('#unit-plan-table')) {
@@ -4519,6 +4256,7 @@
             _isSelectingUnitPlan = false;
         });
 
+        // 削除（Delete / Backspace）
         document.addEventListener('keydown', (e) => {
             if (currentView === 'unit-plan') {
                 const activeEl = document.activeElement;
@@ -4530,6 +4268,8 @@
                     const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
                     if (selectedCells.length > 0) {
                         e.preventDefault();
+                        window.saveStateToHistory(); // ★ 履歴を保存
+                        
                         let isChanged = false;
                         const cls = window.currentUnitPlanGrade;
                         const sub = "技術";
@@ -4555,12 +4295,62 @@
             }
         });
 
-        document.addEventListener('paste', (e) => {
+        // コピー対応（選択範囲のセルをTSVテキストとしてクリップボードへ）
+        document.addEventListener('copy', (e) => {
             if (currentView !== 'unit-plan') return;
-            
             const activeEl = document.activeElement;
             if (activeEl && activeEl.getAttribute('contenteditable') === 'true') {
-                return; // 編集中のセルはブラウザ標準のペーストに任せる
+                return; // セル編集中はブラウザのデフォルトコピーに任せる
+            }
+
+            const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
+            if (selectedCells.length === 0) return;
+
+            e.preventDefault();
+            let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+            selectedCells.forEach(cell => {
+                const r = parseInt(cell.getAttribute('data-row-idx'));
+                const c = parseInt(cell.getAttribute('data-col-idx'));
+                if (r < minR) minR = r;
+                if (r > maxR) maxR = r;
+                if (c < minC) minC = c;
+                if (c > maxC) maxC = c;
+            });
+
+            let tsv = '';
+            const planKey = `${window.currentUnitPlanGrade}_技術`;
+            const plans = allUnitPlans[planKey]?.plans || [];
+            const fieldMap = {0: 'task', 1: 'activity', 2: 'note'};
+
+            for (let r = minR; r <= maxR; r++) {
+                let rowTsv = [];
+                for (let c = minC; c <= maxC; c++) {
+                    let text = '';
+                    if (plans[r]) text = plans[r][fieldMap[c]] || '';
+                    if (text.includes('\n') || text.includes('\t') || text.includes('"')) {
+                        text = '"' + text.replace(/"/g, '""') + '"';
+                    }
+                    rowTsv.push(text);
+                }
+                tsv += rowTsv.join('\t') + '\n';
+            }
+            
+            const clipboardData = e.clipboardData || window.clipboardData;
+            clipboardData.setData('text/plain', tsv);
+            
+            // コピーしたことを少し視覚的にフィードバック
+            selectedCells.forEach(cell => {
+                cell.style.opacity = '0.5';
+                setTimeout(() => cell.style.opacity = '1', 150);
+            });
+        });
+
+        // ペースト対応（TSVをパースして選択範囲の左上を起点に貼り付け）
+        document.addEventListener('paste', (e) => {
+            if (currentView !== 'unit-plan') return;
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.getAttribute('contenteditable') === 'true') {
+                return; // 編集中はデフォルト
             }
 
             const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
@@ -4627,10 +4417,13 @@
                     return;
                 }
                 
+                window.saveStateToHistory(); // ★ 変更前に履歴を保存
+
                 const plans = allUnitPlans[planKey].plans;
                 let isChanged = false;
 
                 if (parsedRows.length === 1 && parsedRows[0].length === 1) {
+                    // 単一セルのコピペ時は、選択されているすべてのセルに貼り付け
                     selectedCells.forEach(cell => {
                         cell.innerText = parsedRows[0][0];
                         const r = parseInt(cell.getAttribute('data-row-idx'));
@@ -4657,6 +4450,7 @@
                             const cellText = rowCells[c];
                             const targetColIdx = startColIdx + c;
                             
+                            // セルテキストが存在する場合、または既存データがない場合に更新
                             if (cellText !== "") {
                                 if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
                                 else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
@@ -4670,10 +4464,307 @@
                     window.saveUnitPlan(false);
                     window.renderUnitPlanView();
                 }
-                
                 setTimeout(() => { window.isUnitPlanPasting = false; }, 50);
             }
         });
+
+        // ==========================================
+        // ★ 単元計画の更新・保存関数（履歴対応版にオーバーライド）
+        // ==========================================
+
+        window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
+            if (window.isUnitPlanPasting) return;
+            if (!document.body.contains(cellElem)) return; 
+            if (!allUnitPlans[planKey]) return;
+            
+            const plans = allUnitPlans[planKey].plans;
+            if (plans[rowIdx]) {
+                if (plans[rowIdx][field] !== cellElem.innerText) {
+                    window.saveStateToHistory(); // 変更された場合のみ履歴保存
+                    plans[rowIdx][field] = cellElem.innerText;
+                    window.saveUnitPlan(false);
+                }
+            }
+            cellElem.setAttribute('contenteditable', 'false');
+        };
+
+        window.addUnitPlanRow = (planKey) => {
+            if (!allUnitPlans[planKey]) return;
+            
+            window.saveStateToHistory(); // 履歴保存
+            
+            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                document.activeElement.blur();
+            }
+
+            const plans = allUnitPlans[planKey].plans;
+            plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
+            window.saveUnitPlan(false);
+            window.renderUnitPlanView();
+            setTimeout(() => {
+                const container = document.getElementById('unit-plan-container').parentElement;
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+        };
+        
+        window.removeUnitPlanRow = (planKey, idx) => {
+            if (!allUnitPlans[planKey]) return;
+            if (confirm(`第${idx + 1}時の行を削除しますか？`)) {
+                window.saveStateToHistory(); // 履歴保存
+                
+                if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                    document.activeElement.blur();
+                }
+                
+                const plans = allUnitPlans[planKey].plans;
+                plans.splice(idx, 1);
+                plans.forEach((p, i) => { p.hour = i + 1; });
+                window.saveUnitPlan(false);
+                window.renderUnitPlanView();
+            }
+        };
+
+        window.saveUnitPlan = (showAlert = true) => {
+            const cls = window.currentUnitPlanGrade;
+            const sub = "技術";
+            const planKey = `${cls}_${sub}`;
+            
+            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                document.activeElement.blur();
+            }
+
+            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+            window.saveToFirebase();
+            if (showAlert) {
+                window.renderUnitPlanView();
+                alert("単元計画を保存しました。");
+            }
+        };
+
+        // テーブル全体のフォーカス制御補助
+        window.focusNextCell = (rowIdx, colIdx) => {
+            const nextTd = document.querySelector(`td[data-row-idx="${rowIdx}"][data-col-idx="${colIdx}"]`);
+            if (nextTd) nextTd.focus();
+        };
+
+        window.setUnitPlanGrade = (grade) => {
+            window.currentUnitPlanGrade = grade;
+            const buttons = document.querySelectorAll('.unit-plan-grade-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.grade === grade) {
+                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                } else {
+                    btn.className = 'unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                }
+            });
+            window.renderUnitPlanView();
+        };
+// ★ 単元計画の進捗状況を計算・取得して描画する処理の追加
+        window.renderUnitPlanView = () => {
+            const container = document.getElementById('unit-plan-container');
+            const grade = window.currentUnitPlanGrade;
+            const sub = "技術"; // 現在は技術固定
+            const planKey = `${grade}_${sub}`;
+
+            if (!allUnitPlans[planKey]) {
+                allUnitPlans[planKey] = {
+                    grade: grade,
+                    subject: sub,
+                    plans: [
+                        { hour: 1, task: "新しい単元の学習課題", activity: "主な学習活動・内容", note: "評価規準や準備物など" }
+                    ]
+                };
+            }
+
+            const plans = allUnitPlans[planKey].plans;
+
+            // クラスごとの進捗状況を計算
+            const classProgress = {};
+            // 現在の年度開始日を計算 (4月始まり)
+            const today = new Date();
+            const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+            const startDate = new Date(year, 3, 1);
+            
+            // 全日程を走査して、この単元計画に関連付けられた授業を抽出
+            let curDate = new Date(startDate);
+            while (curDate <= today) {
+                const dStr = getFormatDateStr(curDate);
+                if (!isHoliday(curDate)) {
+                    const data = allPlanners[dStr] || {};
+                    const ttType = getTtType(dStr);
+                    if (ttType !== 'none') {
+                        const ttPeriods = globalSettings.timetables[ttType].periods;
+                        const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
+                        ttPeriods.slice(0, lessonCount).forEach(p => {
+                            if (p.id === 'p_allday' || p.isAllDay) return;
+                            const cData = getPeriodClass(dStr, p, curDate);
+                            if (cData && !cData.disabled) {
+                                const isCut = (data.classes && data.classes[p.id] && data.classes[p.id].isCut);
+                                if (!isCut) {
+                                    const clsStr = String(cData.cls).trim();
+                                    const subStr = String(cData.sub).trim();
+                                    // この単元計画（学年・教科）に該当する授業かチェック
+                                    if ((clsStr.startsWith(grade) || clsStr.includes(`${grade}年`)) && subStr === sub) {
+                                        // 既にunitPlanIdxが明示的に保存されている場合はそれを記録
+                                        if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
+                                            const idx = parseInt(cData.unitPlanIdx);
+                                            if (!classProgress[clsStr]) classProgress[clsStr] = [];
+                                            classProgress[clsStr].push({ date: dStr, idx: idx });
+                                        } else {
+                                             // 紐付けがない場合は、単純なカウントアップとして記録 (自動連携用)
+                                            if (!classProgress[clsStr]) classProgress[clsStr] = [];
+                                            // ここでは一旦 -1 として記録しておく。後で補完する
+                                            classProgress[clsStr].push({ date: dStr, idx: -1 });
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+
+            // 進捗データの整理・補完
+            Object.keys(classProgress).forEach(cls => {
+                let currentIdx = 0;
+                classProgress[cls].sort((a, b) => a.date.localeCompare(b.date));
+                classProgress[cls].forEach(record => {
+                    if (record.idx === -1) {
+                         // 自動カウントアップ
+                         record.idx = currentIdx;
+                         currentIdx++;
+                    } else {
+                         // 明示的な紐付けがある場合はそれを優先し、次のカウントアップ起点を更新
+                         currentIdx = record.idx + 1;
+                    }
+                });
+            });
+
+            // 進捗リストを作成 (時数インデックス -> 実施したクラスと日付のリスト)
+            const progressByHour = {};
+            Object.keys(classProgress).forEach(cls => {
+                classProgress[cls].forEach(record => {
+                    if (!progressByHour[record.idx]) progressByHour[record.idx] = [];
+                    // "MM/DD"形式にフォーマット
+                    const dParts = record.date.split('-');
+                    const displayDate = `${parseInt(dParts[1])}/${parseInt(dParts[2])}`;
+                    // "曜日"を追加
+                    const dayOfWeekStr = DAYS_STR[new Date(record.date).getDay()];
+                    
+                    progressByHour[record.idx].push({
+                        cls: cls,
+                        dateStr: `${displayDate}(${dayOfWeekStr})`,
+                        rawDate: record.date
+                    });
+                });
+            });
+
+            let html = `
+                <table id="unit-plan-table" class="w-full border-collapse bg-white">
+                    <thead class="sticky top-0 z-20 shadow-sm">
+                        <tr>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-12 text-center shrink-0">時</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 min-w-[150px] text-center">学習課題（本時の目標）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/3 min-w-[200px] text-center">学習活動・内容</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 min-w-[150px] text-center">備考・評価・準備物</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-32 min-w-[120px] text-center">進捗（クラス別）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-2 w-8 text-center shrink-0"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            plans.forEach((plan, idx) => {
+                // 進捗バッジの生成
+                let progressHtml = '';
+                const progressList = progressByHour[idx];
+                if (progressList && progressList.length > 0) {
+                    // クラス名でソート
+                    progressList.sort((a, b) => a.cls.localeCompare(b.cls));
+                    
+                    // クラス別にグルーピング (同じ時間に同じクラスが複数回ある場合の対応)
+                    const latestProgressByCls = {};
+                    progressList.forEach(p => {
+                        // 同じクラスで複数回実施されている場合は最新のものを保持
+                        if (!latestProgressByCls[p.cls] || latestProgressByCls[p.cls].rawDate < p.rawDate) {
+                             latestProgressByCls[p.cls] = p;
+                        }
+                    });
+                    
+                    progressHtml = `<div class="flex flex-col gap-1 w-full max-h-[80px] overflow-y-auto custom-scrollbar pr-1">`;
+                    Object.values(latestProgressByCls).forEach(p => {
+                        // 実施済みのクラスは薄い青色(bg-blue-50)で表示
+                        progressHtml += `
+                            <div class="flex items-center justify-between text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded shadow-sm">
+                                <span class="font-bold truncate max-w-[50px]">${p.cls}</span>
+                                <span class="text-gray-500 font-medium ml-1 text-[8px] whitespace-nowrap">${p.dateStr}</span>
+                            </div>
+                        `;
+                    });
+                    progressHtml += `</div>`;
+                } else {
+                    progressHtml = `<div class="text-[9px] text-gray-400 text-center">-</div>`;
+                }
+
+                html += `
+                    <tr class="hover:bg-blue-50/30 transition-colors group">
+                        <td class="border border-gray-300 p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 w-12 shrink-0">${plan.hour}</td>
+                        <td class="border border-gray-300 p-0 align-top relative w-1/4 min-w-[150px]">
+                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                                 data-row-idx="${idx}" data-col-idx="0"
+                                 onclick="window.selectUnitPlanCell(this)"
+                                 ondblclick="window.editUnitPlanCell(this)"
+                                 onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
+                        </td>
+                        <td class="border border-gray-300 p-0 align-top relative w-1/3 min-w-[200px]">
+                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                                 data-row-idx="${idx}" data-col-idx="1"
+                                 onclick="window.selectUnitPlanCell(this)"
+                                 ondblclick="window.editUnitPlanCell(this)"
+                                 onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${plan.activity || ''}</div>
+                        </td>
+                        <td class="border border-gray-300 p-0 align-top relative w-1/4 min-w-[150px]">
+                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                                 data-row-idx="${idx}" data-col-idx="2"
+                                 onclick="window.selectUnitPlanCell(this)"
+                                 ondblclick="window.editUnitPlanCell(this)"
+                                 onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'note', this)">${plan.note || ''}</div>
+                        </td>
+                        <!-- ★ 進捗表示列の追加 -->
+                        <td class="border border-gray-300 p-1.5 align-top bg-gray-50/50 w-32 min-w-[120px]">
+                            ${progressHtml}
+                        </td>
+                        <td class="border border-gray-300 p-1 text-center align-middle w-8 shrink-0 bg-gray-50">
+                            <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition p-1 opacity-0 group-hover:opacity-100" title="この行を削除"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="mt-4 flex justify-center">
+                    <button onclick="window.addUnitPlanRow('${planKey}')" class="flex items-center gap-2 bg-white border border-gray-300 text-[#4a5f73] px-6 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 shadow-sm transition group">
+                        <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition"><i class="fas fa-plus"></i></div>
+                        行を追加
+                    </button>
+                </div>
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <h4 class="font-bold text-[#4a5f73] text-xs mb-2 flex items-center gap-1.5"><i class="fas fa-info-circle text-blue-500"></i> 操作のヒント</h4>
+                    <ul class="text-[10px] text-gray-600 space-y-1.5 list-disc pl-4">
+                        <li>セルを<span class="font-bold">ダブルクリック</span>すると文字の編集ができます。</li>
+                        <li>セルを一度クリックして選択し、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Delete</span> または <span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Backspace</span>キーを押すと内容を消去できます。</li>
+                        <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
+                        <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
+                        <li><span class="font-bold text-blue-600">NEW:</span> 週案簿で授業を登録すると、右端の「進捗」欄に実施予定日が自動で表示されます。</li>
+                    </ul>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        };
 
         // 初期化処理の呼び出し
         initDataSync();
