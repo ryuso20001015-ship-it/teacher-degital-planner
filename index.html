@@ -78,6 +78,10 @@
         .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
         .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
 
+        /* ★ 週カレンダーのスマホ縦スクロール対応 ★ */
+        .mode-mobile #week-scroll-area { overflow-y: auto !important; overflow-x: hidden !important; touch-action: pan-y; }
+        .mode-mobile #week-scroll-area > div { min-height: 1000px !important; position: absolute; top: 0; left: 0; right: 0; bottom: auto; }
+
         #memo-edit-content:empty::before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
 
         /* ★ メモのリッチテキスト対応用CSS ★ */
@@ -1926,11 +1930,9 @@
                 const cData = data.classes[period.id];
                 if (cData.disabled) return null; 
                 
-                if (cData.cls || cData.sub || cData.memo) {
-                    cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
-                    if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
-                    hasCustom = true;
-                }
+                cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
+                if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                hasCustom = true;
             }
             
             if (!hasCustom && baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
@@ -1940,7 +1942,7 @@
                 }
             }
 
-            if (!cls && !sub && !memo) return null;
+            if (!cls && !sub && !memo && sourceDay === dObj.getDay() && sourcePeriod === (parseInt(period.name.replace('限','')) || 1)) return null;
             
             let unitPlanIdx = null;
             if (data.classes && data.classes[period.id] && data.classes[period.id].unitPlanIdx !== undefined) {
@@ -2866,7 +2868,7 @@
 
                     if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][p.name]) {
                         const bData = baseTt[dObj.getDay()][p.name];
-                        if (bData && (bData.cls || bData.sub || bData.memo)) {
+                                if (bData && (bData.cls || bData.sub || bData.memo)) {
                             allPlanners[dStr].classes[p.id] = {
                                 cls: bData.cls || "",
                                 sub: bData.sub || "",
@@ -3024,7 +3026,8 @@
 
                         if (data.classes && data.classes[p.id]) {
                             const cData = data.classes[p.id];
-                            if (cData.cls || cData.sub || cData.memo) {
+                            // ★ 振替フラグになる要素があるか確認 (cls, sub, memo がなくても、sourceDayやsourcePeriodが設定されていればカスタムとみなす)
+                            if (cData.cls || cData.sub || cData.memo || cData.sourceDay !== undefined) {
                                 currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
                                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
                             }
@@ -3050,6 +3053,7 @@
                         let displayCls = hasCustom ? currentCls : baseCls, displaySub = hasCustom ? currentSub : baseSub, displayMemo = hasCustom ? currentMemo : baseMemo;
                         let btnContent = "", borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
 
+                        // ★ 曜日や時間が変わっていればオレンジラベルを表示する条件
                         const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                         const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
                         const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
@@ -3082,7 +3086,10 @@
                                 }
                             } else if (displayMemo) {
                                 mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
-                            } else { mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; }
+                            } else { 
+                                // ★ 振替で空の授業を設定した場合などは「未設定」と表示
+                                mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; 
+                            }
 
                             btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
                             borderClass = "border border-[#4a5f73]/50 shadow-sm";
