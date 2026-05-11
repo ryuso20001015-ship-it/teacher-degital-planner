@@ -455,8 +455,9 @@
                     </div>
                     <button onclick="window.saveUnitPlan()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a5f73] text-white rounded text-[10px] sm:text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
                 </div>
+                <!-- ★ 単元計画の進捗状況を表示するエリア -->
                 <div class="flex items-center gap-3">
-                    <div id="unit-plan-progress" class="text-[10px] sm:text-xs font-bold text-gray-600"></div>
+                    <div id="unit-plan-progress" class="text-[10px] sm:text-xs font-bold text-gray-600 flex flex-wrap gap-2 sm:gap-4"></div>
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
@@ -2759,16 +2760,23 @@
         };
 
 
-        const calculateCumulativeHoursForUnitPlan = (targetGrade, targetSub) => {
+        // ★ calculateCumulativeHoursForUnitPlan の修正
+        // targetDateStr を受け取り、その「前日」までをカウントの対象とするように変更
+        const calculateCumulativeHoursForUnitPlan = (targetGrade, targetSub, targetDateStr = null) => {
             if (!targetGrade || !targetSub) return 0;
             const today = new Date();
             const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
             const startDate = new Date(year, 3, 1); 
             
+            const limitDate = targetDateStr ? new Date(targetDateStr) : new Date(today);
+            if (targetDateStr) {
+                limitDate.setDate(limitDate.getDate() - 1); // targetDateStr の前日まで
+            }
+            
             const classCounts = {};
             
             let curDate = new Date(startDate);
-            while (curDate <= today) {
+            while (curDate <= limitDate) {
                 const dStr = getFormatDateStr(curDate);
                 if (!isHoliday(curDate)) {
                     const data = allPlanners[dStr] || {}; 
@@ -3178,7 +3186,7 @@
             let html = '<option value="">(連携しない)</option>';
             
             // 該当クラスの現在の進捗を計算してデフォルト選択にする
-            const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub);
+            const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub, wpModalTarget.targetDateStr);
             let targetIdx = null;
             
             // 既に選択されている値がある場合はそれを優先
@@ -4126,43 +4134,6 @@
         // ★ 追加された機能の再定義（単元計画の履歴・選択・コピペ対応）
         // ==========================================
 
-        // 履歴保存に allUnitPlans を含めるようにオーバーライド
-        window.saveStateToHistory = () => {
-            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
-            if (undoStack.length > MAX_HISTORY) undoStack.shift();
-            redoStack = []; window.updateUndoRedoButtons();
-        };
-
-        window.undo = () => {
-            if (undoStack.length === 0) return;
-            redoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
-            const state = JSON.parse(undoStack.pop());
-            if (state.planners) {
-                allPlanners = state.planners;
-                allUnitPlans = state.unitPlans || allUnitPlans;
-            } else {
-                allPlanners = state; // 古い形式との互換性
-            }
-            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
-            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
-            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
-        };
-
-        window.redo = () => {
-            if (redoStack.length === 0) return;
-            undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
-            const state = JSON.parse(redoStack.pop());
-            if (state.planners) {
-                allPlanners = state.planners;
-                allUnitPlans = state.unitPlans || allUnitPlans;
-            } else {
-                allPlanners = state;
-            }
-            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
-            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
-            window.saveToFirebase(); window.updateUndoRedoButtons(); window.renderCurrentView();
-        };
-
         // セル選択と編集
         window.selectUnitPlanCell = (cell) => {
             if (window.selectedUnitPlanCell) {
@@ -4583,9 +4554,10 @@
             const today = new Date();
             const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
             const startDate = new Date(year, 3, 1);
+            const endDate = new Date(year + 1, 2, 31); // ★年度末まで対象とする
             
             let curDate = new Date(startDate);
-            while (curDate <= today) {
+            while (curDate <= endDate) {
                 const dStr = getFormatDateStr(curDate);
                 if (!isHoliday(curDate)) {
                     const data = allPlanners[dStr] || {};
@@ -4648,8 +4620,33 @@
                 });
             });
 
-            // 1組から6組までの固定列を作成
+            // ★ 進捗状況ヘッダーの描画（右上に表示）
+            let progressHeaderHtml = '';
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
+            
+            classCols.forEach(cls => {
+                const records = classProgress[cls] || [];
+                const doneCount = records.filter(r => r.date <= getFormatDateStr(new Date())).length;
+                const totalCount = records.length;
+                const isAllDone = doneCount === plans.length;
+                const textColor = isAllDone ? 'text-green-600' : 'text-blue-600';
+                const bgColor = isAllDone ? 'bg-green-50' : 'bg-blue-50';
+                const borderColor = isAllDone ? 'border-green-200' : 'border-blue-200';
+                
+                if (totalCount > 0) {
+                    progressHeaderHtml += `
+                        <div class="flex flex-col items-center border ${borderColor} ${bgColor} rounded px-1.5 py-0.5 shadow-sm">
+                            <span class="text-[8px] sm:text-[9px] text-gray-500 font-bold mb-0.5">${cls.split('-')[1]}組</span>
+                            <span class="text-[10px] sm:text-xs font-bold ${textColor}">${doneCount}/${totalCount}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (progressHeaderHtml === '') {
+                progressHeaderHtml = '<span class="text-[10px] text-gray-400 font-normal">進捗データなし</span>';
+            }
+            document.getElementById('unit-plan-progress').innerHTML = progressHeaderHtml;
 
             let html = `
                 <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed">
