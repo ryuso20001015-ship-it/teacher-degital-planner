@@ -4136,7 +4136,18 @@
 
         // セル選択と編集
         window.selectUnitPlanCell = (cell) => {
-            if (window.selectedUnitPlanCell) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - (cell.lastTapTime || 0);
+            
+            if (tapLength < 400 && tapLength > 0) {
+                // ダブルタップ（またはダブルクリック）検知
+                window.editUnitPlanCell(cell);
+                cell.lastTapTime = 0;
+                return;
+            }
+            cell.lastTapTime = currentTime;
+
+            if (window.selectedUnitPlanCell && window.selectedUnitPlanCell !== cell) {
                 window.selectedUnitPlanCell.classList.remove('unit-plan-cell-selected');
                 window.selectedUnitPlanCell.setAttribute('contenteditable', 'false');
             }
@@ -4620,33 +4631,11 @@
                 });
             });
 
-            // ★ 進捗状況ヘッダーの描画（右上に表示）
-            let progressHeaderHtml = '';
+            // ★ 進捗状況ヘッダーの描画（右上に表示）を削除
+            document.getElementById('unit-plan-progress').innerHTML = '';
+
+            // 1組から6組までの固定列を作成
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
-            
-            classCols.forEach(cls => {
-                const records = classProgress[cls] || [];
-                const doneCount = records.filter(r => r.date <= getFormatDateStr(new Date())).length;
-                const totalCount = records.length;
-                const isAllDone = doneCount === plans.length;
-                const textColor = isAllDone ? 'text-green-600' : 'text-blue-600';
-                const bgColor = isAllDone ? 'bg-green-50' : 'bg-blue-50';
-                const borderColor = isAllDone ? 'border-green-200' : 'border-blue-200';
-                
-                if (totalCount > 0) {
-                    progressHeaderHtml += `
-                        <div class="flex flex-col items-center border ${borderColor} ${bgColor} rounded px-1.5 py-0.5 shadow-sm">
-                            <span class="text-[8px] sm:text-[9px] text-gray-500 font-bold mb-0.5">${cls.split('-')[1]}組</span>
-                            <span class="text-[10px] sm:text-xs font-bold ${textColor}">${doneCount}/${totalCount}</span>
-                        </div>
-                    `;
-                }
-            });
-            
-            if (progressHeaderHtml === '') {
-                progressHeaderHtml = '<span class="text-[10px] text-gray-400 font-normal">進捗データなし</span>';
-            }
-            document.getElementById('unit-plan-progress').innerHTML = progressHeaderHtml;
 
             let html = `
                 <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed">
@@ -4749,7 +4738,7 @@
                 <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
                     <h4 class="font-bold text-[#4a5f73] text-xs mb-2 flex items-center gap-1.5"><i class="fas fa-info-circle text-blue-500"></i> 操作のヒント</h4>
                     <ul class="text-[10px] text-gray-600 space-y-1.5 list-disc pl-4">
-                        <li>セルを<span class="font-bold">ダブルクリック</span>すると文字の編集ができます。</li>
+                        <li>セルを<span class="font-bold">ダブルクリック（またはスマホで2回タップ）</span>すると文字の編集ができます。</li>
                         <li>セルを一度クリックして選択し、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Delete</span> または <span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Backspace</span>キーを押すと内容を消去できます。</li>
                         <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
                         <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
