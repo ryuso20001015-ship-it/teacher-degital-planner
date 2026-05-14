@@ -330,10 +330,14 @@
                 <label class="text-[9px] font-bold text-gray-500 block mb-0.5">授業メモ・予定</label>
                 <textarea id="wp-modal-memo" rows="2" class="w-full bg-transparent px-0.5 py-0.5 text-xs outline-none resize-none font-bold text-gray-700 placeholder-gray-400" placeholder="単元名や連絡事項など..."></textarea>
             </div>
-            <div class="flex gap-1.5">
+            <!-- ★ 確定・自習・空きコマ・元に戻すボタン -->
+            <div class="flex gap-1.5 mb-1.5">
                 <button onclick="window.saveWeeklyPlanModal()" class="flex-1 bg-[#4a5f73] text-white font-bold py-1.5 rounded hover:bg-[#3b4c5c] transition shadow-sm text-xs">確定する</button>
-                <button id="wp-modal-delete-btn" onclick="window.deleteWeeklyPlanModal()" class="bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs">空きコマ</button>
-                <button id="wp-modal-reset-btn" onclick="window.resetWeeklyPlanModal()" class="bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-2 rounded hover:bg-gray-50 transition shadow-sm text-xs">元に戻す</button>
+            </div>
+            <div class="flex gap-1.5">
+                <button id="wp-modal-self-study-btn" onclick="window.setSelfStudyWeeklyPlanModal()" class="flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold py-1.5 px-2 rounded hover:bg-yellow-100 transition shadow-sm text-xs">自習</button>
+                <button id="wp-modal-delete-btn" onclick="window.deleteWeeklyPlanModal()" class="flex-1 bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs">空きコマ</button>
+                <button id="wp-modal-reset-btn" onclick="window.resetWeeklyPlanModal()" class="flex-1 bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-2 rounded hover:bg-gray-50 transition shadow-sm text-xs">元に戻す</button>
             </div>
             <button onclick="window.closeWeeklyPlanModal()" class="absolute top-2 left-2 w-6 h-6 flex justify-center items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-times text-xs"></i></button>
         </div>
@@ -1166,7 +1170,8 @@
             if (category === 'private') return "border-orange-400 text-orange-800";
             return "border-gray-400 text-gray-800";
         };
-        const getClassColorClass = (cls, sub) => {
+        const getClassColorClass = (cls, sub, isSelfStudy = false) => {
+            if (isSelfStudy) return "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200"; // ★ 自習用カラー
             const subStr = String(sub || "").trim();
             if (['学活', '総合', '道徳'].includes(subStr)) return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100";
             const clsStr = String(cls || "").trim();
@@ -1925,6 +1930,7 @@
             const baseTt = getBaseTimetableForDate(dObj);
 
             let hasCustom = false;
+            let isSelfStudy = false; // ★ 自習フラグ
 
             if (data.classes && data.classes[period.id]) {
                 const cData = data.classes[period.id];
@@ -1932,6 +1938,7 @@
                 
                 cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
+                if (cData.isSelfStudy) isSelfStudy = true; // ★ 自習フラグ取得
                 hasCustom = true;
             }
             
@@ -1949,7 +1956,7 @@
                 unitPlanIdx = data.classes[period.id].unitPlanIdx;
             }
 
-            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx };
+            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx, isSelfStudy }; // ★ 返り値に isSelfStudy 追加
         };
 
         window.openMonthBottomSheet = (dStr, defaultHour = null, disableTransformReset = false) => {
@@ -1976,8 +1983,9 @@
                     if(p.id === 'p_allday' || p.isAllDay) return;
                     const cData = getPeriodClass(dStr, p, dObj);
                     if (cData) { 
-                        const colorClass = getClassColorClass(cData.cls, cData.sub);
+                        const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
                         let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
                         schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                             <div class="flex items-start gap-2 w-full">
@@ -2402,8 +2410,9 @@
                         let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
                     } else if (slot.type === 'class') {
-                        const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub); 
+                        const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
                     } else if (slot.type === 'task') {
                         const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
@@ -2616,6 +2625,9 @@
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 unitPlanLabel = `<span class="text-[7px] bg-blue-100 text-blue-700 px-0.5 rounded ml-1 leading-none shrink-0 border border-blue-200">第${parseInt(cData.unitPlanIdx)+1}時</span>`;
                             }
+                            if (cData.isSelfStudy) { // ★ 自習ラベル
+                                unitPlanLabel += ` <span class="text-[7px] bg-yellow-200 text-yellow-800 px-0.5 rounded ml-1 leading-none shrink-0 border border-yellow-300">自習</span>`;
+                            }
                             combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData, badge: unitPlanLabel });
                         }
                     });
@@ -2628,7 +2640,7 @@
                     let heightPct = Math.max(1, item.endPos - item.startPos); 
 
                     if (item.isClass) {
-                        const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub); 
+                        const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
@@ -2682,8 +2694,9 @@
                         const cData = getPeriodClass(dStr, p, dObj);
                         if (cData && !cData.disabled && !cData.isCut) { 
                             let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                            if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
                             let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
-                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub)}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
+                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy)}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                                 <div class="flex items-start gap-1.5 w-full">
                                     <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-80 mt-0.5">${p.name}</span>
                                     <span class="font-bold break-words flex-1">${titleHtml}</span>
@@ -3023,6 +3036,7 @@
                         let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
                         let unitPlanTask = ""; 
                         let uIdxForTask = null; 
+                        let isSelfStudy = false; // ★ 自習フラグ
 
                         if (data.classes && data.classes[p.id]) {
                             const cData = data.classes[p.id];
@@ -3032,6 +3046,7 @@
                                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
                             }
                             if (cData.disabled) isExcluded = true;
+                            if (cData.isSelfStudy) isSelfStudy = true; // ★ 自習フラグ取得
                             
                             // ★ 単元計画の学習課題を取得
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
@@ -3061,12 +3076,17 @@
                         if (isExcluded) {
                             btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
                         } else if (displayCls || displaySub || displayMemo || hasCustom) {
-                            const colorClass = getClassColorClass(displayCls, displaySub);
+                            const colorClass = getClassColorClass(displayCls, displaySub, isSelfStudy); // ★ 自習フラグを渡す
                             bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                             const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
                             
                             let memoAndTaskHtml = '';
                             
+                            // ★ 自習ラベルをブロック内にも表示
+                            if (isSelfStudy) {
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-200 border border-yellow-300 rounded px-1 w-full mt-0.5 truncate leading-tight box-border text-center">自習</div>`;
+                            }
+
                             // ★ 課題の表示形式を「第X時: 学習課題」に変更
                             if (unitPlanTask) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
@@ -3259,6 +3279,7 @@
             const classInputArea = document.getElementById('wp-modal-class-area');
             const deleteBtn = document.getElementById('wp-modal-delete-btn');
             const resetBtn = document.getElementById('wp-modal-reset-btn');
+            const selfStudyBtn = document.getElementById('wp-modal-self-study-btn'); // ★ 自習ボタン
             const modalTitle = document.getElementById('wp-modal-title');
             const memoInput = document.getElementById('wp-modal-memo');
 
@@ -3277,9 +3298,11 @@
                 document.getElementById('wp-modal-base-status').classList.add('hidden');
                 document.getElementById('wp-modal-time-config').classList.add('hidden');
                 
+                selfStudyBtn.classList.add('hidden'); // ★ 特殊な枠では自習ボタンを隠す
+                
                 deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
                 deleteBtn.onclick = () => window.toggleCutWeeklyPlanModal();
-                deleteBtn.className = "bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
+                deleteBtn.className = "flex-1 bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
                 
                 resetBtn.classList.add('hidden');
                 
@@ -3294,9 +3317,18 @@
                 document.getElementById('wp-modal-base-status').classList.remove('hidden');
                 document.getElementById('wp-modal-time-config').classList.remove('hidden');
                 
+                selfStudyBtn.classList.remove('hidden'); // ★ 通常枠では自習ボタンを表示
+                if (cData && cData.isSelfStudy) {
+                    selfStudyBtn.innerHTML = '自習解除';
+                    selfStudyBtn.className = "flex-1 bg-gray-50 border border-gray-300 text-gray-700 font-bold py-1.5 px-2 rounded hover:bg-gray-100 transition shadow-sm text-xs";
+                } else {
+                    selfStudyBtn.innerHTML = '自習';
+                    selfStudyBtn.className = "flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold py-1.5 px-2 rounded hover:bg-yellow-100 transition shadow-sm text-xs";
+                }
+
                 deleteBtn.innerHTML = '空きコマ';
                 deleteBtn.onclick = () => window.deleteWeeklyPlanModal();
-                deleteBtn.className = "bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
+                deleteBtn.className = "flex-1 bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
                 resetBtn.classList.remove('hidden');
 
                 wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
@@ -3357,7 +3389,7 @@
             for(let i=1; i<=maxPeriods; i++) {
                 const isSelected = wpSelectedPeriod === i;
                 const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-                        periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
             }
             periodsContainer.innerHTML = periodsHtml;
         };
@@ -3433,6 +3465,7 @@
                     sourceDay: wpSelectedDay,
                     sourcePeriod: wpSelectedPeriod,
                     unitPlanIdx: unitPlanIdx,
+                    isSelfStudy: false, // ★ 確定ボタン時は自習フラグをオフにする
                     disabled: false
                 };
 
@@ -3479,6 +3512,45 @@
                     }
                 }
                 // --- 単元計画の自動シフト処理の追加終了 ---
+            }
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+            window.saveToFirebase();
+            window.renderCurrentView();
+            window.closeWeeklyPlanModal();
+        };
+
+        // ★ 新規追加: 自習ボタンの処理
+        window.setSelfStudyWeeklyPlanModal = () => {
+            window.saveStateToHistory();
+            const { targetDateStr, targetPeriodId } = wpModalTarget;
+            if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
+            
+            const cls = document.getElementById('wp-modal-cls').value.trim();
+            const sub = document.getElementById('wp-modal-sub').value.trim();
+            const memo = document.getElementById('wp-modal-memo').value.trim();
+
+            const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
+            const isCurrentlySelfStudy = currentData.isSelfStudy;
+
+            // 既に自習の場合は自習を解除（トグル動作）
+            if (isCurrentlySelfStudy) {
+                allPlanners[targetDateStr].classes[targetPeriodId] = {
+                    ...currentData,
+                    isSelfStudy: false
+                };
+            } else {
+                allPlanners[targetDateStr].classes[targetPeriodId] = {
+                    cls: cls,
+                    sub: sub,
+                    memo: memo,
+                    sourceDay: wpSelectedDay,
+                    sourcePeriod: wpSelectedPeriod,
+                    unitPlanIdx: "", // 単元計画との連携を外す
+                    isSelfStudy: true, // 自習フラグを立てる
+                    disabled: false
+                };
             }
             
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -3667,7 +3739,6 @@
 
             const startSelects = generateDateSelects('settings-pattern-start', sDate);
             const endSelects = generateDateSelects('settings-pattern-end', eDate);
-
 
             let baseHtml = `
             <div class="flex items-center gap-2 mb-2">
@@ -3876,7 +3947,7 @@
                 return;
             }
             
-            // ★追加：ボトムシート内でのスワイプ開始ならカレンダーのスワイプをキャンセル
+            // ボトムシート内でのスワイプ開始ならカレンダーのスワイプをキャンセル
             if (e.target.closest('#month-bottom-sheet')) {
                 return;
             }
@@ -3912,7 +3983,7 @@
         document.addEventListener('touchmove', (e) => {
             if (!swipeStartX || !activeViewElem) return;
             
-            // ★追加：ボトムシートが表示中かつシート内での操作ならカレンダーのスワイプをキャンセル
+            // ボトムシートが表示中かつシート内での操作ならカレンダーのスワイプをキャンセル
             if (e.target.closest('#month-bottom-sheet')) {
                 return;
             }
@@ -4007,7 +4078,7 @@
             isSwiping = false;
         });
 
-        // ★ 月・週カレンダーボトムシートの下スワイプで閉じる処理 + 左右スワイプで日付移動
+        // 月・週カレンダーボトムシートの下スワイプで閉じる処理 + 左右スワイプで日付移動
         const bottomSheet = document.getElementById('month-bottom-sheet');
         let sheetStartY = 0;
         let sheetStartX = 0;
@@ -4137,11 +4208,6 @@
             });
         }
 
-        // ==========================================
-        // ★ 追加された機能の再定義（単元計画の履歴・選択・コピペ対応）
-        // ==========================================
-
-        // セル選択と編集
         window.selectUnitPlanCell = (cell) => {
             const currentTime = new Date().getTime();
             const tapLength = currentTime - (cell.lastTapTime || 0);
@@ -4457,10 +4523,6 @@
             }
         });
 
-        // ==========================================
-        // ★ 単元計画の更新・保存関数（履歴対応版にオーバーライド）
-        // ==========================================
-
         window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
             if (window.isUnitPlanPasting) return;
             if (!document.body.contains(cellElem)) return; 
@@ -4548,7 +4610,7 @@
             });
             window.renderUnitPlanView();
         };
-// ★ 単元計画の進捗状況を計算・取得して描画する処理の追加
+
         window.renderUnitPlanView = () => {
             const container = document.getElementById('unit-plan-container');
             const grade = window.currentUnitPlanGrade;
@@ -4638,7 +4700,6 @@
                 });
             });
 
-            // ★ 進捗状況ヘッダーの描画（右上に表示）を削除
             document.getElementById('unit-plan-progress').innerHTML = '';
 
             // 1組から6組までの固定列を作成
@@ -4681,8 +4742,6 @@
                 classCols.forEach(clsName => {
                     const p = latestProgressByCls[clsName];
                     if (p) {
-                        // 予定日が過去か未来か（本日を含む）で色を出し分ける
-                        // 過去は薄青色(bg-blue-50/text-blue-800)、未来・本日は薄赤色(bg-red-50/text-red-800)
                         const isPast = p.rawDate < todayStrForCompare;
                         const cellBgColor = isPast ? 'bg-blue-50' : 'bg-red-50';
                         const textColor = isPast ? 'text-blue-800' : 'text-red-800';
