@@ -109,11 +109,64 @@
         .current-time-line .w-2 { width: 6px; height: 6px; border-radius: 50%; left: -3px; }
 
         @media print {
+            html, body { 
+                width: 100% !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+                background-color: #ffffff !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+            }
             body > *:not(#memo-edit-modal) { display: none !important; }
-            #memo-edit-modal { position: static !important; width: 100% !important; height: auto !important; display: block !important; background: white !important; }
+            
+            #memo-edit-modal { 
+                position: static !important; 
+                width: 100% !important; 
+                max-width: 100% !important;
+                height: auto !important; 
+                display: block !important; 
+                background-color: #ffffff !important; 
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            /* スクロールする親要素の高さを解除して全内容をA4用紙等に表示させる */
+            #memo-edit-modal > div,
+            .custom-scrollbar,
+            .overflow-y-auto,
+            #memo-print-area,
+            .flex-1 {
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+            }
+
             .no-print { display: none !important; }
-            #memo-print-area { border: none !important; box-shadow: none !important; width: 100% !important; max-width: none !important; }
-            #memo-edit-content { height: auto !important; overflow: visible !important; resize: none !important; min-height: 500px; }
+            
+            #memo-print-area { 
+                border: none !important; 
+                box-shadow: none !important; 
+                width: 100% !important; 
+                max-width: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+            }
+            
+            #memo-edit-content { 
+                height: auto !important; 
+                overflow: visible !important; 
+                resize: none !important; 
+                min-height: auto !important; 
+                color: #000000 !important;
+            }
+            
+            /* 背景色やグラデーションを強制的に正確に印刷・リセットする */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
+            @page { margin: 15mm; size: auto; }
         }
     </style>
 </head>
@@ -202,6 +255,9 @@
                     <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                             <div id="add-modal-color-indicator" class="w-2 h-2 rounded-full bg-[#4a5f73] shrink-0 transition-colors duration-200"></div>
+                            <div id="add-modal-task-checkbox" class="hidden shrink-0 cursor-pointer flex items-center justify-center text-gray-400 hover:text-blue-500 transition" onclick="window.toggleAddModalTaskStatus()">
+                                <i id="add-modal-task-icon" class="far fa-square text-lg"></i>
+                            </div>
                             <input type="text" id="add-modal-title" class="flex-1 text-sm outline-none placeholder-gray-400 text-gray-800 font-bold" placeholder="タイトル">
                         </div>
                         <div id="fields-location" class="flex items-center gap-2 px-3 py-2">
@@ -247,7 +303,7 @@
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
                             <select id="add-modal-category-sched" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
-                                <option value="work">仕事</option><option value="club">部活</option><option value="private">プライベート</option>
+                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
                         <div class="px-3 py-2"><textarea id="add-modal-memo-sched" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
@@ -257,7 +313,7 @@
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
                             <select id="add-modal-category-task" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
-                                <option value="work">仕事</option><option value="club">部活</option><option value="private">プライベート</option>
+                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
                         <div class="px-3 py-2"><textarea id="add-modal-memo-task" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
@@ -373,16 +429,18 @@
                     
                     <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
                         <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-work_club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work_club')">仕事</button>
+                        <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
                         <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                     
                     <div class="flex sm:hidden ml-2 items-center shrink-0">
                         <select id="mobile-filter-select" onchange="window.setCalendarFilter(this.value)" class="bg-gray-100 border border-gray-300 text-[#4a5f73] text-[10px] font-bold rounded px-1.5 py-1 outline-none">
                             <option value="all">全て</option>
-                            <option value="work_club">仕事</option>
+                            <option value="work">仕事</option>
                             <option value="jugyo">授業</option>
+                            <option value="student_council">生徒会</option>
                             <option value="private">プライベート</option>
                         </select>
                     </div>
@@ -398,7 +456,7 @@
 
         <!-- View 2: 週カレンダー -->
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
+            <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 z-20 shrink-0 gap-2">
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <h2 id="week-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
@@ -409,6 +467,24 @@
                             <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
                         </div>
                     </button>
+                    
+                    <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
+                        <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
+                        <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
+                        <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
+                    </div>
+                    
+                    <div class="flex sm:hidden ml-2 items-center shrink-0">
+                        <select id="mobile-filter-select-week" onchange="window.setCalendarFilter(this.value)" class="bg-gray-100 border border-gray-300 text-[#4a5f73] text-[10px] font-bold rounded px-1.5 py-1 outline-none">
+                            <option value="all">全て</option>
+                            <option value="work">仕事</option>
+                            <option value="jugyo">授業</option>
+                            <option value="student_council">生徒会</option>
+                            <option value="private">プライベート</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
@@ -818,6 +894,21 @@
         window.currentColorCommand = '';
         window.lastColorBtn = null;
 
+        // ★ タスクポップアップ用の状態管理追加
+        window.currentTaskCompleted = false;
+
+        window.toggleAddModalTaskStatus = () => {
+            window.currentTaskCompleted = !window.currentTaskCompleted;
+            const icon = document.getElementById('add-modal-task-icon');
+            if (icon) {
+                if (window.currentTaskCompleted) {
+                    icon.className = 'fas fa-check-circle text-blue-500 text-lg';
+                } else {
+                    icon.className = 'far fa-square text-lg';
+                }
+            }
+        };
+
         window.initColorPalette = () => {
             let html = `
             <div class="flex items-center gap-2 mb-2 p-1.5 hover:bg-gray-100 cursor-pointer rounded transition border border-transparent hover:border-gray-200" onclick="window.applyColor('initial', true)">
@@ -916,21 +1007,28 @@
         window.currentCalendarFilter = 'all';
         window.setCalendarFilter = (filter) => {
             window.currentCalendarFilter = filter;
-            const ids = ['all', 'work_club', 'jugyo', 'private'];
-            ids.forEach(id => {
-                const btn = document.getElementById(`filter-btn-${id}`);
-                if(btn) {
-                    if(id === filter) {
-                        btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
-                    } else {
-                        btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+            const ids = ['all', 'work', 'jugyo', 'student_council', 'private'];
+            
+            const prefixes = ['filter-btn-', 'filter-btn-week-'];
+            prefixes.forEach(prefix => {
+                ids.forEach(id => {
+                    const btn = document.getElementById(`${prefix}${id}`);
+                    if(btn) {
+                        if(id === filter) {
+                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                        } else {
+                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                        }
                     }
-                }
+                });
             });
+
             const mobileSelect = document.getElementById('mobile-filter-select');
-            if (mobileSelect && mobileSelect.value !== filter) {
-                mobileSelect.value = filter;
-            }
+            if (mobileSelect && mobileSelect.value !== filter) mobileSelect.value = filter;
+            
+            const mobileSelectWeek = document.getElementById('mobile-filter-select-week');
+            if (mobileSelectWeek && mobileSelectWeek.value !== filter) mobileSelectWeek.value = filter;
+
             window.renderCurrentView();
         };
 
@@ -1160,13 +1258,15 @@
         
         const getEventColorClass = (category) => {
             if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
-            if (category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
+            if (category === 'jugyo') return "bg-green-100 text-green-800 border-green-300";
+            if (category === 'student_council' || category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
             if (category === 'private') return "bg-orange-100 text-orange-800 border-orange-300";
             return "bg-gray-100 text-gray-800 border-gray-300";
         };
         const getMultiDayColorClass = (category) => {
             if (category === 'work') return "border-red-400 text-red-800";
-            if (category === 'club') return "border-blue-400 text-blue-800";
+            if (category === 'jugyo') return "border-green-400 text-green-800";
+            if (category === 'student_council' || category === 'club') return "border-blue-400 text-blue-800";
             if (category === 'private') return "border-orange-400 text-orange-800";
             return "border-gray-400 text-gray-800";
         };
@@ -1220,6 +1320,23 @@
             function packGroup(cols) {
                 let numCols = cols.length;
                 cols.forEach((col, colIdx) => { col.forEach(e => { e.colIndex = colIdx; e.numCols = numCols; }); });
+            }
+        };
+
+        // ★ フィルターのスキップ判定を統一する共通関数
+        window.shouldSkipEvent = (slotType, category) => {
+            const filterCat = window.currentCalendarFilter || 'all';
+            if (filterCat === 'all') return false;
+
+            if (slotType === 'class') {
+                return (filterCat === 'work' || filterCat === 'student_council' || filterCat === 'private');
+            } else {
+                const cat = category || 'work';
+                if (filterCat === 'work' && cat !== 'work') return true;
+                if (filterCat === 'student_council' && cat !== 'student_council' && cat !== 'club') return true;
+                if (filterCat === 'private' && cat !== 'private') return true;
+                if (filterCat === 'jugyo' && cat !== 'jugyo') return true;
+                return false;
             }
         };
 
@@ -1784,7 +1901,17 @@
 
         window.printMemo = () => {
             window.saveMemoLocally();
-            setTimeout(() => window.print(), 100);
+            
+            // スマホ等での印刷ダイアログ呼び出しエラーや表示崩れを防ぐため、
+            // 描画処理が完全に終了してから少し長めの遅延(500ms)後に印刷を実行する
+            setTimeout(() => {
+                try {
+                    window.print();
+                } catch (e) {
+                    console.error("Print error:", e);
+                    alert("お使いのブラウザや環境では印刷機能がサポートされていない可能性があります。");
+                }
+            }, 500);
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1983,9 +2110,10 @@
                     if(p.id === 'p_allday' || p.isAllDay) return;
                     const cData = getPeriodClass(dStr, p, dObj);
                     if (cData) { 
-                        const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
+                        if (window.shouldSkipEvent('class', null)) return;
+                        const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy);
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
+                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; 
                         let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
                         schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                             <div class="flex items-start gap-2 w-full">
@@ -2013,6 +2141,7 @@
             eventsForDay.forEach(ev => { if (!seenIds.has(ev.id)) { seenIds.add(ev.id); uniqueEvents.push(ev); } });
 
             uniqueEvents.forEach(ev => {
+                if (window.shouldSkipEvent(ev.isAllDay ? 'allday' : 'time', ev.category)) return;
                 let label = "", isMultiDay = false;
                 if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
                     const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
@@ -2034,6 +2163,7 @@
 
             if (data.reminders) {
                 data.reminders.forEach(t => { 
+                    if (window.shouldSkipEvent('task', t.category)) return;
                     const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
                     const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
                     const memoHtml = t.memo ? `<div class="text-[10px] opacity-80 mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200 pt-1.5 w-full ml-5">${t.memo}</div>` : '';
@@ -2098,6 +2228,10 @@
             document.getElementById('add-modal-category-sched').value = 'work';
             document.getElementById('add-modal-category-task').value = 'work';
 
+            window.currentTaskCompleted = false;
+            const taskIcon = document.getElementById('add-modal-task-icon');
+            if (taskIcon) taskIcon.className = 'far fa-square text-lg';
+
             document.getElementById('modal-header-toggle').classList.remove('hidden'); document.getElementById('modal-header-class').classList.add('hidden');
             document.querySelector('input[name="add-type"][value="schedule"]').checked = true;
             window.toggleAddModalType(); window.toggleAllDay();
@@ -2160,6 +2294,10 @@
                     if (task.dueDate) { const parts = task.dueDate.split('T'); document.getElementById('add-modal-due-date').value = parts[0]; }
                     document.getElementById('add-modal-category-task').value = task.category || 'work'; 
                     document.getElementById('add-modal-memo-task').value = task.memo || '';
+                    
+                    window.currentTaskCompleted = !!task.completed;
+                    const taskIcon = document.getElementById('add-modal-task-icon');
+                    if (taskIcon) taskIcon.className = window.currentTaskCompleted ? 'fas fa-check-circle text-blue-500 text-lg' : 'far fa-square text-lg';
                 }
             }
             
@@ -2203,13 +2341,22 @@
             const mode = document.querySelector('input[name="add-type"]:checked').value;
             const cat = document.getElementById(`add-modal-category-${mode === 'schedule' ? 'sched' : 'task'}`).value;
             const indicator = document.getElementById('add-modal-color-indicator');
-            if(!indicator) return;
+            const checkbox = document.getElementById('add-modal-task-checkbox');
+            if(!indicator || !checkbox) return;
             
-            indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
-            if (cat === 'work') indicator.classList.add('bg-red-500');
-            else if (cat === 'club') indicator.classList.add('bg-blue-500');
-            else if (cat === 'private') indicator.classList.add('bg-orange-500');
-            else indicator.classList.add('bg-[#4a5f73]');
+            if (mode === 'schedule') {
+                indicator.classList.remove('hidden');
+                checkbox.classList.add('hidden');
+                indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
+                if (cat === 'work') indicator.classList.add('bg-red-500');
+                else if (cat === 'jugyo') indicator.classList.add('bg-green-500');
+                else if (cat === 'student_council' || cat === 'club') indicator.classList.add('bg-blue-500');
+                else if (cat === 'private') indicator.classList.add('bg-orange-500');
+                else indicator.classList.add('bg-[#4a5f73]');
+            } else {
+                indicator.classList.add('hidden');
+                checkbox.classList.remove('hidden');
+            }
         };
 
         window.deleteFromMenu = () => {
@@ -2260,7 +2407,7 @@
                     const cat = document.getElementById('add-modal-category-task').value; 
                     const tsk = {
                         id: editTarget ? editTarget.idOrIndex : Date.now().toString(),
-                        title, completed: false, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
+                        title, completed: window.currentTaskCompleted, dueDate: dueStr, category: cat, memo: document.getElementById('add-modal-memo-task').value
                     };
                     if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
                     if (editTarget) {
@@ -2381,18 +2528,9 @@
 
                 for (let r = 0; r < allDaySlots[i].length; r++) {
                     const slot = allDaySlots[i][r]; if (!slot) continue;
-                    const ev = slot.event; let shouldSkip = false;
-
-                    if (slot.type === 'class') {
-                        if (filterCat === 'work_club' || filterCat === 'private') shouldSkip = true;
-                    } else {
-                        const cat = ev.category || 'work'; 
-                        if (filterCat === 'work_club' && cat !== 'work' && cat !== 'club') shouldSkip = true;
-                        if (filterCat === 'private' && cat !== 'private') shouldSkip = true;
-                        if (filterCat === 'jugyo') shouldSkip = true;
-                    }
-
-                    if (shouldSkip) continue;
+                    const ev = slot.event;
+                    
+                    if (window.shouldSkipEvent(slot.type, ev.category)) continue;
 
                     if (r >= maxRows) { overCount++; continue; }
                     const topPx = r * rowHeight; 
@@ -2560,6 +2698,8 @@
             for(let r = 0; r <= maxRow; r++) {
                 for(let c = 0; c < 7; c++) {
                     const slot = allDaySlots[c][r]; if (!slot) continue;
+                    if (window.shouldSkipEvent(slot.type, slot.event.category)) continue;
+                    
                     const topPx = r * ALLDAY_ROW_HEIGHT + 1;
                     
                     if (slot.type === 'multi') {
@@ -2625,7 +2765,7 @@
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 unitPlanLabel = `<span class="text-[7px] bg-blue-100 text-blue-700 px-0.5 rounded ml-1 leading-none shrink-0 border border-blue-200">第${parseInt(cData.unitPlanIdx)+1}時</span>`;
                             }
-                            if (cData.isSelfStudy) { // ★ 自習ラベル
+                            if (cData.isSelfStudy) {
                                 unitPlanLabel += ` <span class="text-[7px] bg-yellow-200 text-yellow-800 px-0.5 rounded ml-1 leading-none shrink-0 border border-yellow-300">自習</span>`;
                             }
                             combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData, badge: unitPlanLabel });
@@ -2636,6 +2776,10 @@
                 packTimeEvents(combinedEvents);
 
                 combinedEvents.forEach(item => {
+                    const cat = item.isClass ? null : item.ev.category;
+                    const type = item.isClass ? 'class' : 'time';
+                    if (window.shouldSkipEvent(type, cat)) return;
+
                     const leftStr = `calc(${(item.colIndex / item.numCols) * 100}% + 2px)`; const widthStr = `calc(${(1 / item.numCols) * 100}% - 4px)`;
                     let heightPct = Math.max(1, item.endPos - item.startPos); 
 
