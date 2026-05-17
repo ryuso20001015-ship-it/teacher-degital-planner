@@ -130,7 +130,6 @@
                 margin: 0 !important;
             }
             
-            /* スクロールする親要素の高さを解除して全内容をA4用紙等に表示させる */
             #memo-edit-modal > div,
             .custom-scrollbar,
             .overflow-y-auto,
@@ -160,7 +159,6 @@
                 color: #000000 !important;
             }
             
-            /* 背景色やグラデーションを強制的に正確に印刷・リセットする */
             * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -303,7 +301,7 @@
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
                             <select id="add-modal-category-sched" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
-                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
+                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="club">部活</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
                         <div class="px-3 py-2"><textarea id="add-modal-memo-sched" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
@@ -313,7 +311,7 @@
                         <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 text-xs">
                             <label class="text-gray-700 font-medium flex items-center gap-2"><i class="fas fa-tag text-gray-400 w-3 text-center"></i> カテゴリ</label>
                             <select id="add-modal-category-task" onchange="window.updateModalColor()" class="bg-gray-100 rounded px-1.5 py-1 outline-none text-gray-700 font-medium w-1/2 text-center appearance-none">
-                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
+                                <option value="work">仕事</option><option value="jugyo">授業</option><option value="club">部活</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
                         <div class="px-3 py-2"><textarea id="add-modal-memo-task" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
@@ -431,6 +429,7 @@
                         <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('club')">部活</button>
                         <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
                         <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
@@ -440,6 +439,7 @@
                             <option value="all">全て</option>
                             <option value="work">仕事</option>
                             <option value="jugyo">授業</option>
+                            <option value="club">部活</option>
                             <option value="student_council">生徒会</option>
                             <option value="private">プライベート</option>
                         </select>
@@ -472,6 +472,7 @@
                         <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-week-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('club')">部活</button>
                         <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
                         <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
@@ -481,13 +482,15 @@
                             <option value="all">全て</option>
                             <option value="work">仕事</option>
                             <option value="jugyo">授業</option>
+                            <option value="club">部活</option>
                             <option value="student_council">生徒会</option>
                             <option value="private">プライベート</option>
                         </select>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- ★ ここから週カレンダーの本体 -->
             <div id="week-animation-area" class="flex flex-col flex-1 min-h-0 w-full bg-white relative">
                 <div class="flex flex-col bg-gray-50 border-b border-gray-300 shadow-sm z-10 shrink-0">
                     <div id="week-view-header" class="grid grid-cols-[2.5rem_repeat(7,1fr)] text-center border-b border-gray-200 py-1 shrink-0"></div>
@@ -779,6 +782,31 @@
 
                         <!-- ★ メモテキスト編集ツールバー -->
                         <div id="memo-text-toolbar" class="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar relative">
+                            <!-- 追加：一つ戻る・やり直し -->
+                            <button type="button" onclick="document.execCommand('undo', false, null); window.triggerAutoSaveMemo();" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="元に戻す"><i class="fas fa-undo"></i></button>
+                            <button type="button" onclick="document.execCommand('redo', false, null); window.triggerAutoSaveMemo();" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="やり直し"><i class="fas fa-redo"></i></button>
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+
+                            <!-- 追加：フォント設定 -->
+                            <select onchange="document.execCommand('fontName', false, this.value); window.triggerAutoSaveMemo();" class="p-1 text-xs text-gray-600 bg-transparent hover:bg-gray-100 rounded outline-none cursor-pointer border border-transparent hover:border-gray-300 transition shrink-0 w-28 truncate" title="フォント">
+                                <option value="Noto Sans JP">標準フォント</option>
+                                <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
+                                <option value="BIZ UDPGothic" style="font-family: 'BIZ UDPGothic', sans-serif;">BIZ UDPGothic</option>
+                                <option value="Comic Sans MS" style="font-family: 'Comic Sans MS', cursive;">Comic Sans MS</option>
+                                <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
+                                <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
+                                <option value="Impact" style="font-family: Impact, fantasy;">Impact</option>
+                                <option value="Times New Roman" style="font-family: 'Times New Roman', Times, serif;">Times New Roman</option>
+                                <option value="Trebuchet MS" style="font-family: 'Trebuchet MS', Helvetica, sans-serif;">Trebuchet MS</option>
+                                <option value="Verdana" style="font-family: Verdana, Geneva, sans-serif;">Verdana</option>
+                                <option value="Meiryo" style="font-family: Meiryo, 'メイリオ', sans-serif;">メイリオ</option>
+                                <option value="MS PGothic" style="font-family: 'MS PGothic', 'MS Pゴシック', sans-serif;">MS Pゴシック</option>
+                                <option value="MS PMincho" style="font-family: 'MS PMincho', 'MS P明朝', serif;">MS P明朝</option>
+                                <option value="MS Gothic" style="font-family: 'MS Gothic', 'MS ゴシック', sans-serif;">MS ゴシック</option>
+                                <option value="MS Mincho" style="font-family: 'MS Mincho', 'MS 明朝', serif;">MS 明朝</option>
+                            </select>
+                            <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+
                             <button onclick="document.execCommand('bold',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="太字"><i class="fas fa-bold"></i></button>
                             <button onclick="document.execCommand('underline',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="下線"><i class="fas fa-underline"></i></button>
                             <button onclick="document.execCommand('strikeThrough',false,null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="取り消し線"><i class="fas fa-strikethrough"></i></button>
@@ -1007,7 +1035,7 @@
         window.currentCalendarFilter = 'all';
         window.setCalendarFilter = (filter) => {
             window.currentCalendarFilter = filter;
-            const ids = ['all', 'work', 'jugyo', 'student_council', 'private'];
+            const ids = ['all', 'work', 'jugyo', 'club', 'student_council', 'private'];
             
             const prefixes = ['filter-btn-', 'filter-btn-week-'];
             prefixes.forEach(prefix => {
@@ -1024,12 +1052,32 @@
             });
 
             const mobileSelect = document.getElementById('mobile-filter-select');
-            if (mobileSelect && mobileSelect.value !== filter) mobileSelect.value = filter;
-            
+            if (mobileSelect && mobileSelect.value !== filter) {
+                mobileSelect.value = filter;
+            }
             const mobileSelectWeek = document.getElementById('mobile-filter-select-week');
-            if (mobileSelectWeek && mobileSelectWeek.value !== filter) mobileSelectWeek.value = filter;
-
+            if (mobileSelectWeek && mobileSelectWeek.value !== filter) {
+                mobileSelectWeek.value = filter;
+            }
             window.renderCurrentView();
+        };
+
+        // ★ フィルターのスキップ判定を統一する共通関数
+        window.shouldSkipEvent = (slotType, category) => {
+            const filterCat = window.currentCalendarFilter || 'all';
+            if (filterCat === 'all') return false;
+
+            if (slotType === 'class') {
+                return (filterCat === 'work' || filterCat === 'club' || filterCat === 'student_council' || filterCat === 'private');
+            } else {
+                const cat = category || 'work';
+                if (filterCat === 'work' && cat !== 'work') return true;
+                if (filterCat === 'club' && cat !== 'club') return true;
+                if (filterCat === 'student_council' && cat !== 'student_council') return true;
+                if (filterCat === 'private' && cat !== 'private') return true;
+                if (filterCat === 'jugyo' && cat !== 'jugyo') return true;
+                return false;
+            }
         };
 
         let tempSettings = null; 
@@ -1259,19 +1307,22 @@
         const getEventColorClass = (category) => {
             if (category === 'work') return "bg-red-100 text-red-800 border-red-300";
             if (category === 'jugyo') return "bg-green-100 text-green-800 border-green-300";
-            if (category === 'student_council' || category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
+            if (category === 'club') return "bg-blue-100 text-blue-800 border-blue-300";
+            if (category === 'student_council') return "bg-purple-100 text-purple-800 border-purple-300";
             if (category === 'private') return "bg-orange-100 text-orange-800 border-orange-300";
             return "bg-gray-100 text-gray-800 border-gray-300";
         };
         const getMultiDayColorClass = (category) => {
             if (category === 'work') return "border-red-400 text-red-800";
             if (category === 'jugyo') return "border-green-400 text-green-800";
-            if (category === 'student_council' || category === 'club') return "border-blue-400 text-blue-800";
+            if (category === 'club') return "border-blue-400 text-blue-800";
+            if (category === 'student_council') return "border-purple-400 text-purple-800";
             if (category === 'private') return "border-orange-400 text-orange-800";
             return "border-gray-400 text-gray-800";
         };
+
         const getClassColorClass = (cls, sub, isSelfStudy = false) => {
-            if (isSelfStudy) return "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200"; // ★ 自習用カラー
+            if (isSelfStudy) return "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200";
             const subStr = String(sub || "").trim();
             if (['学活', '総合', '道徳'].includes(subStr)) return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100";
             const clsStr = String(cls || "").trim();
@@ -1323,25 +1374,6 @@
             }
         };
 
-        // ★ フィルターのスキップ判定を統一する共通関数
-        window.shouldSkipEvent = (slotType, category) => {
-            const filterCat = window.currentCalendarFilter || 'all';
-            if (filterCat === 'all') return false;
-
-            if (slotType === 'class') {
-                return (filterCat === 'work' || filterCat === 'student_council' || filterCat === 'private');
-            } else {
-                const cat = category || 'work';
-                if (filterCat === 'work' && cat !== 'work') return true;
-                if (filterCat === 'student_council' && cat !== 'student_council' && cat !== 'club') return true;
-                if (filterCat === 'private' && cat !== 'private') return true;
-                if (filterCat === 'jugyo' && cat !== 'jugyo') return true;
-                return false;
-            }
-        };
-
-        // ==========================================
-        // ★ 履歴保存機能（Undo/Redoに単元計画も含めるよう拡張）
         // ==========================================
         window.saveStateToHistory = () => {
             undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
@@ -2350,7 +2382,8 @@
                 indicator.className = 'w-2 h-2 rounded-full shrink-0 transition-colors duration-200';
                 if (cat === 'work') indicator.classList.add('bg-red-500');
                 else if (cat === 'jugyo') indicator.classList.add('bg-green-500');
-                else if (cat === 'student_council' || cat === 'club') indicator.classList.add('bg-blue-500');
+                else if (cat === 'club') indicator.classList.add('bg-blue-500');
+                else if (cat === 'student_council') indicator.classList.add('bg-purple-500');
                 else if (cat === 'private') indicator.classList.add('bg-orange-500');
                 else indicator.classList.add('bg-[#4a5f73]');
             } else {
@@ -2528,8 +2561,8 @@
 
                 for (let r = 0; r < allDaySlots[i].length; r++) {
                     const slot = allDaySlots[i][r]; if (!slot) continue;
-                    const ev = slot.event;
-                    
+                    const ev = slot.event; 
+
                     if (window.shouldSkipEvent(slot.type, ev.category)) continue;
 
                     if (r >= maxRows) { overCount++; continue; }
@@ -2545,12 +2578,12 @@
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm flex items-center shadow-sm cursor-pointer border ${bgColorClass} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold truncate text-[9px] px-1">${ev.title}</span></div>`;
                     } else if (slot.type === 'time') {
                         let label = ev.start ? ev.start.split('T').pop().substring(0,5) : "";
-                        let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"));
+                        let dotColor = ev.category === 'work' ? "bg-red-400" : (ev.category === 'jugyo' ? "bg-green-400" : (ev.category === 'club' ? "bg-blue-400" : (ev.category === 'student_council' ? "bg-purple-400" : (ev.category === 'private' ? "bg-orange-400" : "bg-gray-400"))));
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] px-0.5 flex items-center bg-transparent cursor-pointer hover:bg-gray-100 rounded transition pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><div class="w-1 h-1 rounded-full ${dotColor} shrink-0 mr-0.5"></div><span class="font-bold text-gray-500 shrink-0 mr-0.5 text-[8px]">${label}</span><span class="font-bold text-gray-800 truncate text-[9px]">${ev.title}</span></div>`;
                     } else if (slot.type === 'class') {
-                        const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
+                        const p = slot.period; const cData = slot.event; const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
+                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
                         cellContentHtml += `<div class="absolute left-[2px] right-[2px] rounded-sm px-0.5 flex items-center cursor-pointer border ${colorClass} transition hover:brightness-95 pointer-events-auto" style="top: ${topPx}px; height: ${itemHeight}px;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')"><span class="font-bold opacity-70 shrink-0 mr-0.5 text-[8px]">${p.name}</span><span class="font-bold truncate text-[9px]">${titleHtml}</span></div>`;
                     } else if (slot.type === 'task') {
                         const icon = ev.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
@@ -2698,8 +2731,9 @@
             for(let r = 0; r <= maxRow; r++) {
                 for(let c = 0; c < 7; c++) {
                     const slot = allDaySlots[c][r]; if (!slot) continue;
-                    if (window.shouldSkipEvent(slot.type, slot.event.category)) continue;
                     
+                    if (window.shouldSkipEvent(slot.type, slot.event.category)) continue;
+
                     const topPx = r * ALLDAY_ROW_HEIGHT + 1;
                     
                     if (slot.type === 'multi') {
@@ -2765,9 +2799,6 @@
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 unitPlanLabel = `<span class="text-[7px] bg-blue-100 text-blue-700 px-0.5 rounded ml-1 leading-none shrink-0 border border-blue-200">第${parseInt(cData.unitPlanIdx)+1}時</span>`;
                             }
-                            if (cData.isSelfStudy) {
-                                unitPlanLabel += ` <span class="text-[7px] bg-yellow-200 text-yellow-800 px-0.5 rounded ml-1 leading-none shrink-0 border border-yellow-300">自習</span>`;
-                            }
                             combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: cData, badge: unitPlanLabel });
                         }
                     });
@@ -2786,6 +2817,7 @@
                     if (item.isClass) {
                         const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
+                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
@@ -2833,14 +2865,18 @@
                 
                 if (!isHoli && ttType !== 'none') {
                     const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
-                    ttPeriods.slice(0, lessonCount).forEach(p => {
-                        if (p.id === 'p_allday' || p.isAllDay) return;
+                    const displayPeriods = ttPeriods.slice(0, lessonCount);
+
+                    displayPeriods.forEach(p => {
+                        if(p.id === 'p_allday' || p.isAllDay) return;
                         const cData = getPeriodClass(dStr, p, dObj);
                         if (cData && !cData.disabled && !cData.isCut) { 
+                            if (window.shouldSkipEvent('class', null)) return;
+                            const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy);
                             let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                            if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; // ★ 自習ラベル
-                            let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-70 text-[9px] mt-1 border-t border-gray-200/50 pt-1 whitespace-pre-wrap pl-11">${cData.memo}</div>` : '';
-                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy)}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
+                            if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
+                            let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
+                            schedHtml += `<div class="text-[10px] px-2 py-1.5 rounded border flex flex-col cursor-pointer transition hover:shadow-sm ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                                 <div class="flex items-start gap-1.5 w-full">
                                     <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-80 mt-0.5">${p.name}</span>
                                     <span class="font-bold break-words flex-1">${titleHtml}</span>
@@ -2851,39 +2887,53 @@
                     });
                 }
                 
-                if (data.events || data.classes) {
-                    let events = data.events ? [...data.events] : [];
-                    events = events.concat(getSpecialClassesAsEvents(dStr));
+                let eventsForDay = [];
+                for (const dateKey in allPlanners) {
+                    let events = allPlanners[dateKey].events ? [...allPlanners[dateKey].events] : [];
+                    events = events.concat(getSpecialClassesAsEvents(dateKey));
                     events.forEach(ev => {
-                        let label = "", isMultiDay = false;
-                        if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
-                            const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
-                            label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
-                        } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
-                        let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
-                        const memoPreview = ev.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-black/10 pt-1 w-full">${ev.memo}</div>` : '';
-                        schedHtml += `<div class="text-[10px] ${badgeClass} px-2 py-1.5 rounded flex flex-col cursor-pointer transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
-                            <div class="flex items-start gap-1.5 w-full">
-                                <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
-                                <span class="break-words font-bold flex-1">${ev.title}</span>
-                            </div>
-                            ${memoPreview}
-                        </div>`; 
+                        const sDate = ev.start ? ev.start.split('T')[0] : dateKey;
+                        const eDate = ev.end ? ev.end.split('T')[0] : sDate;
+                        if (dStr >= sDate && dStr <= eDate) eventsForDay.push({ ...ev, originalDateKey: dateKey });
                     });
                 }
 
-                if (data.reminders) data.reminders.forEach(t => { 
-                    const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
-                    const style = t.completed ? 'text-gray-400 line-through' : 'text-gray-700'; 
-                    const taskMemoHtml = t.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-gray-200 pt-1 w-full ml-5">${t.memo}</div>` : '';
-                    taskHtml += `<div class="text-[10px] flex flex-col px-2 py-1.5 ${style} cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
+                const uniqueEvents = []; const seenIds = new Set();
+                eventsForDay.forEach(ev => { if (!seenIds.has(ev.id)) { seenIds.add(ev.id); uniqueEvents.push(ev); } });
+
+                uniqueEvents.forEach(ev => {
+                    if (window.shouldSkipEvent(ev.isAllDay ? 'allday' : 'time', ev.category)) return;
+                    let label = "", isMultiDay = false;
+                    if (ev.start && ev.end && ev.start.split('T')[0] !== ev.end.split('T')[0]) {
+                        const sD = new Date(ev.start.split('T')[0]); const eD = new Date(ev.end.split('T')[0]);
+                        label = `${sD.getMonth()+1}/${sD.getDate()}〜${eD.getMonth()+1}/${eD.getDate()}`; isMultiDay = true;
+                    } else { label = ev.isAllDay ? "終日" : (ev.start ? ev.start.split('T').pop().substring(0, 5) : ""); }
+                    let badgeClass = isMultiDay ? `bg-transparent border-0 border-b-2 ${getMultiDayColorClass(ev.category)} hover:bg-gray-50` : `${getEventColorClass(ev.category)} border shadow-sm hover:brightness-95`;
+                    const memoPreview = ev.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-black/10 pt-1 w-full">${ev.memo}</div>` : '';
+                    schedHtml += `<div class="text-[10px] ${badgeClass} px-2 py-1.5 rounded flex flex-col cursor-pointer transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey || dStr}', 'schedule', '${ev.id}')">
                         <div class="flex items-start gap-1.5 w-full">
-                            <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
-                            <span class="break-words flex-1 font-bold">${t.title}</span>
+                            <span class="font-bold w-auto min-w-[2.5rem] whitespace-nowrap shrink-0 opacity-70 mt-0.5">${label}</span>
+                            <span class="break-words font-bold flex-1">${ev.title}</span>
                         </div>
-                        ${taskMemoHtml}
+                        ${memoPreview}
                     </div>`; 
                 });
+
+                if (data.reminders) {
+                    data.reminders.forEach(t => { 
+                        if (window.shouldSkipEvent('task', t.category)) return;
+                        const icon = t.completed ? '<i class="fas fa-check-circle text-blue-500"></i>' : '<i class="far fa-square text-gray-300"></i>'; 
+                        const style = t.completed ? 'text-gray-400 line-through opacity-70' : 'text-[#4a5f73]'; 
+                        const taskMemoHtml = t.memo ? `<div class="text-[9px] opacity-70 mt-1 whitespace-pre-wrap break-words border-t border-gray-200 pt-1 w-full ml-5">${t.memo}</div>` : '';
+                        taskHtml += `<div class="text-[10px] flex flex-col px-2 py-1.5 ${style} cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded transition hover:shadow-sm" onclick="event.stopPropagation(); window.openEditMenu('${dStr}', 'task', '${t.id}')">
+                            <div class="flex items-start gap-1.5 w-full">
+                                <div class="shrink-0 cursor-pointer flex items-center justify-center mt-0.5" onclick="event.stopPropagation(); window.toggleTaskGlobal('${dStr}', '${t.id}', ${!t.completed})">${icon}</div>
+                                <span class="break-words flex-1 font-bold">${t.title}</span>
+                            </div>
+                            ${taskMemoHtml}
+                        </div>`; 
+                    });
+                }
 
                 if (!schedHtml && !taskHtml) return;
                 count++;
@@ -2917,7 +2967,6 @@
             }
             document.getElementById('agenda-incomplete-tasks').innerHTML = incompleteHtml;
         };
-
 
         // ★ calculateCumulativeHoursForUnitPlan の修正
         // targetDateStr を受け取り、その「前日」までをカウントの対象とするように変更
@@ -3094,6 +3143,7 @@
                 html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+            
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
                 let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
@@ -3180,19 +3230,17 @@
                         let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
                         let unitPlanTask = ""; 
                         let uIdxForTask = null; 
-                        let isSelfStudy = false; // ★ 自習フラグ
+                        let isSelfStudy = false; // ★ 追加
 
                         if (data.classes && data.classes[p.id]) {
                             const cData = data.classes[p.id];
-                            // ★ 振替フラグになる要素があるか確認 (cls, sub, memo がなくても、sourceDayやsourcePeriodが設定されていればカスタムとみなす)
                             if (cData.cls || cData.sub || cData.memo || cData.sourceDay !== undefined) {
                                 currentCls = cData.cls || ""; currentSub = cData.sub || ""; currentMemo = cData.memo || ""; hasCustom = true;
                                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
                             }
                             if (cData.disabled) isExcluded = true;
-                            if (cData.isSelfStudy) isSelfStudy = true; // ★ 自習フラグ取得
+                            if (cData.isSelfStudy) isSelfStudy = true; // ★ 追加
                             
-                            // ★ 単元計画の学習課題を取得
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 let tempGrade = null;
                                 if (currentCls.startsWith('1') || currentCls.includes('1年')) tempGrade = '1';
@@ -3212,7 +3260,6 @@
                         let displayCls = hasCustom ? currentCls : baseCls, displaySub = hasCustom ? currentSub : baseSub, displayMemo = hasCustom ? currentMemo : baseMemo;
                         let btnContent = "", borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
 
-                        // ★ 曜日や時間が変わっていればオレンジラベルを表示する条件
                         const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                         const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
                         const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
@@ -3220,19 +3267,15 @@
                         if (isExcluded) {
                             btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
                         } else if (displayCls || displaySub || displayMemo || hasCustom) {
-                            const colorClass = getClassColorClass(displayCls, displaySub, isSelfStudy); // ★ 自習フラグを渡す
+                            const colorClass = getClassColorClass(displayCls, displaySub, isSelfStudy); // ★ 変更
                             bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                             const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
                             
                             let memoAndTaskHtml = '';
                             
-                            // ★ 自習ラベルをブロック内にも表示
-                            if (isSelfStudy) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-200 border border-yellow-300 rounded px-1 w-full mt-0.5 truncate leading-tight box-border text-center">自習</div>`;
-                            }
-
-                            // ★ 課題の表示形式を「第X時: 学習課題」に変更
-                            if (unitPlanTask) {
+                            if (isSelfStudy) { // ★ 自習ラベル
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-book-reader mr-0.5"></i>自習</div>`;
+                            } else if (unitPlanTask) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
                             }
                             if (displayMemo) {
@@ -3251,7 +3294,6 @@
                             } else if (displayMemo) {
                                 mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
                             } else { 
-                                // ★ 振替で空の授業を設定した場合などは「未設定」と表示
                                 mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; 
                             }
 
@@ -3296,9 +3338,6 @@
             if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
         };
 
-        // ==========================================
-        // ★ 週授業ポップアップ用モーダル関数群
-        // ==========================================
         window.updateWpModalClsSuggest = (clsValue) => {
             const suggestContainer = document.getElementById('wp-modal-cls-suggest');
             if (!clsValue || !clsValue.includes('/')) {
@@ -3356,16 +3395,14 @@
             const plans = allUnitPlans[planKey].plans;
             let html = '<option value="">(連携しない)</option>';
             
-            // 該当クラスの現在の進捗を計算してデフォルト選択にする
             const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub, wpModalTarget.targetDateStr);
             let targetIdx = null;
             
-            // 既に選択されている値がある場合はそれを優先
             const existingData = allPlanners[wpModalTarget.targetDateStr]?.classes?.[wpModalTarget.targetPeriodId];
             if (existingData && existingData.unitPlanIdx !== undefined && existingData.unitPlanIdx !== "") {
                 targetIdx = parseInt(existingData.unitPlanIdx);
             } else if (currentCount < plans.length) {
-                targetIdx = currentCount; // 未実施の最初の時間
+                targetIdx = currentCount; 
             }
 
             plans.forEach((p, idx) => {
@@ -3415,103 +3452,6 @@
             }
         };
 
-        window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
-            window.closeMonthBottomSheet();
-            const isSpecial = periodId.startsWith('sp_');
-            wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: isSpecial };
-            
-            const classInputArea = document.getElementById('wp-modal-class-area');
-            const deleteBtn = document.getElementById('wp-modal-delete-btn');
-            const resetBtn = document.getElementById('wp-modal-reset-btn');
-            const selfStudyBtn = document.getElementById('wp-modal-self-study-btn'); // ★ 自習ボタン
-            const modalTitle = document.getElementById('wp-modal-title');
-            const memoInput = document.getElementById('wp-modal-memo');
-
-            const dObj = new Date(dateStr);
-            const dayOfWeek = dObj.getDay(); 
-            const defaultDay = (dayOfWeek >= 1 && dayOfWeek <= 5) ? dayOfWeek : 1;
-            const defaultPeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
-
-            const data = allPlanners[dateStr] || {};
-            const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : null;
-
-            if (isSpecial) {
-                classInputArea.classList.add('hidden');
-                document.getElementById('wp-modal-special-area').classList.remove('hidden');
-                modalTitle.innerHTML = `<i class="fas fa-sun mr-1"></i>${periodName}の予定`;
-                document.getElementById('wp-modal-base-status').classList.add('hidden');
-                document.getElementById('wp-modal-time-config').classList.add('hidden');
-                
-                selfStudyBtn.classList.add('hidden'); // ★ 特殊な枠では自習ボタンを隠す
-                
-                deleteBtn.innerHTML = cData && cData.isCut ? 'カット解除' : '時間カット';
-                deleteBtn.onclick = () => window.toggleCutWeeklyPlanModal();
-                deleteBtn.className = "flex-1 bg-orange-50 border border-orange-200 text-orange-600 font-bold py-1.5 px-2 rounded hover:bg-orange-100 transition shadow-sm text-xs";
-                
-                resetBtn.classList.add('hidden');
-                
-                document.getElementById('wp-modal-sp-title').value = cData ? (cData.title || "") : "";
-                memoInput.value = cData ? (cData.memo || "") : "";
-                memoInput.placeholder = "メモの内容（一覧には表示されません）";
-
-            } else {
-                classInputArea.classList.remove('hidden');
-                document.getElementById('wp-modal-special-area').classList.add('hidden');
-                modalTitle.innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
-                document.getElementById('wp-modal-base-status').classList.remove('hidden');
-                document.getElementById('wp-modal-time-config').classList.remove('hidden');
-                
-                selfStudyBtn.classList.remove('hidden'); // ★ 通常枠では自習ボタンを表示
-                if (cData && cData.isSelfStudy) {
-                    selfStudyBtn.innerHTML = '自習解除';
-                    selfStudyBtn.className = "flex-1 bg-gray-50 border border-gray-300 text-gray-700 font-bold py-1.5 px-2 rounded hover:bg-gray-100 transition shadow-sm text-xs";
-                } else {
-                    selfStudyBtn.innerHTML = '自習';
-                    selfStudyBtn.className = "flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold py-1.5 px-2 rounded hover:bg-yellow-100 transition shadow-sm text-xs";
-                }
-
-                deleteBtn.innerHTML = '空きコマ';
-                deleteBtn.onclick = () => window.deleteWeeklyPlanModal();
-                deleteBtn.className = "flex-1 bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs";
-                resetBtn.classList.remove('hidden');
-
-                wpSelectedDay = cData && cData.sourceDay !== undefined ? cData.sourceDay : defaultDay;
-                wpSelectedPeriod = cData && cData.sourcePeriod !== undefined ? cData.sourcePeriod : defaultPeriod;
-
-                let initialCls = "", initialSub = "", initialMemo = "";
-                if (cData && !cData.disabled) {
-                    initialCls = cData.cls || "";
-                    initialSub = cData.sub || "";
-                    initialMemo = cData.memo || "";
-                } else {
-                    const baseTt = getBaseTimetableForDate(dObj);
-                    if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
-                        initialCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
-                        initialSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
-                        initialMemo = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].memo || "";
-                    }
-                }
-
-                document.getElementById('wp-modal-cls').value = initialCls;
-                window.updateWpModalClsSuggest(initialCls);
-                document.getElementById('wp-modal-sub').value = initialSub;
-                memoInput.value = initialMemo;
-                memoInput.placeholder = "単元名や連絡事項など...";
-
-                window.renderWpModalButtons();
-                window.updateWpModalBaseStatus();
-                window.updateWpModalUnitPlanOptions();
-            }
-
-            document.getElementById('weekly-plan-modal').classList.remove('hidden');
-            document.getElementById('weekly-plan-modal').classList.add('flex');
-        };
-
-        window.closeWeeklyPlanModal = () => {
-            document.getElementById('weekly-plan-modal').classList.add('hidden');
-            document.getElementById('weekly-plan-modal').classList.remove('flex');
-        };
-
         window.renderWpModalButtons = () => {
             const daysContainer = document.getElementById('wp-modal-days');
             const periodsContainer = document.getElementById('wp-modal-periods');
@@ -3533,7 +3473,7 @@
             for(let i=1; i<=maxPeriods; i++) {
                 const isSelected = wpSelectedPeriod === i;
                 const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+                        periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
             }
             periodsContainer.innerHTML = periodsHtml;
         };
@@ -3598,7 +3538,6 @@
                 const sub = document.getElementById('wp-modal-sub').value.trim();
                 const unitPlanIdx = document.getElementById('wp-modal-unit-plan-select').value;
                 
-                // --- 単元計画の自動シフト（繰り下げ/詰め）処理の追加開始 ---
                 const oldClassData = allPlanners[targetDateStr].classes[targetPeriodId];
                 const oldUnitPlanIdx = oldClassData ? oldClassData.unitPlanIdx : null;
                 
@@ -3609,42 +3548,39 @@
                     sourceDay: wpSelectedDay,
                     sourcePeriod: wpSelectedPeriod,
                     unitPlanIdx: unitPlanIdx,
-                    isSelfStudy: false, // ★ 確定ボタン時は自習フラグをオフにする
-                    disabled: false
+                    disabled: false,
+                    isSelfStudy: false // ★ 確定時は自習フラグを外す
                 };
 
-                // もし、単元計画の紐付けが変更された（ずれた）場合、以降の授業を自動シフトする
                 if (oldUnitPlanIdx !== null && oldUnitPlanIdx !== undefined && unitPlanIdx !== undefined && unitPlanIdx !== null) {
                     const oldIdx = parseInt(oldUnitPlanIdx);
                     const newIdx = parseInt(unitPlanIdx);
                     
                     if (oldIdx !== newIdx) {
-                        const shiftAmount = newIdx - oldIdx; // 正なら繰り下げ、負なら詰め
+                        const shiftAmount = newIdx - oldIdx; 
                         const targetDateObj = new Date(targetDateStr);
                         
-                        // 対象クラス・教科の以後の授業を探してシフト
                         const today = new Date();
                         const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
-                        const endDate = new Date(year + 1, 2, 31); // 年度末まで
+                        const endDate = new Date(year + 1, 2, 31); 
                         
                         let curDate = new Date(targetDateObj);
-                        curDate.setDate(curDate.getDate() + 1); // 翌日から
+                        curDate.setDate(curDate.getDate() + 1); 
                         
                         while (curDate <= endDate) {
                             const dStr = getFormatDateStr(curDate);
                             if (allPlanners[dStr] && allPlanners[dStr].classes) {
                                 for (const pId in allPlanners[dStr].classes) {
                                     const cData = allPlanners[dStr].classes[pId];
-                                    if (cData && !cData.disabled && !cData.isCut && cData.cls === cls && cData.sub === sub) {
+                                    if (cData && !cData.disabled && !cData.isCut && cData.cls === cls && cData.sub === sub && !cData.isSelfStudy) { // ★ 自習はシフト対象外
                                         if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                             const currentIdx = parseInt(cData.unitPlanIdx);
-                                            // 影響を受ける（変更対象の時数より後の）授業のみシフト
                                             if (currentIdx > Math.min(oldIdx, newIdx)) {
                                                  const shiftedIdx = currentIdx + shiftAmount;
                                                  if (shiftedIdx >= 0) {
                                                      cData.unitPlanIdx = shiftedIdx.toString();
                                                  } else {
-                                                     cData.unitPlanIdx = ""; // 負になる場合はクリア
+                                                     cData.unitPlanIdx = ""; 
                                                  }
                                             }
                                         }
@@ -3655,7 +3591,6 @@
                         }
                     }
                 }
-                // --- 単元計画の自動シフト処理の追加終了 ---
             }
             
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -3664,39 +3599,31 @@
             window.closeWeeklyPlanModal();
         };
 
-        // ★ 新規追加: 自習ボタンの処理
         window.setSelfStudyWeeklyPlanModal = () => {
             window.saveStateToHistory();
             const { targetDateStr, targetPeriodId } = wpModalTarget;
             if (!allPlanners[targetDateStr]) allPlanners[targetDateStr] = { classes: {}, reminders: [], events: [] };
             if (!allPlanners[targetDateStr].classes) allPlanners[targetDateStr].classes = {};
             
+            const memo = document.getElementById('wp-modal-memo').value.trim();
             const cls = document.getElementById('wp-modal-cls').value.trim();
             const sub = document.getElementById('wp-modal-sub').value.trim();
-            const memo = document.getElementById('wp-modal-memo').value.trim();
 
-            const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
-            const isCurrentlySelfStudy = currentData.isSelfStudy;
+            const cData = allPlanners[targetDateStr].classes[targetPeriodId];
+            const currentIsSelfStudy = cData && cData.isSelfStudy;
 
-            // 既に自習の場合は自習を解除（トグル動作）
-            if (isCurrentlySelfStudy) {
-                allPlanners[targetDateStr].classes[targetPeriodId] = {
-                    ...currentData,
-                    isSelfStudy: false
-                };
-            } else {
-                allPlanners[targetDateStr].classes[targetPeriodId] = {
-                    cls: cls,
-                    sub: sub,
-                    memo: memo,
-                    sourceDay: wpSelectedDay,
-                    sourcePeriod: wpSelectedPeriod,
-                    unitPlanIdx: "", // 単元計画との連携を外す
-                    isSelfStudy: true, // 自習フラグを立てる
-                    disabled: false
-                };
-            }
-            
+            // 自習フラグのトグル
+            allPlanners[targetDateStr].classes[targetPeriodId] = {
+                cls: cls,
+                sub: sub,
+                memo: memo,
+                sourceDay: wpSelectedDay,
+                sourcePeriod: wpSelectedPeriod,
+                unitPlanIdx: "", // 単元計画との連携は解除
+                disabled: false,
+                isSelfStudy: !currentIsSelfStudy // ★ トグル処理
+            };
+
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -3752,7 +3679,6 @@
             window.closeWeeklyPlanModal();
         };
 
-        // 設定保存ロジック
         window.syncTempSettingsFromDOM = () => {
             if (!tempSettings) return;
             Object.keys(tempSettings.timetables).forEach(key => {
