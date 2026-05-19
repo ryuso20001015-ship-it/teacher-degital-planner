@@ -1090,7 +1090,7 @@
         let editTarget = null; 
         let currentModalMode = 'schedule';
         
-        let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null };
+        let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null, isSpecial: false };
         let wpSelectedDay = 1;
         let wpSelectedPeriod = 1;
 
@@ -2287,6 +2287,81 @@
 
             document.getElementById('add-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('class-edit-cls').focus(), 100);
+        };
+        
+        // ★ 追加: 週案簿モーダルを開く関数
+        window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: false };
+            
+            // スペシャルな予定（朝、昼、放）かどうかを判定
+            if (periodId === 'sp_morning' || periodId === 'sp_noon' || periodId === 'sp_after_school') {
+                wpModalTarget.isSpecial = true;
+                document.getElementById('wp-modal-class-area').classList.add('hidden');
+                document.getElementById('wp-modal-special-area').classList.remove('hidden');
+                document.getElementById('wp-modal-time-config').classList.add('hidden');
+                document.getElementById('wp-modal-base-status').classList.add('hidden');
+                document.getElementById('wp-modal-self-study-btn').classList.add('hidden');
+                
+                const data = allPlanners[dateStr] || {};
+                const cData = (data.classes && data.classes[periodId]) ? data.classes[periodId] : {};
+                
+                document.getElementById('wp-modal-sp-title').value = cData.title || "";
+                document.getElementById('wp-modal-memo').value = cData.memo || "";
+                document.getElementById('wp-modal-title').innerHTML = `<i class="fas fa-clock mr-1"></i>${periodName}の予定`;
+            } else {
+                wpModalTarget.isSpecial = false;
+                document.getElementById('wp-modal-class-area').classList.remove('hidden');
+                document.getElementById('wp-modal-special-area').classList.add('hidden');
+                document.getElementById('wp-modal-time-config').classList.remove('hidden');
+                document.getElementById('wp-modal-base-status').classList.remove('hidden');
+                document.getElementById('wp-modal-self-study-btn').classList.remove('hidden');
+                document.getElementById('wp-modal-title').innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
+
+                const dObj = new Date(dateStr);
+                const data = allPlanners[dateStr] || {};
+                
+                let sourceDay = dObj.getDay();
+                let sourcePeriod = parseInt(periodName.replace(/[^0-9]/g, '')) || 1;
+                
+                if (data.classes && data.classes[periodId] && data.classes[periodId].sourceDay !== undefined) {
+                    sourceDay = data.classes[periodId].sourceDay;
+                    sourcePeriod = data.classes[periodId].sourcePeriod;
+                }
+                
+                wpSelectedDay = sourceDay === 0 ? 7 : sourceDay; // 日曜対応だが通常は月〜金
+                if (wpSelectedDay > 5) wpSelectedDay = 1; // 週末の場合は月曜基準にする
+                wpSelectedPeriod = sourcePeriod;
+                
+                window.renderWpModalButtons();
+                
+                const cData = getPeriodClass(dateStr, { id: periodId, name: periodName }, dObj);
+                
+                document.getElementById('wp-modal-cls').value = cData ? cData.cls : "";
+                document.getElementById('wp-modal-sub').value = cData ? cData.sub : "";
+                document.getElementById('wp-modal-memo').value = cData ? cData.memo : "";
+                
+                window.updateWpModalBaseStatus();
+                window.updateWpModalClsSuggest(cData ? cData.cls : "");
+                window.updateWpModalUnitPlanOptions();
+            }
+
+            document.getElementById('weekly-plan-modal').classList.remove('hidden');
+            document.getElementById('weekly-plan-modal').classList.add('flex');
+            
+            // 少し遅延させてフォーカスを当てる（モバイルでのキーボード表示対応など）
+            setTimeout(() => {
+                if (wpModalTarget.isSpecial) {
+                    document.getElementById('wp-modal-sp-title').focus();
+                } else {
+                    document.getElementById('wp-modal-cls').focus();
+                }
+            }, 100);
+        };
+
+        // ★ 追加: 週案簿モーダルを閉じる関数
+        window.closeWeeklyPlanModal = () => {
+            document.getElementById('weekly-plan-modal').classList.add('hidden');
+            document.getElementById('weekly-plan-modal').classList.remove('flex');
         };
 
         window.openEditMenu = (dateStr, type, evId) => {
