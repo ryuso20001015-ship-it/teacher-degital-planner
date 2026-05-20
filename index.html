@@ -1032,51 +1032,103 @@
             }
         });
 
-        window.currentCalendarFilter = 'all';
+        // ★ フィルター状態を配列で管理するように変更
+        window.currentCalendarFilters = ['work', 'jugyo', 'club', 'student_council', 'private'];
+
+        window.toggleCalendarFilter = (filter) => {
+            const index = window.currentCalendarFilters.indexOf(filter);
+            if (index > -1) {
+                // 既に選択されている場合は除外
+                window.currentCalendarFilters.splice(index, 1);
+            } else {
+                // 選択されていない場合は追加
+                window.currentCalendarFilters.push(filter);
+            }
+            window.updateFilterUI();
+            window.renderCurrentView();
+        };
+
         window.setCalendarFilter = (filter) => {
-            window.currentCalendarFilter = filter;
-            const ids = ['all', 'work', 'jugyo', 'club', 'student_council', 'private'];
-            
+            if (filter === 'all') {
+                window.currentCalendarFilters = ['work', 'jugyo', 'club', 'student_council', 'private'];
+            } else {
+                // セレクトボックスからの変更時は単一選択にするか、全て選択状態にリセットするか
+                // ここでは単一選択として扱う（モバイル向け）
+                window.currentCalendarFilters = [filter];
+            }
+            window.updateFilterUI();
+            window.renderCurrentView();
+        };
+
+        window.updateFilterUI = () => {
+            const ids = ['work', 'jugyo', 'club', 'student_council', 'private'];
             const prefixes = ['filter-btn-', 'filter-btn-week-'];
+            
+            const isAllSelected = ids.every(id => window.currentCalendarFilters.includes(id));
+
             prefixes.forEach(prefix => {
+                // 「全て」ボタンの更新
+                const allBtn = document.getElementById(`${prefix}all`);
+                if (allBtn) {
+                    if (isAllSelected) {
+                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                    } else {
+                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                    }
+                }
+
+                // 各カテゴリボタンの更新
                 ids.forEach(id => {
                     const btn = document.getElementById(`${prefix}${id}`);
-                    if(btn) {
-                        if(id === filter) {
-                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                    if (btn) {
+                        // toggle機能を割り当てるために onclick を変更
+                        btn.onclick = () => window.toggleCalendarFilter(id);
+                        
+                        if (window.currentCalendarFilters.includes(id)) {
+                            // 選択状態のスタイル（色付き枠線などで視覚的に強調）
+                            let activeClass = 'bg-white shadow-sm border ';
+                            if (id === 'work') activeClass += 'border-red-300 text-red-600';
+                            else if (id === 'jugyo') activeClass += 'border-green-300 text-green-600';
+                            else if (id === 'club') activeClass += 'border-blue-300 text-blue-600';
+                            else if (id === 'student_council') activeClass += 'border-purple-300 text-purple-600';
+                            else if (id === 'private') activeClass += 'border-orange-300 text-orange-600';
+                            
+                            btn.className = `px-2 py-1 text-xs font-bold rounded-sm transition-colors ${activeClass}`;
                         } else {
-                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                            // 未選択状態のスタイル
+                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-400 hover:bg-gray-200 hover:text-gray-800 border border-transparent opacity-60';
                         }
                     }
                 });
             });
 
+            // モバイル用セレクトボックスの更新（同期）
             const mobileSelect = document.getElementById('mobile-filter-select');
-            if (mobileSelect && mobileSelect.value !== filter) {
-                mobileSelect.value = filter;
+            if (mobileSelect) {
+                if (isAllSelected) mobileSelect.value = 'all';
+                else if (window.currentCalendarFilters.length === 1) mobileSelect.value = window.currentCalendarFilters[0];
+                // 複数選択状態はセレクトボックスでは表現しきれないため、そのままとするか最初の要素を表示
             }
             const mobileSelectWeek = document.getElementById('mobile-filter-select-week');
-            if (mobileSelectWeek && mobileSelectWeek.value !== filter) {
-                mobileSelectWeek.value = filter;
+            if (mobileSelectWeek) {
+                if (isAllSelected) mobileSelectWeek.value = 'all';
+                else if (window.currentCalendarFilters.length === 1) mobileSelectWeek.value = window.currentCalendarFilters[0];
             }
-            window.renderCurrentView();
         };
 
-        // ★ フィルターのスキップ判定を統一する共通関数
+        // ★ フィルターのスキップ判定を統一する共通関数（配列対応）
         window.shouldSkipEvent = (slotType, category) => {
-            const filterCat = window.currentCalendarFilter || 'all';
-            if (filterCat === 'all') return false;
+            const filters = window.currentCalendarFilters;
+            if (filters.length === 5) return false; // 全て選択状態
 
             if (slotType === 'class') {
-                return (filterCat === 'work' || filterCat === 'club' || filterCat === 'student_council' || filterCat === 'private');
+                // 授業枠の表示判定
+                // 授業枠は category を持たない場合があるため、別途判定が必要な場合があるが、
+                // 基本的に「授業(jugyo)」フィルターがオンの時のみ表示する
+                return !filters.includes('jugyo');
             } else {
                 const cat = category || 'work';
-                if (filterCat === 'work' && cat !== 'work') return true;
-                if (filterCat === 'club' && cat !== 'club') return true;
-                if (filterCat === 'student_council' && cat !== 'student_council') return true;
-                if (filterCat === 'private' && cat !== 'private') return true;
-                if (filterCat === 'jugyo' && cat !== 'jugyo') return true;
-                return false;
+                return !filters.includes(cat);
             }
         };
 
@@ -1442,6 +1494,7 @@
                 window.saveToFirebase();
             }
 
+            window.updateFilterUI(); // 初期化時にフィルターUIを更新
             initTodayButtons(); window.updateUndoRedoButtons(); window.renderCurrentView(); 
         };
 
