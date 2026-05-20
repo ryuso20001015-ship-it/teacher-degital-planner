@@ -426,12 +426,11 @@
                     </button>
                     
                     <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
-                        <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
+                        <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('work')">仕事</button>
+                        <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('club')">部活</button>
+                        <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('student_council')">生徒会</button>
+                        <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('private')">プライベート</button>
                     </div>
                     
                     <div class="flex sm:hidden ml-2 items-center shrink-0">
@@ -469,12 +468,11 @@
                     </button>
                     
                     <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
-                        <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-week-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.setCalendarFilter('private')">プライベート</button>
+                        <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('work')">仕事</button>
+                        <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-week-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('club')">部活</button>
+                        <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('student_council')">生徒会</button>
+                        <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('private')">プライベート</button>
                     </div>
                     
                     <div class="flex sm:hidden ml-2 items-center shrink-0">
@@ -2590,7 +2588,6 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const grid = document.getElementById('month-view-grid');
             
-            const filterCat = window.currentCalendarFilter || 'all';
             const isMobile = document.body.classList.contains('mode-mobile');
             const maxRows = isMobile ? 4 : 6; 
             const rowHeight = isMobile ? 12 : 15;
@@ -2653,7 +2650,7 @@
                 (singleDayAllDayEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'allday', event: ev }));
                 (singleDayTimeEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'time', event: ev }));
 
-                if (!isHoliday(dObj) && (filterCat === 'all' || filterCat === 'jugyo')) {
+                if (!isHoliday(dObj)) {
                     const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
                     const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                     ttPeriods.slice(0, lessonCount).forEach(p => {
@@ -4892,7 +4889,8 @@
                     
                     progressByHour[record.idx].push({
                         cls: cls,
-                        dateStr: `${displayDate}(${dayOfWeekStr})`,
+                        displayDate: displayDate,
+                        dayOfWeekStr: `(${dayOfWeekStr})`,
                         rawDate: record.date
                     });
                 });
@@ -4946,7 +4944,10 @@
 
                         progressColsHtml += `
                             <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
-                                <div class="text-[8px] ${textColor} font-bold whitespace-nowrap leading-tight">${p.dateStr}</div>
+                                <div class="${textColor} font-bold leading-tight flex flex-col items-center justify-center">
+                                    <span class="text-[10px] sm:text-xs">${p.displayDate}</span>
+                                    <span class="text-[7px] sm:text-[8px] opacity-80">${p.dayOfWeekStr}</span>
+                                </div>
                             </td>
                         `;
                     } else {
