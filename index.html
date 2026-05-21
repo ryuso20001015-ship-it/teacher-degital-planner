@@ -78,9 +78,11 @@
         .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
         .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
 
-        /* ★ 週カレンダーのスマホ縦スクロール対応 ★ */
-        .mode-mobile #week-scroll-area { overflow-y: auto !important; overflow-x: hidden !important; touch-action: pan-y; }
-        .mode-mobile #week-scroll-area > div { min-height: 1000px !important; position: absolute; top: 0; left: 0; right: 0; bottom: auto; }
+        /* ★ 週カレンダーの縦スクロール対応 (PC・スマホ共通) ★ */
+        #week-scroll-area { overflow-y: auto !important; overflow-x: hidden !important; touch-action: pan-y; }
+        #week-scroll-area > div { min-height: 1140px !important; position: absolute; top: 0; left: 0; right: 0; bottom: auto; }
+        
+        .mode-mobile #week-scroll-area > div { min-height: 1000px !important; }
 
         #memo-edit-content:empty::before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
 
@@ -193,14 +195,14 @@
                 <button id="nav-btn-week" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('week')">
                     <i class="fas fa-calendar-week mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週</span>
                 </button>
+                <button id="nav-btn-agenda" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('agenda')">
+                    <i class="fas fa-list-ul mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">一覧</span>
+                </button>
                 <button id="nav-btn-weekly-plan" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('weekly-plan')">
                     <i class="fas fa-chalkboard-teacher mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">週案簿</span>
                 </button>
                 <button id="nav-btn-unit-plan" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('unit-plan')">
                     <i class="fas fa-map mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">単元計画</span>
-                </button>
-                <button id="nav-btn-agenda" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('agenda')">
-                    <i class="fas fa-list-ul mode-mobile-icon hidden mb-0.5 text-base"></i><span class="leading-none">一覧</span>
                 </button>
                 <button id="nav-btn-memo" class="nav-btn flex flex-col justify-center items-center" onclick="window.switchView('memo')">
                     <i class="fas fa-sticky-note mode-mobile-icon hidden mb-0.5 text-base text-yellow-500"></i><span class="leading-none">メモ</span>
@@ -414,34 +416,24 @@
         <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="month-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100" title="今日に戻る">
+                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="month-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center shrink-0">YYYY年 M月</h2>
+                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
                         <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
                             <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
                         </div>
                     </button>
                     
-                    <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
-                        <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('private')">プライベート</button>
-                    </div>
-                    
-                    <div class="flex sm:hidden ml-2 items-center shrink-0">
-                        <select id="mobile-filter-select" onchange="window.setCalendarFilter(this.value)" class="bg-gray-100 border border-gray-300 text-[#4a5f73] text-[10px] font-bold rounded px-1.5 py-1 outline-none">
-                            <option value="all">全て</option>
-                            <option value="work">仕事</option>
-                            <option value="jugyo">授業</option>
-                            <option value="club">部活</option>
-                            <option value="student_council">生徒会</option>
-                            <option value="private">プライベート</option>
-                        </select>
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar">
+                        <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
+                        <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
+                        <button id="filter-btn-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
+                        <button id="filter-btn-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                 </div>
             </div>
@@ -456,34 +448,24 @@
         <!-- View 2: 週カレンダー -->
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 z-20 shrink-0 gap-2">
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="week-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100" title="今日に戻る">
+                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="week-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center shrink-0">YYYY年 M月</h2>
+                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
                         <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
                             <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
                         </div>
                     </button>
                     
-                    <div class="ml-2 sm:ml-3 hidden sm:flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0">
-                        <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-week-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" onclick="window.toggleCalendarFilter('private')">プライベート</button>
-                    </div>
-                    
-                    <div class="flex sm:hidden ml-2 items-center shrink-0">
-                        <select id="mobile-filter-select-week" onchange="window.setCalendarFilter(this.value)" class="bg-gray-100 border border-gray-300 text-[#4a5f73] text-[10px] font-bold rounded px-1.5 py-1 outline-none">
-                            <option value="all">全て</option>
-                            <option value="work">仕事</option>
-                            <option value="jugyo">授業</option>
-                            <option value="club">部活</option>
-                            <option value="student_council">生徒会</option>
-                            <option value="private">プライベート</option>
-                        </select>
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar">
+                        <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
+                        <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
+                        <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                        <button id="filter-btn-week-club" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
+                        <button id="filter-btn-week-student_council" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
+                        <button id="filter-btn-week-private" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
                     </div>
                 </div>
             </div>
@@ -920,7 +902,6 @@
         window.currentColorCommand = '';
         window.lastColorBtn = null;
 
-        // ★ タスクポップアップ用の状態管理追加
         window.currentTaskCompleted = false;
 
         window.toggleAddModalTaskStatus = () => {
@@ -1030,16 +1011,13 @@
             }
         });
 
-        // ★ フィルター状態を配列で管理するように変更
         window.currentCalendarFilters = ['work', 'jugyo', 'club', 'student_council', 'private'];
 
         window.toggleCalendarFilter = (filter) => {
             const index = window.currentCalendarFilters.indexOf(filter);
             if (index > -1) {
-                // 既に選択されている場合は除外
                 window.currentCalendarFilters.splice(index, 1);
             } else {
-                // 選択されていない場合は追加
                 window.currentCalendarFilters.push(filter);
             }
             window.updateFilterUI();
@@ -1050,9 +1028,12 @@
             if (filter === 'all') {
                 window.currentCalendarFilters = ['work', 'jugyo', 'club', 'student_council', 'private'];
             } else {
-                // セレクトボックスからの変更時は単一選択にするか、全て選択状態にリセットするか
-                // ここでは単一選択として扱う（モバイル向け）
-                window.currentCalendarFilters = [filter];
+                const index = window.currentCalendarFilters.indexOf(filter);
+                if (index > -1) {
+                    window.currentCalendarFilters.splice(index, 1);
+                } else {
+                    window.currentCalendarFilters.push(filter);
+                }
             }
             window.updateFilterUI();
             window.renderCurrentView();
@@ -1065,25 +1046,21 @@
             const isAllSelected = ids.every(id => window.currentCalendarFilters.includes(id));
 
             prefixes.forEach(prefix => {
-                // 「全て」ボタンの更新
                 const allBtn = document.getElementById(`${prefix}all`);
                 if (allBtn) {
                     if (isAllSelected) {
-                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200';
+                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0';
                     } else {
-                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent';
+                        allBtn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0';
                     }
                 }
 
-                // 各カテゴリボタンの更新
                 ids.forEach(id => {
                     const btn = document.getElementById(`${prefix}${id}`);
                     if (btn) {
-                        // toggle機能を割り当てるために onclick を変更
                         btn.onclick = () => window.toggleCalendarFilter(id);
                         
                         if (window.currentCalendarFilters.includes(id)) {
-                            // 選択状態のスタイル（色付き枠線などで視覚的に強調）
                             let activeClass = 'bg-white shadow-sm border ';
                             if (id === 'work') activeClass += 'border-red-300 text-red-600';
                             else if (id === 'jugyo') activeClass += 'border-green-300 text-green-600';
@@ -1091,38 +1068,20 @@
                             else if (id === 'student_council') activeClass += 'border-purple-300 text-purple-600';
                             else if (id === 'private') activeClass += 'border-orange-300 text-orange-600';
                             
-                            btn.className = `px-2 py-1 text-xs font-bold rounded-sm transition-colors ${activeClass}`;
+                            btn.className = `px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0 ${activeClass}`;
                         } else {
-                            // 未選択状態のスタイル
-                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-400 hover:bg-gray-200 hover:text-gray-800 border border-transparent opacity-60';
+                            btn.className = 'px-2 py-1 text-xs font-bold rounded-sm transition-colors text-gray-400 hover:bg-gray-200 hover:text-gray-800 border border-transparent opacity-60 shrink-0';
                         }
                     }
                 });
             });
-
-            // モバイル用セレクトボックスの更新（同期）
-            const mobileSelect = document.getElementById('mobile-filter-select');
-            if (mobileSelect) {
-                if (isAllSelected) mobileSelect.value = 'all';
-                else if (window.currentCalendarFilters.length === 1) mobileSelect.value = window.currentCalendarFilters[0];
-                // 複数選択状態はセレクトボックスでは表現しきれないため、そのままとするか最初の要素を表示
-            }
-            const mobileSelectWeek = document.getElementById('mobile-filter-select-week');
-            if (mobileSelectWeek) {
-                if (isAllSelected) mobileSelectWeek.value = 'all';
-                else if (window.currentCalendarFilters.length === 1) mobileSelectWeek.value = window.currentCalendarFilters[0];
-            }
         };
 
-        // ★ フィルターのスキップ判定を統一する共通関数（配列対応）
         window.shouldSkipEvent = (slotType, category) => {
             const filters = window.currentCalendarFilters;
-            if (filters.length === 5) return false; // 全て選択状態
+            if (filters.length === 5) return false; 
 
             if (slotType === 'class') {
-                // 授業枠の表示判定
-                // 授業枠は category を持たない場合があるため、別途判定が必要な場合があるが、
-                // 基本的に「授業(jugyo)」フィルターがオンの時のみ表示する
                 return !filters.includes('jugyo');
             } else {
                 const cat = category || 'work';
@@ -1150,7 +1109,6 @@
 
         const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         
-        // ★ 祝日APIの連携とキャッシュ機構
         window.holidays = {};
         const fetchHolidays = async () => {
             try {
@@ -1424,7 +1382,6 @@
             }
         };
 
-        // ==========================================
         window.saveStateToHistory = () => {
             undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
             if (undoStack.length > MAX_HISTORY) undoStack.shift();
@@ -1439,7 +1396,7 @@
                 allPlanners = state.planners;
                 allUnitPlans = state.unitPlans || allUnitPlans;
             } else {
-                allPlanners = state; // 古い形式との互換性
+                allPlanners = state; 
             }
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
@@ -1492,7 +1449,7 @@
                 window.saveToFirebase();
             }
 
-            window.updateFilterUI(); // 初期化時にフィルターUIを更新
+            window.updateFilterUI(); 
             initTodayButtons(); window.updateUndoRedoButtons(); window.renderCurrentView(); 
         };
 
@@ -1985,8 +1942,6 @@
         window.printMemo = () => {
             window.saveMemoLocally();
             
-            // スマホ等での印刷ダイアログ呼び出しエラーや表示崩れを防ぐため、
-            // 描画処理が完全に終了してから少し長めの遅延(500ms)後に印刷を実行する
             setTimeout(() => {
                 try {
                     window.print();
@@ -2140,7 +2095,7 @@
             const baseTt = getBaseTimetableForDate(dObj);
 
             let hasCustom = false;
-            let isSelfStudy = false; // ★ 自習フラグ
+            let isSelfStudy = false; 
 
             if (data.classes && data.classes[period.id]) {
                 const cData = data.classes[period.id];
@@ -2148,7 +2103,7 @@
                 
                 cls = cData.cls || ""; sub = cData.sub || ""; memo = cData.memo || "";
                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
-                if (cData.isSelfStudy) isSelfStudy = true; // ★ 自習フラグ取得
+                if (cData.isSelfStudy) isSelfStudy = true; 
                 hasCustom = true;
             }
             
@@ -2166,7 +2121,7 @@
                 unitPlanIdx = data.classes[period.id].unitPlanIdx;
             }
 
-            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx, isSelfStudy }; // ★ 返り値に isSelfStudy 追加
+            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx, isSelfStudy }; 
         };
 
         window.openMonthBottomSheet = (dStr, defaultHour = null, disableTransformReset = false) => {
@@ -2340,11 +2295,9 @@
             setTimeout(() => document.getElementById('class-edit-cls').focus(), 100);
         };
         
-        // ★ 追加: 週案簿モーダルを開く関数
         window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
             wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: false };
             
-            // スペシャルな予定（朝、昼、放）かどうかを判定
             if (periodId === 'sp_morning' || periodId === 'sp_noon' || periodId === 'sp_after_school') {
                 wpModalTarget.isSpecial = true;
                 document.getElementById('wp-modal-class-area').classList.add('hidden');
@@ -2379,8 +2332,8 @@
                     sourcePeriod = data.classes[periodId].sourcePeriod;
                 }
                 
-                wpSelectedDay = sourceDay === 0 ? 7 : sourceDay; // 日曜対応だが通常は月〜金
-                if (wpSelectedDay > 5) wpSelectedDay = 1; // 週末の場合は月曜基準にする
+                wpSelectedDay = sourceDay === 0 ? 7 : sourceDay; 
+                if (wpSelectedDay > 5) wpSelectedDay = 1; 
                 wpSelectedPeriod = sourcePeriod;
                 
                 window.renderWpModalButtons();
@@ -2399,7 +2352,6 @@
             document.getElementById('weekly-plan-modal').classList.remove('hidden');
             document.getElementById('weekly-plan-modal').classList.add('flex');
             
-            // 少し遅延させてフォーカスを当てる（モバイルでのキーボード表示対応など）
             setTimeout(() => {
                 if (wpModalTarget.isSpecial) {
                     document.getElementById('wp-modal-sp-title').focus();
@@ -2409,7 +2361,6 @@
             }, 100);
         };
 
-        // ★ 追加: 週案簿モーダルを閉じる関数
         window.closeWeeklyPlanModal = () => {
             document.getElementById('weekly-plan-modal').classList.add('hidden');
             document.getElementById('weekly-plan-modal').classList.remove('flex');
@@ -2733,7 +2684,6 @@
             grid.innerHTML = html;
         };
 
-        // ★ 週カレンダーの現在時刻線更新
         window.updateCurrentTimeLineInWeekView = () => {
             if (currentView !== 'week') return;
             const now = new Date();
@@ -2752,7 +2702,6 @@
                 }
             }
         };
-        // 1分ごとに更新
         setInterval(window.updateCurrentTimeLineInWeekView, 60000);
 
         window.changeWeekView = (offset) => { calendarDisplayDate.setDate(calendarDisplayDate.getDate() + (offset * 7)); renderWeekView(); };
@@ -2940,17 +2889,21 @@
                     let heightPct = Math.max(1, item.endPos - item.startPos); 
 
                     if (item.isClass) {
-                        const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); // ★ 自習フラグを渡す
+                        const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                         if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
+                        
+                        const isChanged = (cData.sourceDay !== cur.getDay()) || (cData.sourcePeriod !== (ttPeriods.findIndex(tp => tp.id === p.id) + 1));
+                        const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
+                        const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod}</div>`;
+
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')">${labelHtml}<div class="flex items-center gap-0.5 w-full truncate pointer-events-none mt-4"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
                     }
                 });
                 
-                // ★ 現在時刻の赤線描画
                 if (isToday) {
                     const now = new Date();
                     const hour = now.getHours();
@@ -3093,8 +3046,6 @@
             document.getElementById('agenda-incomplete-tasks').innerHTML = incompleteHtml;
         };
 
-        // ★ calculateCumulativeHoursForUnitPlan の修正
-        // targetDateStr を受け取り、その「前日」までをカウントの対象とするように変更
         const calculateCumulativeHoursForUnitPlan = (targetGrade, targetSub, targetDateStr = null) => {
             if (!targetGrade || !targetSub) return 0;
             const today = new Date();
@@ -3103,7 +3054,7 @@
             
             const limitDate = targetDateStr ? new Date(targetDateStr) : new Date(today);
             if (targetDateStr) {
-                limitDate.setDate(limitDate.getDate() - 1); // targetDateStr の前日まで
+                limitDate.setDate(limitDate.getDate() - 1); 
             }
             
             const classCounts = {};
@@ -3355,7 +3306,7 @@
                         let sourceDay = day.getDay(), sourcePeriod = pIdx + 1;
                         let unitPlanTask = ""; 
                         let uIdxForTask = null; 
-                        let isSelfStudy = false; // ★ 追加
+                        let isSelfStudy = false;
 
                         if (data.classes && data.classes[p.id]) {
                             const cData = data.classes[p.id];
@@ -3364,7 +3315,7 @@
                                 if (cData.sourceDay !== undefined) { sourceDay = cData.sourceDay; sourcePeriod = cData.sourcePeriod; }
                             }
                             if (cData.disabled) isExcluded = true;
-                            if (cData.isSelfStudy) isSelfStudy = true; // ★ 追加
+                            if (cData.isSelfStudy) isSelfStudy = true; 
                             
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 let tempGrade = null;
@@ -3392,13 +3343,13 @@
                         if (isExcluded) {
                             btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
                         } else if (displayCls || displaySub || displayMemo || hasCustom) {
-                            const colorClass = getClassColorClass(displayCls, displaySub, isSelfStudy); // ★ 変更
+                            const colorClass = getClassColorClass(displayCls, displaySub, isSelfStudy);
                             bgClass = colorClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
                             const textColor = colorClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
                             
                             let memoAndTaskHtml = '';
                             
-                            if (isSelfStudy) { // ★ 自習ラベル
+                            if (isSelfStudy) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-book-reader mr-0.5"></i>自習</div>`;
                             } else if (unitPlanTask) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
@@ -3416,6 +3367,7 @@
                                     let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
                                     techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                                 }
+                                <!-- ... existing code ... -->
                             } else if (displayMemo) {
                                 mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
                             } else { 
@@ -4889,8 +4841,7 @@
                     
                     progressByHour[record.idx].push({
                         cls: cls,
-                        displayDate: displayDate,
-                        dayOfWeekStr: `(${dayOfWeekStr})`,
+                        dateStr: `<span class="text-[14px]">${displayDate}</span><br><span class="text-[9px]">(${dayOfWeekStr})</span>`,
                         rawDate: record.date
                     });
                 });
@@ -4912,7 +4863,7 @@
             `;
             // クラスヘッダを追加
             classCols.forEach(clsName => {
-                html += `<th class="bg-gray-100 border border-gray-300 p-1 text-[#4a5f73] font-bold text-[10px] w-12 text-center">${clsName.split('-')[1]}組</th>`;
+                html += `<th class="bg-gray-100 border border-gray-300 p-1 text-[#4a5f73] font-bold text-[10px] w-14 text-center">${clsName.split('-')[1]}組</th>`;
             });
             
             html += `
@@ -4944,10 +4895,7 @@
 
                         progressColsHtml += `
                             <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
-                                <div class="${textColor} font-bold leading-tight flex flex-col items-center justify-center">
-                                    <span class="text-[10px] sm:text-xs">${p.displayDate}</span>
-                                    <span class="text-[7px] sm:text-[8px] opacity-80">${p.dayOfWeekStr}</span>
-                                </div>
+                                <div class="${textColor} font-bold whitespace-nowrap leading-tight">${p.dateStr}</div>
                             </td>
                         `;
                     } else {
