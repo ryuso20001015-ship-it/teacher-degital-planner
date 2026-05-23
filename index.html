@@ -416,7 +416,7 @@
         <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
                     <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <h2 id="month-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center shrink-0">YYYY年 M月</h2>
                     <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
@@ -427,7 +427,7 @@
                         </div>
                     </button>
                     
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar">
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap" style="max-width: calc(100vw - 200px);">
                         <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
@@ -448,7 +448,7 @@
         <!-- View 2: 週カレンダー -->
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
             <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 z-20 shrink-0 gap-2">
-                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
                     <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
                     <h2 id="week-view-title" class="text-sm sm:text-base font-bold text-[#4a5f73] tracking-wider w-[100px] text-center shrink-0">YYYY年 M月</h2>
                     <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
@@ -459,7 +459,7 @@
                         </div>
                     </button>
                     
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar">
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap" style="max-width: calc(100vw - 200px);">
                         <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
@@ -2893,11 +2893,7 @@
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                         if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
                         
-                        const isChanged = (cData.sourceDay !== cur.getDay()) || (cData.sourcePeriod !== (ttPeriods.findIndex(tp => tp.id === p.id) + 1));
-                        const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
-                        const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod}</div>`;
-
-                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')">${labelHtml}<div class="flex items-center gap-0.5 w-full truncate pointer-events-none mt-4"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
+                        colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight transition shadow-sm border pointer-events-auto z-10 cursor-pointer hover:brightness-95 ${blockClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%; opacity: 0.95;" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${curStr}', '${p.id}', '${p.name}')"><div class="flex items-center gap-0.5 w-full truncate pointer-events-none mt-1"><span class="font-bold text-[8px] opacity-80 shrink-0">${p.name || ''}</span><span class="font-bold text-[9px] truncate">${titleHtml}</span>${item.badge}</div></div>`;
                     } else {
                         const ev = item.ev; let bgColorClass = getEventColorClass(ev.category);
                         colContent += `<div class="absolute rounded-sm p-0.5 overflow-hidden flex flex-col leading-tight shadow-md border z-20 cursor-pointer hover:brightness-110 transition pointer-events-auto ${bgColorClass}" style="top: ${item.startPos}%; left: ${leftStr}; width: ${widthStr}; height: ${heightPct}%;" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold opacity-90 text-[8px] mb-0.5 pointer-events-none">${ev.drawStart}</span><span class="truncate text-[9px] font-bold pointer-events-none leading-snug">${ev.title}</span></div>`;
@@ -3367,7 +3363,6 @@
                                     let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
                                     techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                                 }
-                                <!-- ... existing code ... -->
                             } else if (displayMemo) {
                                 mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
                             } else { 
@@ -4969,4 +4964,4 @@
 
     </script>
 </body>
-</html>
+</html>               
