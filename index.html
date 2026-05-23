@@ -306,7 +306,7 @@
                                 <option value="work">仕事</option><option value="jugyo">授業</option><option value="club">部活</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
-                        <div class="px-3 py-2"><textarea id="add-modal-memo-sched" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
+                        <div class="px-3 py-2"><textarea id="add-modal-memo-sched" rows="4" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
                     </div>
 
                     <div id="fields-task-options" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hidden">
@@ -316,7 +316,7 @@
                                 <option value="work">仕事</option><option value="jugyo">授業</option><option value="club">部活</option><option value="student_council">生徒会</option><option value="private">プライベート</option>
                             </select>
                         </div>
-                        <div class="px-3 py-2"><textarea id="add-modal-memo-task" rows="2" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
+                        <div class="px-3 py-2"><textarea id="add-modal-memo-task" rows="4" class="w-full text-xs outline-none placeholder-gray-400 resize-none font-medium" placeholder="メモを追加..."></textarea></div>
                     </div>
                 </div>
 
@@ -427,7 +427,8 @@
                         </div>
                     </button>
                     
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap" style="max-width: calc(100vw - 200px);">
+                    <!-- ★ filter-container クラスを追加 -->
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap filter-container" style="max-width: calc(100vw - 200px);">
                         <button id="filter-btn-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
@@ -459,7 +460,8 @@
                         </div>
                     </button>
                     
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap" style="max-width: calc(100vw - 200px);">
+                    <!-- ★ filter-container クラスを追加 -->
+                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap filter-container" style="max-width: calc(100vw - 200px);">
                         <button id="filter-btn-week-all" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
                         <button id="filter-btn-week-work" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
                         <button id="filter-btn-week-jugyo" class="px-2 py-1 text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
@@ -4094,6 +4096,11 @@
                 return;
             }
 
+            // カテゴリーフィルター領域でのスワイプ開始ならカレンダーのスワイプをキャンセル
+            if (e.target.closest('.filter-container')) {
+                return;
+            }
+
             swipeStartX = e.touches[0].screenX;
             swipeStartY = e.touches[0].screenY;
             swipeTargetElem = null;
@@ -4127,6 +4134,11 @@
             
             // ボトムシートが表示中かつシート内での操作ならカレンダーのスワイプをキャンセル
             if (e.target.closest('#month-bottom-sheet')) {
+                return;
+            }
+
+            // カテゴリーフィルター領域での操作ならカレンダーのスワイプをキャンセル
+            if (e.target.closest('.filter-container')) {
                 return;
             }
 
@@ -4964,4 +4976,4 @@
 
     </script>
 </body>
-</html>               
+</html>
