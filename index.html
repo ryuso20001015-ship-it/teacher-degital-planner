@@ -415,27 +415,27 @@
         
         <!-- View 1: 月カレンダー -->
         <div id="view-month" class="view-container w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                    <button onclick="window.changeMonthView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="month-view-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-[80px] sm:w-[100px] text-center shrink-0">YYYY年 M月</h2>
-                    <button onclick="window.changeMonthView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
+            <div class="bg-white p-1.5 sm:p-3 flex justify-between items-center border-b border-gray-300 gap-1 sm:gap-2 shrink-0 min-w-0 w-full">
+                <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    <button onclick="window.changeMonthView(-1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="month-view-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-auto min-w-[70px] sm:min-w-[90px] text-center shrink-0 px-0.5">YYYY年 M月</h2>
+                    <button onclick="window.changeMonthView(1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-0.5 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
                         <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
-                            <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
+                            <span class="today-btn-date text-[9px] sm:text-xs font-bold"></span><span class="today-btn-day text-[7px] font-bold ml-0.5"></span>
                         </div>
                     </button>
-                    
-                    <!-- ★ filter-container クラスを追加 -->
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap filter-container" style="max-width: calc(100vw - 180px);">
-                        <button id="filter-btn-all" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-work" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-jugyo" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-club" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-student_council" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-private" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
-                    </div>
+                </div>
+                
+                <!-- ★ filter-container -->
+                <div class="ml-1 sm:ml-2 flex bg-gray-100 rounded-md p-0.5 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-nowrap filter-container min-w-0" style="max-width: 100%;">
+                    <button id="filter-btn-all" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
+                    <button id="filter-btn-work" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
+                    <button id="filter-btn-jugyo" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                    <button id="filter-btn-club" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
+                    <button id="filter-btn-student_council" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
+                    <button id="filter-btn-private" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
                 </div>
             </div>
             <div id="month-animation-area" class="flex flex-col flex-1 bg-gray-200 gap-[1px] min-h-0 w-full relative">
@@ -448,27 +448,27 @@
 
         <!-- View 2: 週カレンダー -->
         <div id="view-week" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-2 sm:p-3 flex flex-wrap justify-between items-center border-b border-gray-300 z-20 shrink-0 gap-2">
-                <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                    <button onclick="window.changeWeekView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="week-view-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-[80px] sm:w-[100px] text-center shrink-0">YYYY年 M月</h2>
-                    <button onclick="window.changeWeekView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-1 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
+            <div class="bg-white p-1.5 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0 gap-1 sm:gap-2 min-w-0 w-full">
+                <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    <button onclick="window.changeWeekView(-1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="week-view-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-auto min-w-[70px] sm:min-w-[90px] text-center shrink-0 px-0.5">YYYY年 M月</h2>
+                    <button onclick="window.changeWeekView(1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-0.5 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
                         <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
-                            <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
+                            <span class="today-btn-date text-[9px] sm:text-xs font-bold"></span><span class="today-btn-day text-[7px] font-bold ml-0.5"></span>
                         </div>
                     </button>
-                    
-                    <!-- ★ filter-container クラスを追加 -->
-                    <div class="ml-2 flex bg-gray-100 rounded-md p-1 items-center gap-0.5 shadow-inner shrink-0 overflow-x-auto hide-scrollbar flex-nowrap filter-container" style="max-width: calc(100vw - 180px);">
-                        <button id="filter-btn-week-all" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
-                        <button id="filter-btn-week-work" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
-                        <button id="filter-btn-week-jugyo" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
-                        <button id="filter-btn-week-club" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
-                        <button id="filter-btn-week-student_council" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
-                        <button id="filter-btn-week-private" class="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
-                    </div>
+                </div>
+                
+                <!-- ★ filter-container -->
+                <div class="ml-1 sm:ml-2 flex bg-gray-100 rounded-md p-0.5 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-nowrap filter-container min-w-0" style="max-width: 100%;">
+                    <button id="filter-btn-week-all" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
+                    <button id="filter-btn-week-work" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
+                    <button id="filter-btn-week-jugyo" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
+                    <button id="filter-btn-week-club" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
+                    <button id="filter-btn-week-student_council" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('student_council')">生徒会</button>
+                    <button id="filter-btn-week-private" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('private')">プライベート</button>
                 </div>
             </div>
 
@@ -493,15 +493,15 @@
 
         <!-- View 4: 週案簿 -->
         <div id="view-weekly-plan" class="view-container hidden w-full h-full flex flex-col bg-white shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-2 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0">
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                    <button onclick="window.changeWeeklyPlanView(-1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <h2 id="weekly-plan-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-[80px] sm:w-[100px] text-center">YYYY年 M月</h2>
-                    <button onclick="window.changeWeeklyPlanView(1)" class="w-7 h-7 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
-                    <button onclick="window.goToToday()" class="ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100" title="今日に戻る">
+            <div class="bg-white p-1.5 sm:p-3 flex justify-between items-center border-b border-gray-300 z-20 shrink-0 min-w-0 w-full">
+                <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    <button onclick="window.changeWeeklyPlanView(-1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-left text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <h2 id="weekly-plan-title" class="text-[13px] sm:text-base font-bold text-[#4a5f73] tracking-normal sm:tracking-wider w-auto min-w-[70px] sm:min-w-[90px] text-center shrink-0 px-0.5">YYYY年 M月</h2>
+                    <button onclick="window.changeWeeklyPlanView(1)" class="w-6 h-6 sm:w-8 sm:h-8 flex justify-center items-center rounded-full hover:bg-gray-200 shrink-0"><i class="fas fa-chevron-right text-[#4a5f73] text-xs sm:text-sm"></i></button>
+                    <button onclick="window.goToToday()" class="ml-0.5 sm:ml-2 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100 shrink-0" title="今日に戻る">
                         <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
                         <div class="flex items-baseline leading-none">
-                            <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
+                            <span class="today-btn-date text-[9px] sm:text-xs font-bold"></span><span class="today-btn-day text-[7px] font-bold ml-0.5"></span>
                         </div>
                     </button>
                 </div>
@@ -1051,9 +1051,9 @@
                 const allBtn = document.getElementById(`${prefix}all`);
                 if (allBtn) {
                     if (isAllSelected) {
-                        allBtn.className = 'px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0';
+                        allBtn.className = 'px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors bg-white text-[#4a5f73] shadow-sm border border-gray-200 shrink-0';
                     } else {
-                        allBtn.className = 'px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0';
+                        allBtn.className = 'px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent shrink-0';
                     }
                 }
 
@@ -1070,9 +1070,9 @@
                             else if (id === 'student_council') activeClass += 'border-purple-300 text-purple-600';
                             else if (id === 'private') activeClass += 'border-orange-300 text-orange-600';
                             
-                            btn.className = `px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors shrink-0 ${activeClass}`;
+                            btn.className = `px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0 ${activeClass}`;
                         } else {
-                            btn.className = 'px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-400 hover:bg-gray-200 hover:text-gray-800 border border-transparent opacity-60 shrink-0';
+                            btn.className = 'px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors text-gray-400 hover:bg-gray-200 hover:text-gray-800 border border-transparent opacity-60 shrink-0';
                         }
                     }
                 });
@@ -2090,6 +2090,7 @@
             return {1:{},2:{},3:{},4:{},5:{}};
         };
 
+        // ★ 修正：period.name ではなく「何限目か」の固定の文字列をキーとして取得するよう修正
         const getPeriodClass = (dateStr, period, dObj) => {
             const data = allPlanners[dateStr] || {};
             let cls = "", sub = "", memo = "", isBase = false;
@@ -2109,8 +2110,17 @@
                 hasCustom = true;
             }
             
-            if (!hasCustom && baseTt[dObj.getDay()] && baseTt[dObj.getDay()][period.name]) {
-                const baseData = baseTt[dObj.getDay()][period.name];
+            // 修正部分
+            let pNum = 1;
+            if (period.id && period.id.startsWith('p_')) {
+                pNum = parseInt(period.id.replace('p_', '')) || 1;
+            } else {
+                pNum = parseInt(period.name.replace(/[^0-9]/g, '')) || 1;
+            }
+            const periodKey = `${pNum}限`;
+
+            if (!hasCustom && baseTt[dObj.getDay()] && baseTt[dObj.getDay()][periodKey]) {
+                const baseData = baseTt[dObj.getDay()][periodKey];
                 if (baseData) {
                     cls = baseData.cls || ""; sub = baseData.sub || ""; memo = baseData.memo || ""; isBase = true;
                 }
@@ -3146,9 +3156,11 @@
                     const cData = allPlanners[dStr].classes[p.id];
                     if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
 
-                    if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][p.name]) {
-                        const bData = baseTt[dObj.getDay()][p.name];
-                                if (bData && (bData.cls || bData.sub || bData.memo)) {
+                    // ★ 修正：何限目かを示す固定文字列をキーにする
+                    const periodKey = `${pIdx + 1}限`;
+                    if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][periodKey]) {
+                        const bData = baseTt[dObj.getDay()][periodKey];
+                        if (bData && (bData.cls || bData.sub || bData.memo)) {
                             allPlanners[dStr].classes[p.id] = {
                                 cls: bData.cls || "",
                                 sub: bData.sub || "",
@@ -3296,8 +3308,10 @@
 
                         const baseTt = getBaseTimetableForDate(day);
                         let baseCls = "", baseSub = "", baseMemo = "";
-                        if (baseTt[day.getDay()] && baseTt[day.getDay()][p.name]) {
-                            baseCls = baseTt[day.getDay()][p.name].cls || ""; baseSub = baseTt[day.getDay()][p.name].sub || ""; baseMemo = baseTt[day.getDay()][p.name].memo || "";
+                        // ★ 修正：My時間割から引くためのキーを固定（1限, 2限...）にする
+                        const periodKey = `${pIdx + 1}限`;
+                        if (baseTt[day.getDay()] && baseTt[day.getDay()][periodKey]) {
+                            baseCls = baseTt[day.getDay()][periodKey].cls || ""; baseSub = baseTt[day.getDay()][periodKey].sub || ""; baseMemo = baseTt[day.getDay()][periodKey].memo || "";
                         }
 
                         let currentCls = "", currentSub = "", currentMemo = "", isExcluded = false, hasCustom = false;
@@ -3561,9 +3575,10 @@
             const dObj = new Date(wpModalTarget.targetDateStr);
             const baseTt = getBaseTimetableForDate(dObj);
             let newCls = "", newSub = "";
-            if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][`${wpSelectedPeriod}限`]) {
-                newCls = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].cls || "";
-                newSub = baseTt[wpSelectedDay][`${wpSelectedPeriod}限`].sub || "";
+            const periodKey = `${wpSelectedPeriod}限`;
+            if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][periodKey]) {
+                newCls = baseTt[wpSelectedDay][periodKey].cls || "";
+                newSub = baseTt[wpSelectedDay][periodKey].sub || "";
             }
             
             document.getElementById('wp-modal-cls').value = newCls;
@@ -3623,7 +3638,7 @@
                     sourcePeriod: wpSelectedPeriod,
                     unitPlanIdx: unitPlanIdx,
                     disabled: false,
-                    isSelfStudy: false // ★ 確定時は自習フラグを外す
+                    isSelfStudy: false
                 };
 
                 if (oldUnitPlanIdx !== null && oldUnitPlanIdx !== undefined && unitPlanIdx !== undefined && unitPlanIdx !== null) {
@@ -3646,7 +3661,7 @@
                             if (allPlanners[dStr] && allPlanners[dStr].classes) {
                                 for (const pId in allPlanners[dStr].classes) {
                                     const cData = allPlanners[dStr].classes[pId];
-                                    if (cData && !cData.disabled && !cData.isCut && cData.cls === cls && cData.sub === sub && !cData.isSelfStudy) { // ★ 自習はシフト対象外
+                                    if (cData && !cData.disabled && !cData.isCut && cData.cls === cls && cData.sub === sub && !cData.isSelfStudy) {
                                         if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                             const currentIdx = parseInt(cData.unitPlanIdx);
                                             if (currentIdx > Math.min(oldIdx, newIdx)) {
@@ -3686,16 +3701,15 @@
             const cData = allPlanners[targetDateStr].classes[targetPeriodId];
             const currentIsSelfStudy = cData && cData.isSelfStudy;
 
-            // 自習フラグのトグル
             allPlanners[targetDateStr].classes[targetPeriodId] = {
                 cls: cls,
                 sub: sub,
                 memo: memo,
                 sourceDay: wpSelectedDay,
                 sourcePeriod: wpSelectedPeriod,
-                unitPlanIdx: "", // 単元計画との連携は解除
+                unitPlanIdx: "",
                 disabled: false,
-                isSelfStudy: !currentIsSelfStudy // ★ トグル処理
+                isSelfStudy: !currentIsSelfStudy
             };
 
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -4800,7 +4814,7 @@
                         const ttPeriods = globalSettings.timetables[ttType].periods;
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                         ttPeriods.slice(0, lessonCount).forEach(p => {
-                            if (p.id === 'p_allday' || p.isAllDay) return;
+                                if (p.id === 'p_allday' || p.isAllDay) return;
                             const cData = getPeriodClass(dStr, p, curDate);
                             if (cData && !cData.disabled) {
                                 const isCut = (data.classes && data.classes[p.id] && data.classes[p.id].isCut);
