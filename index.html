@@ -922,6 +922,14 @@
         // ★ 認証状態変数
         window.currentUser = null;
 
+        // ★ データを更新した日付にタイムスタンプを付与する補助関数
+        window.setPlannerUpdated = (dateStr) => {
+            if (!allPlanners[dateStr]) {
+                allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
+            }
+            allPlanners[dateStr].updatedAt = Date.now();
+        };
+
         // ==========================================
         // === js/firebase.js の役割 (同期・DB連携) ===
         // ==========================================
@@ -1075,6 +1083,64 @@
             } catch (e) { console.error("Firebase init failed:", e); }
         };
 
+        // ★ クラウドとローカルのデータを「新しさ（updatedAt）」基準でマージする関数
+        const mergeData = (localData, cloudData) => {
+            let isChanged = false;
+            
+            // 1. カレンダー（planners）のマージ
+            if (cloudData.planners) {
+                for (const dateKey in cloudData.planners) {
+                    const cPlanner = cloudData.planners[dateKey];
+                    const lPlanner = localData.planners[dateKey];
+                    // クラウド側により新しい更新日時がある場合、またはローカルに存在しない場合はクラウドを採用
+                    if (!lPlanner || (cPlanner.updatedAt || 0) > (lPlanner.updatedAt || 0)) {
+                        localData.planners[dateKey] = cPlanner;
+                        isChanged = true;
+                    }
+                }
+            }
+            
+            // 2. 設定（settings）のマージ
+            if (cloudData.settings) {
+                if (!localData.settings || (cloudData.settings.updatedAt || 0) > (localData.settings.updatedAt || 0)) {
+                    localData.settings = cloudData.settings;
+                    isChanged = true;
+                }
+            }
+
+            // 3. 配列データ（memos, folders）をIDとupdatedAtベースでマージする汎用関数
+            const mergeArray = (localArr, cloudArr) => {
+                const map = {};
+                (localArr || []).forEach(item => map[item.id] = item);
+                (cloudArr || []).forEach(cItem => {
+                    const lItem = map[cItem.id];
+                    if (!lItem || (cItem.updatedAt || 0) > (lItem.updatedAt || 0)) {
+                        map[cItem.id] = cItem;
+                        isChanged = true;
+                    }
+                });
+                return Object.values(map);
+            };
+
+            // 4. メモとフォルダのマージ
+            if (cloudData.memos) localData.memos = mergeArray(localData.memos, cloudData.memos);
+            if (cloudData.folders) localData.folders = mergeArray(localData.folders, cloudData.folders);
+
+            // 5. 単元計画（unitPlans）のマージ
+            if (cloudData.unitPlans) {
+                for (const key in cloudData.unitPlans) {
+                    const cPlan = cloudData.unitPlans[key];
+                    const lPlan = localData.unitPlans[key];
+                    if (!lPlan || (cPlan.updatedAt || 0) > (lPlan.updatedAt || 0)) {
+                        localData.unitPlans[key] = cPlan;
+                        isChanged = true;
+                    }
+                }
+            }
+
+            return isChanged;
+        };
+
         const startFirebaseSync = (uid) => {
             if (unsubscribeSnapshot) unsubscribeSnapshot();
             const docRef = window.fb.doc(db, 'planners', uid);
@@ -1083,40 +1149,41 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const cloudTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                    
+                    // クラウド側の最終更新日時が、最後に反映したものより古ければ無視
                     if (cloudTime <= lastCloudUpdateTime) return; 
                     
                     lastCloudUpdateTime = cloudTime;
-                    let changed = false;
 
-                    if (data.planners) {
-                        allPlanners = data.planners;
-                        safeSetItem(LS_KEY, JSON.stringify(allPlanners));
-                        changed = true;
-                    }
-                    if (data.settings) {
-                        globalSettings = data.settings;
-                        if (!globalSettings.timetables) globalSettings.timetables = DEFAULT_TIMETABLES;
-                        safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
-                        changed = true;
-                        window.updateDisplayMode(); 
-                    }
-                    if (data.memos) {
-                        allMemos = data.memos;
-                        safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
-                        changed = true;
-                    }
-                    if (data.folders) {
-                        allFolders = data.folders;
-                        safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
-                        changed = true;
-                    }
-                    if (data.unitPlans) {
-                        allUnitPlans = data.unitPlans;
-                        safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
-                        changed = true;
-                    }
+                    // ★ まるごと上書きではなく、新しい方を採用するマージ処理を実行
+                    const localDataPack = {
+                        planners: allPlanners,
+                        settings: globalSettings,
+                        memos: allMemos,
+                        folders: allFolders,
+                        unitPlans: allUnitPlans
+                    };
+
+                    const changed = mergeData(localDataPack, data);
 
                     if (changed) {
+                        // マージされた最新のデータを各グローバル変数に反映
+                        allPlanners = localDataPack.planners;
+                        globalSettings = localDataPack.settings;
+                        allMemos = localDataPack.memos;
+                        allFolders = localDataPack.folders;
+                        allUnitPlans = localDataPack.unitPlans;
+
+                        // ローカルストレージに保存
+                        safeSetItem(LS_KEY, JSON.stringify(allPlanners));
+                        if (!globalSettings.timetables) globalSettings.timetables = DEFAULT_TIMETABLES;
+                        safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
+                        safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                        safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+                        safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
+
+                        // 画面更新
+                        window.updateDisplayMode(); 
                         window.renderCurrentView(); 
                         if (currentView === 'memo') window.renderMemoList();
                         if (currentView === 'unit-plan') window.renderUnitPlanView();
@@ -1555,6 +1622,7 @@
             const localUnitPlans = safeGetItem('teacher_planner_unit_plans');
             if (localUnitPlans) { try { allUnitPlans = JSON.parse(localUnitPlans); } catch(e){} }
 
+            // ★ ゴミ箱に入れてから30日経過したメモを自動で物理削除する
             const thirtyDays = 30 * 24 * 60 * 60 * 1000;
             const now = Date.now();
             let memoChanged = false;
@@ -1565,8 +1633,20 @@
                 }
                 return true;
             });
+            
+            // ★ Tombstone（論理削除）になったが、ずっと残っているものも適当な時期（30日）で消す
+            allFolders = allFolders.filter(f => {
+                if (f.isDeleted && f.updatedAt && (now - f.updatedAt) > thirtyDays) return false;
+                return true;
+            });
+            allMemos = allMemos.filter(m => {
+                if (m.isDeleted && m.updatedAt && (now - m.updatedAt) > thirtyDays) return false;
+                return true;
+            });
+
             if (memoChanged) {
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
+                safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
                 window.saveToFirebase();
             }
 
@@ -1663,10 +1743,10 @@
 
         const getFolderPath = (folderId) => {
             let path = [];
-            let curr = allFolders.find(f => f.id === folderId);
+            let curr = allFolders.find(f => f.id === folderId && !f.isDeleted);
             while (curr) {
                 path.unshift(curr);
-                curr = allFolders.find(f => f.id === curr.parentId);
+                curr = allFolders.find(f => f.id === curr.parentId && !f.isDeleted);
             }
             return path;
         };
@@ -1689,14 +1769,18 @@
             
             let filteredMemos = [];
             let currentFolders = [];
+            
+            // ★ 論理削除（Tombstone）されたものを除外して表示
+            const validMemos = allMemos.filter(m => !m.isDeleted);
+            const validFolders = allFolders.filter(f => !f.isDeleted);
 
             if (currentMemoFilter === 'favorite') {
-                filteredMemos = allMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
+                filteredMemos = validMemos.filter(m => m.isFavorite && m.categoryId !== 'trash');
                 addFolderBtnPc?.classList.add('hidden');
                 addFolderBtnSp?.classList.add('hidden');
             } else if (currentMemoFilter === 'all') {
                 const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                filteredMemos = allMemos.filter(m => {
+                filteredMemos = validMemos.filter(m => {
                     if (m.categoryId === 'trash') return false;
                     const targetTime = m.lastOpenedAt || m.updatedAt || 0;
                     return targetTime >= oneWeekAgo;
@@ -1704,14 +1788,14 @@
                 addFolderBtnPc?.classList.add('hidden');
                 addFolderBtnSp?.classList.add('hidden');
             } else if (currentMemoFilter === 'trash') {
-                filteredMemos = allMemos.filter(m => m.categoryId === 'trash');
+                filteredMemos = validMemos.filter(m => m.categoryId === 'trash');
                 addFolderBtnPc?.classList.add('hidden');
                 addFolderBtnSp?.classList.add('hidden');
             } else {
                 addFolderBtnPc?.classList.remove('hidden');
                 addFolderBtnSp?.classList.remove('hidden');
-                currentFolders = allFolders.filter(f => f.categoryId === currentMemoFilter && f.parentId === currentMemoFolderId);
-                filteredMemos = allMemos.filter(m => m.categoryId === currentMemoFilter && m.folderId === currentMemoFolderId);
+                currentFolders = validFolders.filter(f => f.categoryId === currentMemoFilter && f.parentId === currentMemoFolderId);
+                filteredMemos = validMemos.filter(m => m.categoryId === currentMemoFilter && m.folderId === currentMemoFolderId);
             }
 
             filteredMemos.sort((a, b) => {
@@ -1814,7 +1898,8 @@
                 id: 'folder_' + Date.now() + Math.random().toString(36).substr(2, 5),
                 name: name,
                 categoryId: currentMemoFilter,
-                parentId: currentMemoFolderId
+                parentId: currentMemoFolderId,
+                updatedAt: Date.now() // ★ 更新日時付与
             };
             allFolders.push(newFolder);
             safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
@@ -1824,9 +1909,27 @@
 
         window.deleteFolder = (folderId) => {
             if(confirm("フォルダを削除しますか？中にあるメモや子フォルダはカテゴリーのルートに移動されます。")) {
-                allMemos.forEach(m => { if(m.folderId === folderId) m.folderId = null; });
-                allFolders = allFolders.filter(f => f.id !== folderId);
-                allFolders.forEach(f => { if(f.parentId === folderId) f.parentId = null; });
+                const now = Date.now();
+                // フォルダの階層リセット
+                allMemos.forEach(m => { 
+                    if(m.folderId === folderId && !m.isDeleted) {
+                        m.folderId = null; 
+                        m.updatedAt = now; 
+                    }
+                });
+                
+                allFolders.forEach(f => { 
+                    if(f.parentId === folderId && !f.isDeleted) {
+                        f.parentId = null;
+                        f.updatedAt = now;
+                    }
+                });
+
+                // ★ 配列から完全に削除せず、Tombstone化する
+                const folderIndex = allFolders.findIndex(f => f.id === folderId);
+                if (folderIndex > -1) {
+                    allFolders[folderIndex] = { id: folderId, isDeleted: true, updatedAt: now };
+                }
                 
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                 safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
@@ -1838,7 +1941,8 @@
         window.updateMemoFolderOptions = () => {
             const catId = document.getElementById('memo-edit-category').value;
             const folderSelect = document.getElementById('memo-edit-folder');
-            const foldersInCat = allFolders.filter(f => f.categoryId === catId);
+            // 論理削除されていないフォルダだけ対象
+            const foldersInCat = allFolders.filter(f => f.categoryId === catId && !f.isDeleted);
             
             let html = '<option value="">(ルート)</option>';
             const buildOptions = (parentId, depth) => {
@@ -1984,7 +2088,7 @@
                 memo.folderId = folderId;
                 memo.isFavorite = isFavorite; 
                 memo.createdAt = createTimeVal; 
-                memo.updatedAt = Date.now(); 
+                memo.updatedAt = Date.now(); // ★ 更新日時を更新
             }
 
             safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
@@ -1996,8 +2100,12 @@
             window.saveMemoLocally();
             
             const memo = allMemos.find(m => m.id === editingMemoId);
-            if (memo && !memo.title.trim() && !memo.content.trim()) {
-                allMemos = allMemos.filter(m => m.id !== editingMemoId);
+            if (memo && !memo.title.trim() && !memo.content.trim() && !memo.isDeleted) {
+                // 完全な空のメモ（新規で何も書かずに閉じた場合）は物理削除でも良いが、Tombstone化しておく
+                const mIdx = allMemos.findIndex(m => m.id === editingMemoId);
+                if (mIdx > -1) {
+                    allMemos[mIdx] = { id: editingMemoId, isDeleted: true, updatedAt: Date.now() };
+                }
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                 window.saveToFirebase();
                 window.renderMemoList();
@@ -2018,7 +2126,11 @@
 
             if (memo.categoryId === 'trash') {
                 if (confirm("このメモを完全に削除してもよろしいですか？（復元できません）")) {
-                    allMemos = allMemos.filter(m => m.id !== editingMemoId);
+                    // ★ 完全に削除せず Tombstone を残す
+                    const mIdx = allMemos.findIndex(m => m.id === editingMemoId);
+                    if (mIdx > -1) {
+                        allMemos[mIdx] = { id: editingMemoId, isDeleted: true, updatedAt: Date.now() };
+                    }
                     safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                     window.saveToFirebase(); window.renderMemoList();
                     document.getElementById('memo-edit-modal').classList.add('hidden');
@@ -2030,6 +2142,7 @@
                     memo.categoryId = 'trash';
                     memo.folderId = null; 
                     memo.deletedAt = Date.now();
+                    memo.updatedAt = Date.now(); // ★
                     memo.isFavorite = false;
                     safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                     window.saveToFirebase(); window.renderMemoList();
@@ -2551,6 +2664,7 @@
                 const task = allPlanners[dateStr].reminders.find(t => t.id === taskId);
                 if (task) {
                     task.completed = completed;
+                    window.setPlannerUpdated(dateStr); // ★ 更新日時付与
                     safeSetItem(LS_KEY, JSON.stringify(allPlanners));
                     window.saveToFirebase();
                     window.renderCurrentView();
@@ -2610,6 +2724,7 @@
             } else if (currentModalMode === 'class') {
                 if (allPlanners[dateStr] && allPlanners[dateStr].classes) delete allPlanners[dateStr].classes[idOrIndex];
             }
+            window.setPlannerUpdated(dateStr); // ★ 更新日時付与
             safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView();
         };
 
@@ -2656,6 +2771,7 @@
                     } else { allPlanners[dateStr].reminders.push(tsk); }
                 }
             }
+            window.setPlannerUpdated(dateStr); // ★ 更新日時付与
             safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView(); 
         };
 
@@ -3290,6 +3406,10 @@
                         }
                     }
                 });
+                
+                if (isChanged) {
+                    window.setPlannerUpdated(dStr); // ★ 更新日時付与
+                }
             }
 
             if (isChanged) {
@@ -3521,23 +3641,36 @@
             allPlanners[dStr].timetableType = select.value;
             if (select.value === 'none') { allPlanners[dStr].lessonCount = 0; } 
             else { allPlanners[dStr].lessonCount = globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
+            window.setPlannerUpdated(dStr); // ★ 更新日時付与
             window.saveWeeklyPlan(false); 
         };
 
         window.saveWeeklyPlan = (showAlert = true) => {
             window.saveStateToHistory(); 
             const d = new Date(calendarDisplayDate); const startOfWeek = new Date(d.setDate(d.getDate() - (d.getDay() === 0 ? 7 : d.getDay()) + 1));
+            
+            let isChanged = false;
             for (let i = 0; i < 5; i++) {
                 const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
                 const dStr = getFormatDateStr(cur); const ttSelect = document.getElementById(`wp-tt-${dStr}`);
                 if (!ttSelect) continue;
                 const lessonCount = parseInt(document.getElementById(`wp-lc-${dStr}`).value);
                 if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
-                allPlanners[dStr].timetableType = ttSelect.value; allPlanners[dStr].lessonCount = lessonCount;
+                
+                if (allPlanners[dStr].timetableType !== ttSelect.value || allPlanners[dStr].lessonCount !== lessonCount) {
+                    allPlanners[dStr].timetableType = ttSelect.value; allPlanners[dStr].lessonCount = lessonCount;
+                    isChanged = true;
+                }
                 if (!allPlanners[dStr].classes) allPlanners[dStr].classes = {};
+                
+                if (isChanged) {
+                    window.setPlannerUpdated(dStr);
+                }
             }
-            window.autoApplyBaseTimetableToWeek();
-            safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); 
+            const autoApplied = window.autoApplyBaseTimetableToWeek();
+            if (isChanged || autoApplied) {
+                safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); 
+            }
             if (showAlert) { alert("週の授業計画を保存しました。"); window.renderCurrentView(); } else { renderWeeklyPlanView(); }
         };
 
@@ -3783,8 +3916,10 @@
                                                  const shiftedIdx = currentIdx + shiftAmount;
                                                  if (shiftedIdx >= 0) {
                                                      cData.unitPlanIdx = shiftedIdx.toString();
+                                                     window.setPlannerUpdated(dStr); // ★ 連鎖更新にもタイムスタンプ
                                                  } else {
                                                      cData.unitPlanIdx = ""; 
+                                                     window.setPlannerUpdated(dStr);
                                                  }
                                             }
                                         }
@@ -3797,6 +3932,7 @@
                 }
             }
             
+            window.setPlannerUpdated(targetDateStr); // ★ 更新日時付与
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -3827,6 +3963,7 @@
                 isSelfStudy: !currentIsSelfStudy
             };
 
+            window.setPlannerUpdated(targetDateStr); // ★
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -3849,6 +3986,7 @@
                 isCut: !currentData.isCut
             };
             
+            window.setPlannerUpdated(targetDateStr); // ★
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -3863,6 +4001,7 @@
             
             allPlanners[targetDateStr].classes[targetPeriodId] = { disabled: true };
             
+            window.setPlannerUpdated(targetDateStr); // ★
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -3874,6 +4013,7 @@
             const { targetDateStr, targetPeriodId } = wpModalTarget;
             if (allPlanners[targetDateStr] && allPlanners[targetDateStr].classes) {
                 delete allPlanners[targetDateStr].classes[targetPeriodId];
+                window.setPlannerUpdated(targetDateStr); // ★
             }
             
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -4134,6 +4274,7 @@
         window.saveSettings = () => {
             window.syncTempSettingsFromDOM();
             globalSettings = JSON.parse(JSON.stringify(tempSettings));
+            globalSettings.updatedAt = Date.now(); // ★ 設定全体の更新日時
             safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
             window.saveToFirebase();
             window.updateDisplayMode();
@@ -4172,6 +4313,27 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         if (data.planners && data.settings) {
+                            // ★ インポートしたデータがクラウドのデータに負けないように
+                            // すべてのデータの updatedAt を現在時刻に強制上書きする
+                            const now = Date.now();
+                            
+                            for (const dateKey in data.planners) {
+                                data.planners[dateKey].updatedAt = now;
+                            }
+                            data.settings.updatedAt = now;
+                            
+                            if (data.memos) {
+                                data.memos.forEach(m => m.updatedAt = now);
+                            }
+                            if (data.folders) {
+                                data.folders.forEach(f => f.updatedAt = now);
+                            }
+                            if (data.unitPlans) {
+                                for (const key in data.unitPlans) {
+                                    data.unitPlans[key].updatedAt = now;
+                                }
+                            }
+
                             allPlanners = data.planners;
                             globalSettings = data.settings;
                             allMemos = data.memos || [];
@@ -4628,6 +4790,7 @@
                             }
                         });
                         if (isChanged) {
+                            allUnitPlans[planKey].updatedAt = Date.now(); // ★
                             window.saveUnitPlan(false);
                         }
                     }
@@ -4801,6 +4964,7 @@
                 }
                 
                 if (isChanged) {
+                    allUnitPlans[planKey].updatedAt = Date.now(); // ★
                     window.saveUnitPlan(false);
                     window.renderUnitPlanView();
                 }
@@ -4818,6 +4982,7 @@
                 if (plans[rowIdx][field] !== cellElem.innerText) {
                     window.saveStateToHistory(); // 変更された場合のみ履歴保存
                     plans[rowIdx][field] = cellElem.innerText;
+                    allUnitPlans[planKey].updatedAt = Date.now(); // ★
                     window.saveUnitPlan(false);
                 }
             }
@@ -4835,6 +5000,7 @@
 
             const plans = allUnitPlans[planKey].plans;
             plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
+            allUnitPlans[planKey].updatedAt = Date.now(); // ★
             window.saveUnitPlan(false);
             window.renderUnitPlanView();
             setTimeout(() => {
@@ -4855,6 +5021,7 @@
                 const plans = allUnitPlans[planKey].plans;
                 plans.splice(idx, 1);
                 plans.forEach((p, i) => { p.hour = i + 1; });
+                allUnitPlans[planKey].updatedAt = Date.now(); // ★
                 window.saveUnitPlan(false);
                 window.renderUnitPlanView();
             }
@@ -4906,6 +5073,7 @@
                 allUnitPlans[planKey] = {
                     grade: grade,
                     subject: sub,
+                    updatedAt: Date.now(), // ★
                     plans: [
                         { hour: 1, task: "新しい単元の学習課題", activity: "主な学習活動・内容", note: "評価規準や準備物など" }
                     ]
