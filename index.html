@@ -14,11 +14,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.fb = {
-            initializeApp, getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged,
+            initializeApp, getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
             getFirestore, doc, setDoc, getDoc, onSnapshot, collection
         };
         window.dispatchEvent(new Event('firebase-loaded'));
@@ -76,7 +76,7 @@
         .mode-mobile #month-view-grid .date-link { font-size: 8px !important; width: 14px; height: 14px; }
         .mode-mobile #month-view-grid .absolute { border-width: 0.5px; }
         .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
-        .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
+        .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal):not(#auth-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
 
         /* ★ 週カレンダーの縦スクロール対応 (PC・スマホ共通) ★ */
         #week-scroll-area { overflow-y: auto !important; overflow-x: hidden !important; touch-action: pan-y; }
@@ -181,6 +181,43 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
+    <!-- ★ 認証モーダル (背景を白に変更し、強制ログインに対応) -->
+    <div id="auth-modal" class="fixed inset-0 bg-white z-[200] hidden flex-col justify-center items-center">
+        <div class="bg-white sm:rounded-xl sm:shadow-2xl p-6 w-full max-w-sm flex flex-col relative modal-animate sm:border border-gray-200 h-full sm:h-auto justify-center">
+            <h2 class="text-2xl font-bold text-[#4a5f73] mb-8 text-center"><i class="fas fa-book-open mr-2"></i>デジタル教師手帳</h2>
+            
+            <div class="flex mb-6 border-b border-gray-200">
+                <button id="auth-tab-login" class="flex-1 py-2 text-sm font-bold border-b-2 border-blue-500 text-blue-600 transition" onclick="window.toggleAuthTab('login')">ログイン</button>
+                <button id="auth-tab-register" class="flex-1 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 transition" onclick="window.toggleAuthTab('register')">新規作成</button>
+            </div>
+
+            <input type="hidden" id="auth-mode" value="login">
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1.5">メールアドレス</label>
+                    <input type="email" id="auth-email" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="teacher@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1.5">パスワード</label>
+                    <input type="password" id="auth-password" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="••••••••">
+                    <p id="auth-password-help" class="text-[10px] text-gray-500 mt-1.5 hidden"><i class="fas fa-info-circle"></i> 未入力の場合は自動生成されます。</p>
+                </div>
+            </div>
+
+            <button id="auth-submit-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition shadow-sm mb-6 text-sm" onclick="window.handleAuthSubmit()">ログイン</button>
+
+            <div class="relative flex items-center justify-center mb-6">
+                <div class="absolute border-t border-gray-300 w-full"></div>
+                <span class="bg-white px-3 text-xs text-gray-400 font-bold relative z-10">または</span>
+            </div>
+
+            <button class="w-full bg-gray-50 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-100 border border-gray-300 transition shadow-sm text-sm" onclick="window.guestLogin()">
+                <i class="fas fa-user-secret mr-1.5"></i> ゲストとして利用（お試し）
+            </button>
+        </div>
+    </div>
+
     <header class="h-14 bg-[#1a1a2e] text-white flex justify-between items-center px-2 sm:px-4 shadow-md z-50 relative shrink-0 gap-2 border-b border-gray-800">
         <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto custom-scrollbar flex-1 min-w-0 pb-1 sm:pb-0 hide-scrollbar">
             <div class="font-bold flex items-center gap-1.5 shrink-0 text-sm">
@@ -220,6 +257,8 @@
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- ★ ログイン状態表示ボタン -->
+            <button id="nav-btn-auth" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.showAuthModal()"><i class="fas fa-sign-in-alt"></i></button>
             <div class="flex gap-1 sm:gap-2 shrink-0">
                 <button id="nav-btn-settings" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
             </div>
@@ -631,6 +670,20 @@
             </div>
             <div class="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-50 custom-scrollbar">
 
+                <!-- ★ アカウントと同期設定 -->
+                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
+                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-user-circle text-blue-500 mr-1.5"></i> アカウントと同期</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">ログイン中のアカウントにデータが保存され、他の端末と同期されます。</p>
+                    
+                    <div class="flex items-center justify-between gap-3 bg-blue-50 p-3 rounded border border-blue-100">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-blue-800 mb-0.5">ログイン中のアカウント:</span>
+                            <span id="display-account-email" class="text-sm font-bold text-blue-600 truncate">未ログイン</span>
+                        </div>
+                        <button onclick="window.logout()" class="px-3 py-1.5 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600 shadow-sm transition whitespace-nowrap">ログアウト</button>
+                    </div>
+                </div>
+
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
                     <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-table text-green-500 mr-1.5"></i> My時間割の設定</h3>
                     <p class="text-[10px] sm:text-xs text-gray-500 mb-3">月〜金曜日の決まった授業を入力・選択しておくと、週案簿やカレンダーの授業枠に自動反映されます。<br>学期ごとに適用期間を設定して切り替えることができます。</p>
@@ -641,24 +694,6 @@
                     <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-clock text-blue-500 mr-1.5"></i> 授業時間（日課）の設定</h3>
                     <p class="text-[10px] sm:text-xs text-gray-500 mb-3">週カレンダーなどに表示されるコマ（行）を追加・削除・編集できます。</p>
                     <div class="space-y-4" id="settings-timetables-container"></div>
-                </div>
-
-                <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
-                    <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-sync-alt text-blue-500 mr-1.5"></i> 端末間のデータ同期と管理</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">以下の同期コードを他の端末（スマホやiPadなど）で入力すると、データがリアルタイムで共有されます。</p>
-                    
-                    <div class="flex items-center gap-3 mb-3 bg-blue-50 p-2.5 rounded border border-blue-100">
-                        <span class="text-xs font-bold text-blue-800">あなたの同期コード:</span>
-                        <span id="display-sync-id" class="text-lg font-bold tracking-widest text-blue-600 bg-white px-2 py-0.5 rounded shadow-sm border border-blue-200 select-all">--------</span>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-3">
-                        <label class="text-[10px] sm:text-xs font-bold text-gray-600 mb-1 block">他の端末のデータとリンクする（この端末のデータは上書きされます）</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" id="input-sync-id" placeholder="8桁の数字コードを入力" class="border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-[#4a5f73] flex-1 font-bold tracking-widest">
-                            <button onclick="window.linkDevice()" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 shadow-sm transition whitespace-nowrap">リンクする</button>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mt-5 mb-5">
@@ -883,22 +918,103 @@
         window.lastColorBtn = null;
 
         window.currentTaskCompleted = false;
+        
+        // ★ 認証状態変数
+        window.currentUser = null;
 
         // ==========================================
         // === js/firebase.js の役割 (同期・DB連携) ===
         // ==========================================
         let db, auth;
         let unsubscribeSnapshot = null;
-        let isLinkedDevice = false; 
         let lastCloudUpdateTime = 0; 
 
-        const getSyncId = () => {
-            let id = safeGetItem('teacher_planner_sync_id');
-            if (!id) {
-                id = Math.floor(10000000 + Math.random() * 90000000).toString();
-                safeSetItem('teacher_planner_sync_id', id);
+        // ★ 認証モーダル関連関数
+        window.showAuthModal = () => {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('flex');
+        };
+
+        window.hideAuthModal = () => {
+            if (window.currentUser) {
+                document.getElementById('auth-modal').classList.add('hidden');
+                document.getElementById('auth-modal').classList.remove('flex');
+            } else {
+                alert("データの保存・同期を利用するにはログインが必要です。");
             }
-            return id;
+        };
+
+        window.toggleAuthTab = (mode) => {
+            document.getElementById('auth-mode').value = mode;
+            if (mode === 'login') {
+                document.getElementById('auth-tab-login').classList.add('border-blue-500', 'text-blue-600');
+                document.getElementById('auth-tab-login').classList.remove('border-transparent', 'text-gray-500');
+                document.getElementById('auth-tab-register').classList.remove('border-blue-500', 'text-blue-600');
+                document.getElementById('auth-tab-register').classList.add('border-transparent', 'text-gray-500');
+                document.getElementById('auth-submit-btn').textContent = 'ログイン';
+                document.getElementById('auth-password-help').classList.add('hidden');
+            } else {
+                document.getElementById('auth-tab-register').classList.add('border-blue-500', 'text-blue-600');
+                document.getElementById('auth-tab-register').classList.remove('border-transparent', 'text-gray-500');
+                document.getElementById('auth-tab-login').classList.remove('border-blue-500', 'text-blue-600');
+                document.getElementById('auth-tab-login').classList.add('border-transparent', 'text-gray-500');
+                document.getElementById('auth-submit-btn').textContent = 'アカウント作成';
+                document.getElementById('auth-password-help').classList.remove('hidden');
+            }
+        };
+
+        window.handleAuthSubmit = async () => {
+            if (!auth) {
+                alert("Firebaseの初期化が完了していません。再読み込みしてください。");
+                return;
+            }
+            const mode = document.getElementById('auth-mode').value;
+            const email = document.getElementById('auth-email').value.trim();
+            let password = document.getElementById('auth-password').value;
+
+            if (!email) {
+                alert("メールアドレスを入力してください。");
+                return;
+            }
+
+            try {
+                if (mode === 'register') {
+                    if (!password) {
+                        // パスワード自動生成 (8桁のランダム文字列 + aA1!)
+                        password = Math.random().toString(36).slice(-8) + "aA1!";
+                        alert(`パスワードが自動生成されました。\nログインに必要なので必ずメモしてください。\n\nパスワード: ${password}`);
+                    }
+                    await window.fb.createUserWithEmailAndPassword(auth, email, password);
+                } else {
+                    if (!password) {
+                        alert("パスワードを入力してください。");
+                        return;
+                    }
+                    await window.fb.signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("認証エラー: " + e.message);
+            }
+        };
+
+        window.guestLogin = async () => {
+            if (!auth) {
+                alert("Firebaseの初期化が完了していません。再読み込みしてください。");
+                return;
+            }
+            try {
+                await window.fb.signInAnonymously(auth);
+            } catch (e) {
+                console.error(e);
+                alert("ゲストログインエラー: " + e.message);
+            }
+        };
+
+        window.logout = async () => {
+            if (confirm("ログアウトしますか？")) {
+                await window.fb.signOut(auth);
+            }
         };
 
         const initFirebase = async () => {
@@ -919,18 +1035,49 @@
                 auth = window.fb.getAuth(app);
                 db = window.fb.getFirestore(app);
 
-                await window.fb.signInAnonymously(auth);
-                window.fb.onAuthStateChanged(auth, (user) => { if (user) startFirebaseSync(); });
+                window.fb.onAuthStateChanged(auth, (user) => {
+                    window.currentUser = user;
+                    const authBtn = document.getElementById('nav-btn-auth');
+                    const emailDisp = document.getElementById('display-account-email');
+
+                    if (user) {
+                        document.getElementById('auth-modal').classList.add('hidden');
+                        document.getElementById('auth-modal').classList.remove('flex');
+                        
+                        if (authBtn) {
+                            authBtn.innerHTML = '<i class="fas fa-sign-out-alt text-red-400"></i>';
+                            authBtn.onclick = window.logout;
+                        }
+                        if (emailDisp) {
+                            emailDisp.textContent = user.isAnonymous ? "ゲストユーザー (お試し中)" : user.email;
+                        }
+
+                        // ★ uidベースで同期開始
+                        startFirebaseSync(user.uid);
+                    } else {
+                        // 未ログイン時は強制表示
+                        window.showAuthModal();
+                        
+                        if (authBtn) {
+                            authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i>';
+                            authBtn.onclick = window.showAuthModal;
+                        }
+                        if (emailDisp) {
+                            emailDisp.textContent = "未ログイン";
+                        }
+                        
+                        if (unsubscribeSnapshot) {
+                            unsubscribeSnapshot();
+                            unsubscribeSnapshot = null;
+                        }
+                    }
+                });
             } catch (e) { console.error("Firebase init failed:", e); }
         };
 
-        const startFirebaseSync = () => {
-            const syncId = getSyncId();
-            const displayElem = document.getElementById('display-sync-id');
-            if (displayElem) displayElem.textContent = syncId;
-
+        const startFirebaseSync = (uid) => {
             if (unsubscribeSnapshot) unsubscribeSnapshot();
-            const docRef = window.fb.doc(db, 'planners', syncId);
+            const docRef = window.fb.doc(db, 'planners', uid);
             
             unsubscribeSnapshot = window.fb.onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -975,19 +1122,18 @@
                         if (currentView === 'unit-plan') window.renderUnitPlanView();
                     }
                 } else {
-                    if (!isLinkedDevice) {
-                        window.saveToFirebase();
-                    } else {
-                        console.warn("リンク先のデータが存在しません。同期を中止します。");
-                    }
+                    // クラウドにデータが無い場合は、現在のローカルデータをアップロード
+                    window.saveToFirebase();
                 }
+            }, (error) => {
+                console.error("Firestore sync error:", error);
             });
         };
 
         window.saveToFirebase = async () => {
-            if (!db || !auth || !auth.currentUser) return;
-            const syncId = getSyncId();
-            const docRef = window.fb.doc(db, 'planners', syncId);
+            if (!db || !auth || !window.currentUser) return;
+            const uid = window.currentUser.uid;
+            const docRef = window.fb.doc(db, 'planners', uid);
             const statusEl = document.getElementById('sync-status');
             if (statusEl) statusEl.classList.remove('hidden');
 
@@ -1011,50 +1157,8 @@
             }
         };
 
-        // ★修正部分：リンク処理を「強制上書き＆リロード方式」に変更
-        window.linkDevice = async () => {
-            const input = document.getElementById('input-sync-id').value.trim();
-            if (/^\d{8}$/.test(input)) {
-                if (confirm(`同期コード ${input} にリンクします。\n現在のこの端末のデータは失われ、リンク先のデータで上書きされますがよろしいですか？`)) {
-                    
-                    try {
-                        const docRef = window.fb.doc(db, 'planners', input);
-                        const docSnap = await window.fb.getDoc(docRef);
-                        
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            
-                            // ★ Firebaseから取得したデータを直接ローカルストレージに強制上書き
-                            if (data.planners) safeSetItem(LS_KEY, JSON.stringify(data.planners));
-                            if (data.settings) safeSetItem('teacher_planner_settings', JSON.stringify(data.settings));
-                            if (data.memos) safeSetItem('teacher_planner_memos', JSON.stringify(data.memos));
-                            if (data.folders) safeSetItem('teacher_planner_folders', JSON.stringify(data.folders));
-                            if (data.unitPlans) safeSetItem('teacher_planner_unit_plans', JSON.stringify(data.unitPlans));
-                            
-                            // 同期IDを更新
-                            safeSetItem('teacher_planner_sync_id', input);
-                            
-                            alert("クラウドからデータを取得しました。画面を再読み込みして復元を完了します。");
-                            // ★ 強制リロードすることで、初期化処理をやり直し、確実に画面に反映させる
-                            window.location.reload();
-                            
-                        } else {
-                            // 存在しない場合はキャンセルしてデータを守る
-                            alert(`同期コード「${input}」のデータは存在しません。\n入力間違いがないか確認してください。`);
-                        }
-                    } catch (error) {
-                        console.error("Link check error:", error);
-                        alert("データの確認中にエラーが発生しました。\nネットワーク状況、またはFirebaseのセキュリティルール（有効期限）を確認してください。");
-                    }
-                }
-            } else { 
-                alert("正しい8桁の数字を入力してください。"); 
-            }
-        };
-
         if (window.fb) initFirebase();
         else window.addEventListener('firebase-loaded', () => initFirebase());
-
 
         // ==========================================
         // === js/main.js の役割 (全体制御・ロジック) ===
@@ -2000,8 +2104,6 @@
             
             if(viewName === 'settings') {
                 initSettingsView();
-                const dSync = document.getElementById('display-sync-id');
-                if(dSync) dSync.textContent = getSyncId();
             }
 
             if(viewName === 'memo') {
@@ -2022,7 +2124,6 @@
                 }, 50);
             }
         };
-
 
         // ==========================================
         // === js/calendar.js の役割 (各種描画処理) ===
@@ -2064,7 +2165,7 @@
         
         document.addEventListener('click', (e) => { 
             if (!document.body.contains(e.target)) return;
-            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal') && !e.target.closest('#custom-color-palette')) {
+            if (!e.target.closest('.calendar-cell') && !e.target.closest('.timeline-cell') && !e.target.closest('#add-modal') && !e.target.closest('.nav-btn') && !e.target.closest('#week-view-allday') && !e.target.closest('#month-bottom-sheet') && !e.target.closest('#memo-edit-modal') && !e.target.closest('#weekly-plan-modal') && !e.target.closest('#custom-color-palette') && !e.target.closest('#auth-modal')) {
                 window.clearCellSelection(); 
             } 
         });
@@ -3173,7 +3274,6 @@
                     const cData = allPlanners[dStr].classes[p.id];
                     if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
 
-                    // ★ 修正：何限目かを示す固定文字列をキーにする
                     const periodKey = `${pIdx + 1}限`;
                     if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][periodKey]) {
                         const bData = baseTt[dObj.getDay()][periodKey];
@@ -3206,7 +3306,6 @@
             const dayOfWeekNum = d.getDay() === 0 ? 7 : d.getDay(); 
             const startOfWeek = new Date(d.setDate(d.getDate() - dayOfWeekNum + 1));
             document.getElementById('weekly-plan-title').textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth()+1}月`;
-
             const workDays = [];
             for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
             const techCountsMap = calculateTechCountsForWeek(startOfWeek);
@@ -3325,7 +3424,6 @@
 
                         const baseTt = getBaseTimetableForDate(day);
                         let baseCls = "", baseSub = "", baseMemo = "";
-                        // ★ 修正：My時間割から引くためのキーを固定（1限, 2限...）にする
                         const periodKey = `${pIdx + 1}限`;
                         if (baseTt[day.getDay()] && baseTt[day.getDay()][periodKey]) {
                             baseCls = baseTt[day.getDay()][periodKey].cls || ""; baseSub = baseTt[day.getDay()][periodKey].sub || ""; baseMemo = baseTt[day.getDay()][periodKey].memo || "";
@@ -4078,11 +4176,13 @@
                             globalSettings = data.settings;
                             allMemos = data.memos || [];
                             allFolders = data.folders || [];
+                            allUnitPlans = data.unitPlans || [];
                             
                             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
                             safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
                             safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                             safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
+                            safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
                             
                             window.saveToFirebase();
                             alert('データの復元が完了しました。画面を再読み込みします。');
