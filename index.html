@@ -163,7 +163,7 @@
             
             * {
                 -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             @page { margin: 15mm; size: auto; }
@@ -181,14 +181,21 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
-    <!-- ★ 認証モーダル -->
-    <div id="auth-modal" class="fixed inset-0 bg-white z-[200] hidden flex-col justify-center items-center">
-        <div class="bg-white sm:rounded-xl sm:shadow-2xl p-6 w-full max-w-sm flex flex-col relative modal-animate sm:border border-gray-200 h-full sm:h-auto justify-center">
+    <!-- ★ 認証モーダル (起動時に必ず表示されるよう flex をデフォルトに設定し、ローディングとフォームを分離) -->
+    <div id="auth-modal" class="fixed inset-0 bg-white z-[200] flex flex-col justify-center items-center">
+        <!-- 認証確認中ローディング -->
+        <div id="auth-loading" class="flex flex-col items-center justify-center h-full w-full">
+            <i class="fas fa-spinner fa-spin text-4xl text-[#4a5f73] mb-4"></i>
+            <p class="text-sm font-bold text-gray-500">アカウントを確認中...</p>
+        </div>
+
+        <!-- ログインフォーム -->
+        <div id="auth-form-container" class="hidden bg-white sm:rounded-xl sm:shadow-2xl p-6 w-full max-w-sm flex-col relative modal-animate sm:border border-gray-200 h-full sm:h-auto justify-center">
             <h2 class="text-2xl font-bold text-[#4a5f73] mb-8 text-center"><i class="fas fa-book-open mr-2"></i>デジタル教師手帳</h2>
             
             <div class="flex mb-6 border-b border-gray-200">
-                <button id="auth-tab-login" class="flex-1 py-2 text-sm font-bold border-b-2 border-blue-500 text-blue-600 transition" onclick="window.toggleAuthTab('login')">ログイン</button>
-                <button id="auth-tab-register" class="flex-1 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 transition" onclick="window.toggleAuthTab('register')">新規作成</button>
+                <button type="button" id="auth-tab-login" class="flex-1 py-2 text-sm font-bold border-b-2 border-blue-500 text-blue-600 transition" onclick="window.toggleAuthTab('login')">ログイン</button>
+                <button type="button" id="auth-tab-register" class="flex-1 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 transition" onclick="window.toggleAuthTab('register')">新規作成</button>
             </div>
 
             <input type="hidden" id="auth-mode" value="login">
@@ -196,23 +203,23 @@
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1.5">メールアドレス</label>
-                    <input type="email" id="auth-email" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="teacher@example.com">
+                    <input type="email" id="auth-email" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="teacher@example.com" onkeydown="window.handleAuthKeyDown(event)">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1.5">パスワード</label>
-                    <input type="password" id="auth-password" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="••••••••">
+                    <input type="password" id="auth-password" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-bold bg-gray-50 focus:bg-white transition-colors" placeholder="••••••••" onkeydown="window.handleAuthKeyDown(event)">
                     <p id="auth-password-help" class="text-[10px] text-gray-500 mt-1.5 hidden"><i class="fas fa-info-circle"></i> 未入力の場合は自動生成されます。</p>
                 </div>
             </div>
 
-            <button id="auth-submit-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition shadow-sm mb-6 text-sm" onclick="window.handleAuthSubmit()">ログイン</button>
+            <button type="button" id="auth-submit-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition shadow-sm mb-6 text-sm" onclick="window.handleAuthSubmit()">ログイン</button>
 
             <div class="relative flex items-center justify-center mb-6">
                 <div class="absolute border-t border-gray-300 w-full"></div>
                 <span class="bg-white px-3 text-xs text-gray-400 font-bold relative z-10">または</span>
             </div>
 
-            <button class="w-full bg-gray-50 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-100 border border-gray-300 transition shadow-sm text-sm" onclick="window.guestLogin()">
+            <button type="button" class="w-full bg-gray-50 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-100 border border-gray-300 transition shadow-sm text-sm" onclick="window.guestLogin()">
                 <i class="fas fa-user-secret mr-1.5"></i> ゲストとして利用（お試し）
             </button>
         </div>
@@ -930,10 +937,12 @@
             allPlanners[dateStr].updatedAt = Date.now();
         };
 
-        // ★ アカウントが切り替わったときにローカルデータをリセットする関数
+        // ★ アカウントが切り替わったとき・未ログイン時にローカルデータをリセットする関数
         window.clearLocalData = () => {
+            if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+            
             allPlanners = {};
-            const patts = globalSettings.baseTimetablePatterns || [];
+            const patts = [ { id: 'p_1', name: 'パターン1', startDate: '', endDate: '', data: {1:{},2:{},3:{},4:{},5:{}} } ];
             globalSettings = { timetables: DEFAULT_TIMETABLES, displayMode: 'auto', baseTimetablePatterns: patts };
             allMemos = [];
             allFolders = [];
@@ -945,9 +954,19 @@
             safeRemoveItem('teacher_planner_folders');
             safeRemoveItem('teacher_planner_unit_plans');
             
-            if (typeof window.renderCurrentView === 'function') {
-                window.renderCurrentView();
-            }
+            lastCloudUpdateTime = 0;
+            undoStack = [];
+            redoStack = [];
+            window.updateUndoRedoButtons();
+            
+            editingMemoId = null;
+            selectedCellId = null;
+            selectedSlot = null;
+            
+            // 入力欄などの状態もリセット
+            if(document.getElementById('add-modal-title')) document.getElementById('add-modal-title').value = '';
+            if(document.getElementById('memo-edit-title')) document.getElementById('memo-edit-title').value = '';
+            if(document.getElementById('memo-edit-content')) document.getElementById('memo-edit-content').innerHTML = '';
         };
 
         // ==========================================
@@ -959,9 +978,22 @@
         let currentUid = safeGetItem('last_logged_in_uid'); // ★ 前回のUIDを保持
 
         // ★ 認証モーダル関連関数
+        window.isAuthInitialized = false;
+
         window.showAuthModal = () => {
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
+            
+            if (window.isAuthInitialized) {
+                document.getElementById('auth-loading').classList.add('hidden');
+                document.getElementById('auth-form-container').classList.remove('hidden');
+                document.getElementById('auth-form-container').classList.add('flex');
+            } else {
+                document.getElementById('auth-loading').classList.remove('hidden');
+                document.getElementById('auth-loading').classList.add('flex');
+                document.getElementById('auth-form-container').classList.add('hidden');
+                document.getElementById('auth-form-container').classList.remove('flex');
+            }
         };
 
         window.hideAuthModal = () => {
@@ -992,6 +1024,12 @@
             }
         };
 
+        window.handleAuthKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                window.handleAuthSubmit();
+            }
+        };
+
         window.handleAuthSubmit = async () => {
             if (!auth) {
                 alert("Firebaseの初期化が完了していません。再読み込みしてください。");
@@ -1013,12 +1051,14 @@
                         password = Math.random().toString(36).slice(-8) + "aA1!";
                         alert(`パスワードが自動生成されました。\nログインに必要なので必ずメモしてください。\n\nパスワード: ${password}`);
                     }
+                    window.clearLocalData(); // ★ 登録直前にクリア
                     await window.fb.createUserWithEmailAndPassword(auth, email, password);
                 } else {
                     if (!password) {
                         alert("パスワードを入力してください。");
                         return;
                     }
+                    window.clearLocalData(); // ★ ログイン直前にクリア
                     await window.fb.signInWithEmailAndPassword(auth, email, password);
                 }
             } catch (e) {
@@ -1033,6 +1073,7 @@
                 return;
             }
             try {
+                window.clearLocalData(); // ★ ゲストログイン直前にクリア
                 await window.fb.signInAnonymously(auth);
             } catch (e) {
                 console.error(e);
@@ -1041,7 +1082,9 @@
         };
 
         window.logout = async () => {
-            if (confirm("ログアウトしますか？")) {
+            if (confirm("ログアウトしますか？（※同期されていないデータは失われます）")) {
+                window.clearLocalData(); // ★ ログアウト実行直前にクリア
+                initDataSync(); // 画面を空データでリセット
                 await window.fb.signOut(auth);
             }
         };
@@ -1065,6 +1108,7 @@
                 db = window.fb.getFirestore(app);
 
                 window.fb.onAuthStateChanged(auth, (user) => {
+                    window.isAuthInitialized = true; // ★ 初期化完了をマーク
                     window.currentUser = user;
                     const authBtn = document.getElementById('nav-btn-auth');
                     const emailDisp = document.getElementById('display-account-email');
@@ -1076,6 +1120,9 @@
                         }
                         safeSetItem('last_logged_in_uid', user.uid);
                         currentUid = user.uid;
+
+                        // ★ ここで初めてローカルデータをロード（新規なら空データがセットされる）
+                        initDataSync();
 
                         document.getElementById('auth-modal').classList.add('hidden');
                         document.getElementById('auth-modal').classList.remove('flex');
@@ -1091,10 +1138,13 @@
                         // ★ uidベースで同期開始
                         startFirebaseSync(user.uid);
                     } else {
-                        // ★ ログアウト時もローカルデータをクリアする
+                        // ★ 未ログイン時は常にローカルデータをクリアする
                         window.clearLocalData();
                         safeRemoveItem('last_logged_in_uid');
                         currentUid = null;
+                        
+                        // 空のデータで画面を描画して過去のデータを隠す
+                        initDataSync();
 
                         // 未ログイン時は強制表示
                         window.showAuthModal();
@@ -1222,7 +1272,7 @@
                         if (currentView === 'unit-plan') window.renderUnitPlanView();
                     }
                 } else {
-                    // クラウドにデータが無い場合は、現在のローカルデータをアップロード
+                    // クラウドにデータが無い場合（新規等）は、現在のローカルデータ（空のはず）をアップロード
                     window.saveToFirebase();
                 }
             }, (error) => {
@@ -1680,7 +1730,7 @@
             if (memoChanged) {
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                 safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
-                window.saveToFirebase();
+                // Firebase初期化前の呼び出しである可能性があるため、ここではsaveToFirebaseは呼ばない
             }
 
             window.updateFilterUI(); 
@@ -3404,8 +3454,7 @@
             
             let isChanged = false;
 
-            for (let i = 0; i < 5; i++) {
-                const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
+            for (let i = 0; i < 5; i++) {const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
                 const dStr = getFormatDateStr(cur);
                 const dObj = new Date(dStr);
                 const ttType = getTtType(dStr);
