@@ -181,7 +181,7 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
-    <!-- ★ 認証モーダル (背景を白に変更し、強制ログインに対応) -->
+    <!-- ★ 認証モーダル -->
     <div id="auth-modal" class="fixed inset-0 bg-white z-[200] hidden flex-col justify-center items-center">
         <div class="bg-white sm:rounded-xl sm:shadow-2xl p-6 w-full max-w-sm flex flex-col relative modal-animate sm:border border-gray-200 h-full sm:h-auto justify-center">
             <h2 class="text-2xl font-bold text-[#4a5f73] mb-8 text-center"><i class="fas fa-book-open mr-2"></i>デジタル教師手帳</h2>
@@ -930,12 +930,33 @@
             allPlanners[dateStr].updatedAt = Date.now();
         };
 
+        // ★ アカウントが切り替わったときにローカルデータをリセットする関数
+        window.clearLocalData = () => {
+            allPlanners = {};
+            const patts = globalSettings.baseTimetablePatterns || [];
+            globalSettings = { timetables: DEFAULT_TIMETABLES, displayMode: 'auto', baseTimetablePatterns: patts };
+            allMemos = [];
+            allFolders = [];
+            allUnitPlans = {};
+            
+            safeRemoveItem(LS_KEY);
+            safeRemoveItem('teacher_planner_settings');
+            safeRemoveItem('teacher_planner_memos');
+            safeRemoveItem('teacher_planner_folders');
+            safeRemoveItem('teacher_planner_unit_plans');
+            
+            if (typeof window.renderCurrentView === 'function') {
+                window.renderCurrentView();
+            }
+        };
+
         // ==========================================
         // === js/firebase.js の役割 (同期・DB連携) ===
         // ==========================================
         let db, auth;
         let unsubscribeSnapshot = null;
         let lastCloudUpdateTime = 0; 
+        let currentUid = safeGetItem('last_logged_in_uid'); // ★ 前回のUIDを保持
 
         // ★ 認証モーダル関連関数
         window.showAuthModal = () => {
@@ -1049,6 +1070,13 @@
                     const emailDisp = document.getElementById('display-account-email');
 
                     if (user) {
+                        // ★ アカウントが切り替わった場合、ローカルデータを初期化して混在を防ぐ
+                        if (currentUid && currentUid !== user.uid) {
+                            window.clearLocalData();
+                        }
+                        safeSetItem('last_logged_in_uid', user.uid);
+                        currentUid = user.uid;
+
                         document.getElementById('auth-modal').classList.add('hidden');
                         document.getElementById('auth-modal').classList.remove('flex');
                         
@@ -1063,6 +1091,11 @@
                         // ★ uidベースで同期開始
                         startFirebaseSync(user.uid);
                     } else {
+                        // ★ ログアウト時もローカルデータをクリアする
+                        window.clearLocalData();
+                        safeRemoveItem('last_logged_in_uid');
+                        currentUid = null;
+
                         // 未ログイン時は強制表示
                         window.showAuthModal();
                         
@@ -3388,7 +3421,15 @@
 
                 ttPeriods.slice(0, lessonCount).forEach((p, pIdx) => {
                     const cData = allPlanners[dStr].classes[p.id];
-                    if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut)) return;
+                    
+                    // ★ ここが修正ポイント ★
+                    // 以前は「何も設定がない場合のみ自動適用」としていましたが、
+                    // 移動先が「クラスも教科もない空きコマ」だった場合、意図的に空きコマ（isCut等）になっていなければ
+                    // 強制的にBaseTimetableで上書きされてしまっていました。
+                    // そこで、明示的に変更された記録（sourceDay, sourcePeriodの変更）があれば、空きコマでも上書きしないようにします。
+                    const isMovedOrModified = cData && (cData.sourceDay !== dObj.getDay() || cData.sourcePeriod !== (pIdx + 1));
+                    
+                    if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut || isMovedOrModified)) return;
 
                     const periodKey = `${pIdx + 1}限`;
                     if (baseTt[dObj.getDay()] && baseTt[dObj.getDay()][periodKey]) {
@@ -3821,9 +3862,11 @@
             window.renderWpModalButtons();
             
             const dObj = new Date(wpModalTarget.targetDateStr);
+            // ★ ここで「変更した曜日」に基づいてBaseTimetableを取得するように修正
             const baseTt = getBaseTimetableForDate(dObj);
             let newCls = "", newSub = "";
             const periodKey = `${wpSelectedPeriod}限`;
+            // wpSelectedDay をそのまま使って、その曜日のデータを引っ張ってくる
             if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][periodKey]) {
                 newCls = baseTt[wpSelectedDay][periodKey].cls || "";
                 newSub = baseTt[wpSelectedDay][periodKey].sub || "";
