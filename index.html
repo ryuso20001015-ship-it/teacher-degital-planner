@@ -265,7 +265,10 @@
 
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <!-- ★ ログイン状態表示ボタン -->
-            <button id="nav-btn-auth" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.showAuthModal()"><i class="fas fa-sign-in-alt"></i></button>
+            <button id="nav-btn-auth" class="flex items-center justify-center gap-1.5 px-2 py-1.5 sm:px-3 rounded-lg border border-gray-600 bg-gray-800 hover:bg-gray-700 transition text-gray-200 text-xs font-bold max-w-[110px] sm:max-w-[160px] shrink-0" onclick="window.showAuthModal()">
+                <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                <span class="truncate">確認中...</span>
+            </button>
             <div class="flex gap-1 sm:gap-2 shrink-0">
                 <button id="nav-btn-settings" class="nav-btn flex items-center justify-center p-1.5 sm:px-3 sm:py-1.5" onclick="window.switchView('settings')"><i class="fas fa-cog"></i></button>
             </div>
@@ -1128,8 +1131,13 @@
                         document.getElementById('auth-modal').classList.remove('flex');
                         
                         if (authBtn) {
-                            authBtn.innerHTML = '<i class="fas fa-sign-out-alt text-red-400"></i>';
                             authBtn.onclick = window.logout;
+                            if (user.isAnonymous) {
+                                authBtn.innerHTML = '<i class="fas fa-user-secret text-yellow-400"></i><span class="truncate">ゲスト</span>';
+                            } else {
+                                authBtn.innerHTML = `<i class="fas fa-user-check text-green-400"></i><span class="truncate" title="${user.email}">${user.email}</span>`;
+                            }
+                            authBtn.className = 'flex items-center justify-center gap-1.5 px-2 py-1.5 sm:px-3 rounded-lg border border-[#3b4c5c] bg-[#2a3746] hover:bg-[#3b4c5c] transition text-white text-xs font-bold max-w-[110px] sm:max-w-[180px] shrink-0';
                         }
                         if (emailDisp) {
                             emailDisp.textContent = user.isAnonymous ? "ゲストユーザー (お試し中)" : user.email;
@@ -1150,8 +1158,9 @@
                         window.showAuthModal();
                         
                         if (authBtn) {
-                            authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i>';
                             authBtn.onclick = window.showAuthModal;
+                            authBtn.innerHTML = '<i class="fas fa-sign-in-alt text-gray-300"></i><span class="truncate">ログイン</span>';
+                            authBtn.className = 'flex items-center justify-center gap-1.5 px-2 py-1.5 sm:px-3 rounded-lg border border-gray-600 bg-gray-800 hover:bg-gray-700 transition text-gray-200 text-xs font-bold max-w-[110px] sm:max-w-[160px] shrink-0';
                         }
                         if (emailDisp) {
                             emailDisp.textContent = "未ログイン";
