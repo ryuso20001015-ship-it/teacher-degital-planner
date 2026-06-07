@@ -3480,11 +3480,6 @@
                 ttPeriods.slice(0, lessonCount).forEach((p, pIdx) => {
                     const cData = allPlanners[dStr].classes[p.id];
                     
-                    // ★ ここが修正ポイント ★
-                    // 以前は「何も設定がない場合のみ自動適用」としていましたが、
-                    // 移動先が「クラスも教科もない空きコマ」だった場合、意図的に空きコマ（isCut等）になっていなければ
-                    // 強制的にBaseTimetableで上書きされてしまっていました。
-                    // そこで、明示的に変更された記録（sourceDay, sourcePeriodの変更）があれば、空きコマでも上書きしないようにします。
                     const isMovedOrModified = cData && (cData.sourceDay !== dObj.getDay() || cData.sourcePeriod !== (pIdx + 1));
                     
                     if (cData && (cData.cls || cData.sub || cData.memo || cData.disabled || cData.isCut || isMovedOrModified)) return;
@@ -3614,14 +3609,16 @@
                             bgClass = "bg-gray-100 text-gray-400";
                             btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
                             borderClass = "border border-dashed border-gray-300";
-                        } else if (title) {
+                        } else if (title || memo) {
+                            // ★ 朝・昼・夕の特記事項欄でも、題名とメモを両方表示するように変更
                             bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
                             borderClass = "border border-yellow-200 shadow-sm";
-                            btnContent = `<div class="text-[9px] sm:text-[10px] font-bold truncate w-full px-1 whitespace-normal leading-tight">${title}</div>`;
-                        } else if (memo) {
-                            bgClass = "bg-gray-50 text-gray-400 hover:bg-gray-100";
-                            borderClass = "border border-gray-200";
-                            btnContent = `<div class="text-[10px] text-gray-400 w-full text-center"><i class="fas fa-comment-dots"></i></div>`;
+                            
+                            let contentHtml = "";
+                            if (title) contentHtml += `<div class="font-bold truncate w-full px-1 leading-tight">${title}</div>`;
+                            if (memo) contentHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-0.5 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>${memo}</div>`;
+                            
+                            btnContent = `<div class="text-[9px] sm:text-[10px] flex flex-col justify-center items-center w-full h-full p-0.5 whitespace-normal">${contentHtml}</div>`;
                         } else {
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
@@ -3684,7 +3681,8 @@
 
                         const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                         const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
-                        const labelHtml = `<div class="absolute top-0 left-0 px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
+                        // ★ 左上の曜日＋時限のラベルサイズを右上の授業数カウントと統一
+                        const labelHtml = `<div class="absolute top-0 left-0 px-1 py-0.5 text-[8px] sm:text-[10px] font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
 
                         if (isExcluded) {
                             btnContent = labelHtml; borderClass = "border border-dashed border-gray-300";
@@ -3698,23 +3696,27 @@
                             if (isSelfStudy) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-book-reader mr-0.5"></i>自習</div>`;
                             } else if (unitPlanTask) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
+                                // ★ 単元計画テキストのフォントサイズを縮小・太字解除
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
                             }
                             if (displayMemo) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] text-gray-600 truncate px-0.5 w-full mt-1 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>メモ: ${displayMemo}</div>`;
+                                // ★ 授業メモのフォントサイズを縮小・太字解除
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-1 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>メモ: ${displayMemo}</div>`;
                             }
 
                             let mainContent = '', techCountHtml = '';
 
                             if (displayCls || displaySub) {
-                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displayCls}</div><div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight">${displaySub}</div>${memoAndTaskHtml}`;
+                                // クラスと教科を横並びに変更、文字サイズ調整
+                                mainContent = `<div class="flex flex-row items-baseline justify-center gap-1 w-full px-0.5 leading-tight"><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displayCls}</div><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displaySub}</div></div>${memoAndTaskHtml}`;
                                 if (displaySub.trim() === '技術') {
                                     const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                                     let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                                    techCountHtml = `<div class="absolute bottom-0 right-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50/90 rounded-tl border-t border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
+                                    // ★ スマホ版・PC版ともに右上に配置し、テキストサイズを揃える
+                                    techCountHtml = `<div class="absolute top-0 right-0 px-1 py-0.5 text-[8px] sm:text-[10px] font-bold text-blue-600 bg-blue-50/90 rounded-bl border-b border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                                 }
                             } else if (displayMemo) {
-                                mainContent = `<div class="font-bold text-[9px] sm:text-xs ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
+                                mainContent = `<div class="font-bold text-[9px] sm:text-sm ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
                             } else { 
                                 mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; 
                             }
