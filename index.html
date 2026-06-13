@@ -78,7 +78,6 @@
         .mode-mobile #week-view-grid span, .mode-mobile #week-view-allday span { font-size: 7px !important; line-height: 1.1; }
         .mode-mobile .fixed.inset-0 > div:not(#memo-edit-modal):not(#auth-modal) { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding-top: calc(0.5rem + env(safe-area-inset-top)) !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important; border: none !important; }
 
-        /* ★ 週カレンダーの縦スクロール対応 (PC・スマホ共通) ★ */
         #week-scroll-area { overflow-y: auto !important; overflow-x: hidden !important; touch-action: pan-y; }
         #week-scroll-area > div { min-height: 1140px !important; position: absolute; top: 0; left: 0; right: 0; bottom: auto; }
         
@@ -86,27 +85,22 @@
 
         #memo-edit-content:empty::before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
 
-        /* ★ メモのリッチテキスト対応用CSS ★ */
         #memo-edit-content ul { list-style-type: disc !important; padding-left: 2em !important; margin: 1em 0 !important; }
         #memo-edit-content ol { list-style-type: decimal !important; padding-left: 2em !important; margin: 1em 0 !important; }
         #memo-edit-content li { display: list-item !important; margin-bottom: 0.25em !important; }
         #memo-edit-content blockquote { margin: 1em 0 1em 2em !important; padding-left: 1em !important; border-left: 4px solid #cbd5e1 !important; color: #64748b !important; }
         #memo-edit-content hr { border: none; border-top: 1px solid #cbd5e1; margin: 1.5em 0; }
         
-        /* ★ カスタムカラーパレット用CSS ★ */
         .color-palette-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
         .color-cell { width: 15px; height: 15px; cursor: pointer; border: 1px solid #e5e7eb; border-radius: 2px; transition: transform 0.1s ease; }
         .color-cell:hover { border-color: #000; transform: scale(1.3); position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-        /* ★ 単元計画用テーブルのセルハイライト */
         .unit-plan-cell { cursor: text; outline: none; transition: background-color 0.1s; }
         .unit-plan-cell-selected { background-color: #eff6ff !important; box-shadow: inset 0 0 0 2px #3b82f6; }
         .unit-plan-cell[contenteditable="true"] { background-color: white !important; cursor: text; box-shadow: inset 0 0 0 2px #3b82f6; }
 
-        /* ★ 単元計画の矢印用CSS */
         .progress-arrow-container { position: absolute; top: 0; bottom: 0; right: 0; left: 0; pointer-events: none; z-index: 1; }
 
-        /* ★ 現在時刻線のCSS */
         .current-time-line { position: absolute; z-index: 30; pointer-events: none; }
         .current-time-line .w-2 { width: 6px; height: 6px; border-radius: 50%; left: -3px; }
 
@@ -182,15 +176,12 @@
         <option value="技術"><option value="学活"><option value="総合"><option value="道徳">
     </datalist>
 
-    <!-- ★ 認証モーダル -->
     <div id="auth-modal" class="fixed inset-0 bg-white z-[200] flex flex-col justify-center items-center">
-        <!-- 認証確認中ローディング -->
         <div id="auth-loading" class="flex flex-col items-center justify-center h-full w-full">
             <i class="fas fa-spinner fa-spin text-4xl text-[#4a5f73] mb-4"></i>
             <p class="text-sm font-bold text-gray-500">アカウントを確認中...</p>
         </div>
 
-        <!-- ログインフォーム -->
         <div id="auth-form-container" class="hidden bg-white sm:rounded-xl sm:shadow-2xl p-6 w-full max-w-sm flex-col relative modal-animate sm:border border-gray-200 h-full sm:h-auto justify-center">
             <h2 class="text-2xl font-bold text-[#4a5f73] mb-8 text-center"><i class="fas fa-book-open mr-2"></i>デジタル教師手帳</h2>
             
@@ -787,20 +778,21 @@
                             </div>
                         </div>
 
-                        <!-- ★ ツールバーコンテナ (テキストツールと手書きツールを切り替え) -->
-                        <div id="memo-toolbar-container" class="flex items-center mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto hide-scrollbar relative">
-                            <!-- 手描きモード切替ボタン (常に表示) -->
+                        <!-- ★ ツールバーコンテナ -->
+                        <div id="memo-toolbar-container" class="flex items-center mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto custom-scrollbar flex-nowrap relative" style="touch-action: pan-x;">
+                            
+                            <!-- 手描きモード切替ボタン -->
                             <button type="button" id="memo-draw-toggle-btn" onclick="window.toggleDrawMode(this)" class="p-1.5 text-gray-600 hover:bg-blue-100 hover:text-blue-600 rounded text-sm transition shrink-0 border border-transparent shadow-sm bg-gray-50 mr-1" title="手書きモード">
                                 <i class="fas fa-pen-fancy"></i>
                             </button>
+
+                            <!-- 共通の戻る・進む -->
+                            <button type="button" onclick="window.handleMemoUndo()" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="元に戻す"><i class="fas fa-undo"></i></button>
+                            <button type="button" onclick="window.handleMemoRedo()" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="やり直し"><i class="fas fa-redo"></i></button>
                             <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
 
                             <!-- テキストツールバー -->
-                            <div id="memo-text-tools" class="flex items-center gap-1">
-                                <button type="button" onclick="document.execCommand('undo', false, null); window.triggerAutoSaveMemo();" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="元に戻す"><i class="fas fa-undo"></i></button>
-                                <button type="button" onclick="document.execCommand('redo', false, null); window.triggerAutoSaveMemo();" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="やり直し"><i class="fas fa-redo"></i></button>
-                                <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
-
+                            <div id="memo-text-tools" class="flex items-center gap-1 shrink-0 flex-nowrap">
                                 <select onchange="document.execCommand('fontName', false, this.value); window.triggerAutoSaveMemo();" class="p-1 text-xs text-gray-600 bg-transparent hover:bg-gray-100 rounded outline-none cursor-pointer border border-transparent hover:border-gray-300 transition shrink-0 w-28 truncate" title="フォント">
                                     <option value="Noto Sans JP">標準フォント</option>
                                     <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
@@ -852,38 +844,47 @@
                                 <button type="button" onclick="document.execCommand('insertHorizontalRule', false, null)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded text-sm transition shrink-0" title="区切り線"><i class="fas fa-minus"></i></button>
                             </div>
 
-                            <!-- 手描きツールバー (初期非表示) -->
-                            <div id="memo-draw-tools" class="hidden items-center gap-2 ml-1">
+                            <!-- 手描きツールバー -->
+                            <div id="memo-draw-tools" class="hidden items-center gap-1.5 ml-1 flex-nowrap transition-opacity duration-200">
                                 <!-- ツール選択 -->
-                                <div class="flex items-center gap-1 bg-gray-100 p-0.5 rounded">
-                                    <button onclick="window.setDrawTool('pen', this)" class="draw-tool-btn px-2 py-1 bg-white shadow-sm border border-gray-200 rounded text-xs font-bold text-gray-700 transition"><i class="fas fa-pen mr-1 text-[#4a5f73]"></i>ペン</button>
-                                    <button onclick="window.setDrawTool('marker', this)" class="draw-tool-btn px-2 py-1 bg-transparent text-gray-500 rounded text-xs font-bold transition hover:bg-gray-200"><i class="fas fa-highlighter mr-1 text-yellow-500"></i>マーカー</button>
-                                    <button onclick="window.setDrawTool('eraser', this)" class="draw-tool-btn px-2 py-1 bg-transparent text-gray-500 rounded text-xs font-bold transition hover:bg-gray-200"><i class="fas fa-eraser mr-1 text-gray-400"></i>消しゴム</button>
+                                <div class="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded shrink-0">
+                                    <button onclick="window.setDrawTool('pen', this)" class="draw-tool-btn px-2 py-1 bg-white shadow-sm border border-gray-200 rounded text-[10px] sm:text-xs font-bold text-gray-700 transition flex items-center shrink-0 whitespace-nowrap"><i class="fas fa-pen mr-1 text-[#4a5f73]"></i>ペン</button>
+                                    <button onclick="window.setDrawTool('marker', this)" class="draw-tool-btn px-2 py-1 bg-transparent text-gray-500 border border-transparent rounded text-[10px] sm:text-xs font-bold transition hover:bg-gray-200 flex items-center shrink-0 whitespace-nowrap"><i class="fas fa-highlighter mr-1 text-yellow-500"></i>マーカー</button>
+                                    <button onclick="window.setDrawTool('eraser', this)" class="draw-tool-btn px-2 py-1 bg-transparent text-gray-500 border border-transparent rounded text-[10px] sm:text-xs font-bold transition hover:bg-gray-200 flex items-center shrink-0 whitespace-nowrap"><i class="fas fa-eraser mr-1 text-gray-400"></i>消しゴム</button>
                                 </div>
                                 
-                                <div class="w-px h-4 bg-gray-300 mx-1 shrink-0"></div>
+                                <div class="w-px h-4 bg-gray-300 mx-0.5 shrink-0"></div>
 
                                 <!-- 太さ選択 -->
-                                <div class="flex items-center gap-1">
-                                    <button onclick="window.setDrawWeight(1, this)" class="draw-weight-btn w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 transition"><div class="w-4 h-px bg-gray-800"></div></button>
-                                    <button onclick="window.setDrawWeight(3, this)" class="draw-weight-btn w-6 h-6 flex items-center justify-center rounded bg-gray-200 transition"><div class="w-4 h-0.5 bg-gray-800"></div></button>
-                                    <button onclick="window.setDrawWeight(5, this)" class="draw-weight-btn w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 transition"><div class="w-4 h-1 bg-gray-800"></div></button>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button onclick="window.setDrawWeight(1, this)" class="draw-weight-btn w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded hover:bg-gray-200 transition bg-transparent shrink-0"><div class="w-4 h-px bg-gray-800 pointer-events-none"></div></button>
+                                    <button onclick="window.setDrawWeight(3, this)" class="draw-weight-btn w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded bg-gray-300 transition shrink-0"><div class="w-4 h-0.5 bg-gray-800 pointer-events-none"></div></button>
+                                    <button onclick="window.setDrawWeight(6, this)" class="draw-weight-btn w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded hover:bg-gray-200 transition bg-transparent shrink-0"><div class="w-4 h-1 bg-gray-800 pointer-events-none"></div></button>
                                 </div>
 
                                 <div class="w-px h-4 bg-gray-300 mx-1 shrink-0" id="draw-color-divider"></div>
 
                                 <!-- 色選択 (ペン用) -->
-                                <div id="draw-color-pen" class="flex items-center gap-1.5">
-                                    <button onclick="window.setDrawColor('#000000', this)" class="draw-color-btn w-5 h-5 rounded-full bg-black ring-2 ring-offset-1 ring-blue-500 transition"></button>
-                                    <button onclick="window.setDrawColor('#ef4444', this)" class="draw-color-btn w-5 h-5 rounded-full bg-red-500 border border-gray-300 transition"></button>
-                                    <button onclick="window.setDrawColor('#3b82f6', this)" class="draw-color-btn w-5 h-5 rounded-full bg-blue-500 border border-gray-300 transition"></button>
+                                <div id="draw-color-pen" class="flex items-center gap-1.5 shrink-0">
+                                    <button onclick="window.setDrawColor('#000000', this)" class="draw-color-btn w-5 h-5 rounded-full bg-black ring-2 ring-offset-1 ring-blue-500 transition shrink-0"></button>
+                                    <button onclick="window.setDrawColor('#ef4444', this)" class="draw-color-btn w-5 h-5 rounded-full bg-red-500 border border-gray-300 transition shrink-0"></button>
+                                    <button onclick="window.setDrawColor('#3b82f6', this)" class="draw-color-btn w-5 h-5 rounded-full bg-blue-500 border border-gray-300 transition shrink-0"></button>
                                 </div>
 
                                 <!-- 色選択 (マーカー用) -->
-                                <div id="draw-color-marker" class="hidden items-center gap-1.5">
-                                    <button onclick="window.setDrawColor('#84cc16', this)" class="draw-color-btn w-5 h-5 rounded-full bg-lime-500 border border-gray-300 transition"></button>
-                                    <button onclick="window.setDrawColor('#eab308', this)" class="draw-color-btn w-5 h-5 rounded-full bg-yellow-500 transition"></button>
-                                    <button onclick="window.setDrawColor('#ec4899', this)" class="draw-color-btn w-5 h-5 rounded-full bg-pink-500 border border-gray-300 transition"></button>
+                                <div id="draw-color-marker" class="hidden items-center gap-1.5 shrink-0">
+                                    <button onclick="window.setDrawColor('#84cc16', this)" class="draw-color-btn w-5 h-5 rounded-full bg-lime-500 border border-gray-300 transition shrink-0"></button>
+                                    <button onclick="window.setDrawColor('#eab308', this)" class="draw-color-btn w-5 h-5 rounded-full bg-yellow-500 transition shrink-0"></button>
+                                    <button onclick="window.setDrawColor('#ec4899', this)" class="draw-color-btn w-5 h-5 rounded-full bg-pink-500 border border-gray-300 transition shrink-0"></button>
+                                </div>
+
+                                <div class="w-px h-4 bg-gray-300 mx-1 shrink-0" id="draw-shape-divider"></div>
+
+                                <!-- 描画モード (フリーハンド、直線、四角形) -->
+                                <div id="draw-shape-tools" class="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded shrink-0">
+                                    <button onclick="window.setDrawShape('freehand', this)" class="draw-shape-btn px-2 py-1 bg-white shadow-sm border border-gray-200 rounded text-[10px] sm:text-xs font-bold text-gray-700 transition flex items-center shrink-0 whitespace-nowrap"><i class="fas fa-wave-square mr-1 text-gray-500"></i>フリー</button>
+                                    <button onclick="window.setDrawShape('line', this)" class="draw-shape-btn px-2 py-1 bg-transparent text-gray-500 border border-transparent rounded text-[10px] sm:text-xs font-bold transition hover:bg-gray-200 flex items-center shrink-0 whitespace-nowrap"><i class="fas fa-minus mr-1 text-gray-500"></i>直線</button>
+                                    <button onclick="window.setDrawShape('rect', this)" class="draw-shape-btn px-2 py-1 bg-transparent text-gray-500 border border-transparent rounded text-[10px] sm:text-xs font-bold transition hover:bg-gray-200 flex items-center shrink-0 whitespace-nowrap"><i class="far fa-square mr-1 text-gray-500"></i>四角形</button>
                                 </div>
                             </div>
                         </div>
@@ -894,6 +895,8 @@
                         <div class="relative w-full min-h-full h-max" id="memo-canvas-wrapper">
                             <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="w-full min-h-full outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0 break-words"></div>
                             <canvas id="memo-canvas" class="absolute top-0 left-0 w-full h-full z-10 pointer-events-none" style="touch-action: auto;"></canvas>
+                            <!-- ★ 描画中の一時レイヤー（重なり描画の問題を解消） -->
+                            <canvas id="memo-overlay-canvas" class="absolute top-0 left-0 w-full h-full z-20 pointer-events-none" style="touch-action: none;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -977,10 +980,8 @@
 
         window.currentTaskCompleted = false;
         
-        // ★ 認証状態変数
         window.currentUser = null;
 
-        // ★ データを更新した日付にタイムスタンプを付与する補助関数
         window.setPlannerUpdated = (dateStr) => {
             if (!allPlanners[dateStr]) {
                 allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
@@ -988,7 +989,6 @@
             allPlanners[dateStr].updatedAt = Date.now();
         };
 
-        // ★ アカウントが切り替わったとき・未ログイン時にローカルデータをリセットする関数
         window.clearLocalData = () => {
             if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
             
@@ -1014,7 +1014,6 @@
             selectedCellId = null;
             selectedSlot = null;
             
-            // 入力欄などの状態もリセット
             if(document.getElementById('add-modal-title')) document.getElementById('add-modal-title').value = '';
             if(document.getElementById('memo-edit-title')) document.getElementById('memo-edit-title').value = '';
             if(document.getElementById('memo-edit-content')) document.getElementById('memo-edit-content').innerHTML = '';
@@ -1026,9 +1025,8 @@
         let db, auth;
         let unsubscribeSnapshot = null;
         let lastCloudUpdateTime = 0; 
-        let currentUid = safeGetItem('last_logged_in_uid'); // ★ 前回のUIDを保持
+        let currentUid = safeGetItem('last_logged_in_uid');
 
-        // ★ 認証モーダル関連関数
         window.isAuthInitialized = false;
 
         window.showAuthModal = () => {
@@ -1098,18 +1096,17 @@
             try {
                 if (mode === 'register') {
                     if (!password) {
-                        // パスワード自動生成 (8桁のランダム文字列 + aA1!)
                         password = Math.random().toString(36).slice(-8) + "aA1!";
                         alert(`パスワードが自動生成されました。\nログインに必要なので必ずメモしてください。\n\nパスワード: ${password}`);
                     }
-                    window.clearLocalData(); // ★ 登録直前にクリア
+                    window.clearLocalData();
                     await window.fb.createUserWithEmailAndPassword(auth, email, password);
                 } else {
                     if (!password) {
                         alert("パスワードを入力してください。");
                         return;
                     }
-                    window.clearLocalData(); // ★ ログイン直前にクリア
+                    window.clearLocalData();
                     await window.fb.signInWithEmailAndPassword(auth, email, password);
                 }
             } catch (e) {
@@ -1124,7 +1121,7 @@
                 return;
             }
             try {
-                window.clearLocalData(); // ★ ゲストログイン直前にクリア
+                window.clearLocalData();
                 await window.fb.signInAnonymously(auth);
             } catch (e) {
                 console.error(e);
@@ -1134,8 +1131,8 @@
 
         window.logout = async () => {
             if (confirm("ログアウトしますか？（※同期されていないデータは失われます）")) {
-                window.clearLocalData(); // ★ ログアウト実行直前にクリア
-                initDataSync(); // 画面を空データでリセット
+                window.clearLocalData();
+                initDataSync();
                 await window.fb.signOut(auth);
             }
         };
@@ -1159,20 +1156,18 @@
                 db = window.fb.getFirestore(app);
 
                 window.fb.onAuthStateChanged(auth, (user) => {
-                    window.isAuthInitialized = true; // ★ 初期化完了をマーク
+                    window.isAuthInitialized = true;
                     window.currentUser = user;
                     const authBtn = document.getElementById('nav-btn-auth');
                     const emailDisp = document.getElementById('display-account-email');
 
                     if (user) {
-                        // ★ アカウントが切り替わった場合、ローカルデータを初期化して混在を防ぐ
                         if (currentUid && currentUid !== user.uid) {
                             window.clearLocalData();
                         }
                         safeSetItem('last_logged_in_uid', user.uid);
                         currentUid = user.uid;
 
-                        // ★ ここで初めてローカルデータをロード（新規なら空データがセットされる）
                         initDataSync();
 
                         document.getElementById('auth-modal').classList.add('hidden');
@@ -1191,18 +1186,13 @@
                             emailDisp.textContent = user.isAnonymous ? "ゲストユーザー (お試し中)" : user.email;
                         }
 
-                        // ★ uidベースで同期開始
                         startFirebaseSync(user.uid);
                     } else {
-                        // ★ 未ログイン時は常にローカルデータをクリアする
                         window.clearLocalData();
                         safeRemoveItem('last_logged_in_uid');
                         currentUid = null;
                         
-                        // 空のデータで画面を描画して過去のデータを隠す
                         initDataSync();
-
-                        // 未ログイン時は強制表示
                         window.showAuthModal();
                         
                         if (authBtn) {
@@ -1223,16 +1213,13 @@
             } catch (e) { console.error("Firebase init failed:", e); }
         };
 
-        // ★ クラウドとローカルのデータを「新しさ（updatedAt）」基準でマージする関数
         const mergeData = (localData, cloudData) => {
             let isChanged = false;
             
-            // 1. カレンダー（planners）のマージ
             if (cloudData.planners) {
                 for (const dateKey in cloudData.planners) {
                     const cPlanner = cloudData.planners[dateKey];
                     const lPlanner = localData.planners[dateKey];
-                    // クラウド側により新しい更新日時がある場合、またはローカルに存在しない場合はクラウドを採用
                     if (!lPlanner || (cPlanner.updatedAt || 0) > (lPlanner.updatedAt || 0)) {
                         localData.planners[dateKey] = cPlanner;
                         isChanged = true;
@@ -1240,7 +1227,6 @@
                 }
             }
             
-            // 2. 設定（settings）のマージ
             if (cloudData.settings) {
                 if (!localData.settings || (cloudData.settings.updatedAt || 0) > (localData.settings.updatedAt || 0)) {
                     localData.settings = cloudData.settings;
@@ -1248,7 +1234,6 @@
                 }
             }
 
-            // 3. 配列データ（memos, folders）をIDとupdatedAtベースでマージする汎用関数
             const mergeArray = (localArr, cloudArr) => {
                 const map = {};
                 (localArr || []).forEach(item => map[item.id] = item);
@@ -1262,11 +1247,9 @@
                 return Object.values(map);
             };
 
-            // 4. メモとフォルダのマージ
             if (cloudData.memos) localData.memos = mergeArray(localData.memos, cloudData.memos);
             if (cloudData.folders) localData.folders = mergeArray(localData.folders, cloudData.folders);
 
-            // 5. 単元計画（unitPlans）のマージ
             if (cloudData.unitPlans) {
                 for (const key in cloudData.unitPlans) {
                     const cPlan = cloudData.unitPlans[key];
@@ -1290,12 +1273,9 @@
                     const data = docSnap.data();
                     const cloudTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
                     
-                    // クラウド側の最終更新日時が、最後に反映したものより古ければ無視
                     if (cloudTime <= lastCloudUpdateTime) return; 
-                    
                     lastCloudUpdateTime = cloudTime;
 
-                    // ★ まるごと上書きではなく、新しい方を採用するマージ処理を実行
                     const localDataPack = {
                         planners: allPlanners,
                         settings: globalSettings,
@@ -1307,14 +1287,12 @@
                     const changed = mergeData(localDataPack, data);
 
                     if (changed) {
-                        // マージされた最新のデータを各グローバル変数に反映
                         allPlanners = localDataPack.planners;
                         globalSettings = localDataPack.settings;
                         allMemos = localDataPack.memos;
                         allFolders = localDataPack.folders;
                         allUnitPlans = localDataPack.unitPlans;
 
-                        // ローカルストレージに保存
                         safeSetItem(LS_KEY, JSON.stringify(allPlanners));
                         if (!globalSettings.timetables) globalSettings.timetables = DEFAULT_TIMETABLES;
                         safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
@@ -1322,14 +1300,12 @@
                         safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
                         safeSetItem('teacher_planner_unit_plans', JSON.stringify(allUnitPlans));
 
-                        // 画面更新
                         window.updateDisplayMode(); 
                         window.renderCurrentView(); 
                         if (currentView === 'memo') window.renderMemoList();
                         if (currentView === 'unit-plan') window.renderUnitPlanView();
                     }
                 } else {
-                    // クラウドにデータが無い場合（新規等）は、現在のローカルデータ（空のはず）をアップロード
                     window.saveToFirebase();
                 }
             }, (error) => {
@@ -1717,6 +1693,11 @@
         };
 
         window.undo = () => {
+            // ★ メモ編集中ならメモ用のUndoを呼ぶ
+            if (editingMemoId) {
+                window.handleMemoUndo();
+                return;
+            }
             if (undoStack.length === 0) return;
             redoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
             const state = JSON.parse(undoStack.pop());
@@ -1732,6 +1713,11 @@
         };
 
         window.redo = () => {
+            // ★ メモ編集中ならメモ用のRedoを呼ぶ
+            if (editingMemoId) {
+                window.handleMemoRedo();
+                return;
+            }
             if (redoStack.length === 0) return;
             undoStack.push(JSON.stringify({ planners: allPlanners, unitPlans: allUnitPlans }));
             const state = JSON.parse(redoStack.pop());
@@ -1748,8 +1734,19 @@
 
         window.updateUndoRedoButtons = () => {
             const undoBtn = document.getElementById('btn-undo'), redoBtn = document.getElementById('btn-redo');
-            if (undoBtn) { undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = undoStack.length > 0 ? 'auto' : 'none'; }
-            if (redoBtn) { redoBtn.style.opacity = redoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = redoStack.length > 0 ? 'auto' : 'none'; }
+            if (editingMemoId) {
+                if (window.drawModeActive) {
+                    if (undoBtn) { undoBtn.style.opacity = window.memoUndoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = window.memoUndoStack.length > 0 ? 'auto' : 'none'; }
+                    if (redoBtn) { redoBtn.style.opacity = window.memoRedoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = window.memoRedoStack.length > 0 ? 'auto' : 'none'; }
+                } else {
+                    // テキストモード時は常に押せる状態にするか、document.queryCommandEnabled を使う
+                    if (undoBtn) { undoBtn.style.opacity = '1'; undoBtn.style.pointerEvents = 'auto'; }
+                    if (redoBtn) { redoBtn.style.opacity = '1'; redoBtn.style.pointerEvents = 'auto'; }
+                }
+            } else {
+                if (undoBtn) { undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = undoStack.length > 0 ? 'auto' : 'none'; }
+                if (redoBtn) { redoBtn.style.opacity = redoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = redoStack.length > 0 ? 'auto' : 'none'; }
+            }
         };
 
         const initDataSync = () => {
@@ -1762,7 +1759,6 @@
             const localUnitPlans = safeGetItem('teacher_planner_unit_plans');
             if (localUnitPlans) { try { allUnitPlans = JSON.parse(localUnitPlans); } catch(e){} }
 
-            // ★ ゴミ箱に入れてから30日経過したメモを自動で物理削除する
             const thirtyDays = 30 * 24 * 60 * 60 * 1000;
             const now = Date.now();
             let memoChanged = false;
@@ -1774,7 +1770,6 @@
                 return true;
             });
             
-            // ★ Tombstone（論理削除）になったが、ずっと残っているものも適当な時期（30日）で消す
             allFolders = allFolders.filter(f => {
                 if (f.isDeleted && f.updatedAt && (now - f.updatedAt) > thirtyDays) return false;
                 return true;
@@ -1787,7 +1782,6 @@
             if (memoChanged) {
                 safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                 safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
-                // Firebase初期化前の呼び出しである可能性があるため、ここではsaveToFirebaseは呼ばない
             }
 
             window.updateFilterUI(); 
@@ -1910,7 +1904,6 @@
             let filteredMemos = [];
             let currentFolders = [];
             
-            // ★ 論理削除（Tombstone）されたものを除外して表示
             const validMemos = allMemos.filter(m => !m.isDeleted);
             const validFolders = allFolders.filter(f => !f.isDeleted);
 
@@ -2039,7 +2032,7 @@
                 name: name,
                 categoryId: currentMemoFilter,
                 parentId: currentMemoFolderId,
-                updatedAt: Date.now() // ★ 更新日時付与
+                updatedAt: Date.now() 
             };
             allFolders.push(newFolder);
             safeSetItem('teacher_planner_folders', JSON.stringify(allFolders));
@@ -2050,7 +2043,6 @@
         window.deleteFolder = (folderId) => {
             if(confirm("フォルダを削除しますか？中にあるメモや子フォルダはカテゴリーのルートに移動されます。")) {
                 const now = Date.now();
-                // フォルダの階層リセット
                 allMemos.forEach(m => { 
                     if(m.folderId === folderId && !m.isDeleted) {
                         m.folderId = null; 
@@ -2065,7 +2057,6 @@
                     }
                 });
 
-                // ★ 配列から完全に削除せず、Tombstone化する
                 const folderIndex = allFolders.findIndex(f => f.id === folderId);
                 if (folderIndex > -1) {
                     allFolders[folderIndex] = { id: folderId, isDeleted: true, updatedAt: now };
@@ -2081,7 +2072,6 @@
         window.updateMemoFolderOptions = () => {
             const catId = document.getElementById('memo-edit-category').value;
             const folderSelect = document.getElementById('memo-edit-folder');
-            // 論理削除されていないフォルダだけ対象
             const foldersInCat = allFolders.filter(f => f.categoryId === catId && !f.isDeleted);
             
             let html = '<option value="">(ルート)</option>';
@@ -2133,8 +2123,72 @@
             if (btnIcon) btnIcon.className = 'fas fa-trash-alt';
         };
 
+        // ★ Undo/Redo用のスタックと関数
+        window.memoUndoStack = [];
+        window.memoRedoStack = [];
+
+        window.saveMemoCanvasState = () => {
+            if (!window.memoCanvas) return;
+            const dataUrl = window.memoCanvas.toDataURL('image/png');
+            window.memoUndoStack.push(dataUrl);
+            if (window.memoUndoStack.length > 20) window.memoUndoStack.shift(); 
+            window.memoRedoStack = []; 
+            window.updateUndoRedoButtons();
+        };
+
+        window.undoMemoCanvas = () => {
+            if (window.memoUndoStack.length === 0) return;
+            const currentState = window.memoCanvas.toDataURL('image/png');
+            window.memoRedoStack.push(currentState);
+            
+            const previousState = window.memoUndoStack.pop();
+            const img = new Image();
+            img.onload = () => {
+                window.memoCtx.clearRect(0, 0, window.memoCanvas.width, window.memoCanvas.height);
+                window.memoCtx.drawImage(img, 0, 0);
+                window.hasCanvasChanged = true;
+                window.triggerAutoSaveMemo();
+                window.updateUndoRedoButtons();
+            };
+            img.src = previousState;
+        };
+
+        window.redoMemoCanvas = () => {
+            if (window.memoRedoStack.length === 0) return;
+            const currentState = window.memoCanvas.toDataURL('image/png');
+            window.memoUndoStack.push(currentState);
+            
+            const nextState = window.memoRedoStack.pop();
+            const img = new Image();
+            img.onload = () => {
+                window.memoCtx.clearRect(0, 0, window.memoCanvas.width, window.memoCanvas.height);
+                window.memoCtx.drawImage(img, 0, 0);
+                window.hasCanvasChanged = true;
+                window.triggerAutoSaveMemo();
+                window.updateUndoRedoButtons();
+            };
+            img.src = nextState;
+        };
+
+        window.handleMemoUndo = () => {
+            if (window.drawModeActive) {
+                window.undoMemoCanvas();
+            } else {
+                document.execCommand('undo', false, null);
+                window.triggerAutoSaveMemo();
+            }
+        };
+
+        window.handleMemoRedo = () => {
+            if (window.drawModeActive) {
+                window.redoMemoCanvas();
+            } else {
+                document.execCommand('redo', false, null);
+                window.triggerAutoSaveMemo();
+            }
+        };
+
         window.openMemoEdit = (memoId = null) => {
-            // もし手書きモード中なら一旦OFFにしておく
             if (window.drawModeActive) {
                 window.toggleDrawMode(document.getElementById('memo-draw-toggle-btn'));
             }
@@ -2149,6 +2203,9 @@
             const favBtn = document.getElementById('memo-edit-fav-btn');
 
             window.updateDeleteMemoButtonText();
+            window.memoUndoStack = [];
+            window.memoRedoStack = [];
+            window.updateUndoRedoButtons();
 
             if (memoId) {
                 const memo = allMemos.find(m => m.id === memoId);
@@ -2169,24 +2226,6 @@
 
                     if (memo.isFavorite) favBtn.classList.replace('text-gray-300', 'text-yellow-400');
                     else favBtn.classList.replace('text-yellow-400', 'text-gray-300');
-
-                    // Canvasのロード
-                    window.hasCanvasChanged = false;
-                    if (window.memoCanvas && window.memoCtx) {
-                        const wrapper = document.getElementById('memo-canvas-wrapper');
-                        if (wrapper) {
-                            window.memoCanvas.width = wrapper.offsetWidth;
-                            window.memoCanvas.height = wrapper.offsetHeight;
-                        }
-                        window.memoCtx.clearRect(0, 0, window.memoCanvas.width, window.memoCanvas.height);
-                        if (memo.canvasData) {
-                            const img = new Image();
-                            img.onload = () => {
-                                window.memoCtx.drawImage(img, 0, 0);
-                            };
-                            img.src = memo.canvasData;
-                        }
-                    }
                 }
             } else {
                 titleInput.value = ''; contentInput.innerHTML = ''; 
@@ -2203,17 +2242,6 @@
 
                 favBtn.classList.replace('text-yellow-400', 'text-gray-300');
 
-                // Canvasのクリア
-                window.hasCanvasChanged = false;
-                if (window.memoCanvas && window.memoCtx) {
-                    const wrapper = document.getElementById('memo-canvas-wrapper');
-                    if (wrapper) {
-                        window.memoCanvas.width = wrapper.offsetWidth;
-                        window.memoCanvas.height = wrapper.offsetHeight;
-                    }
-                    window.memoCtx.clearRect(0, 0, window.memoCanvas.width, window.memoCanvas.height);
-                }
-
                 const newMemo = {
                     id: 'memo_' + Date.now() + Math.random().toString(36).substr(2, 9),
                     title: '', content: '', categoryId: defaultCat, folderId: folderSelect.value || null,
@@ -2225,8 +2253,35 @@
             }
 
             modal.classList.remove('hidden'); modal.classList.add('flex');
+            
             setTimeout(() => { 
                 if(!memoId) titleInput.focus(); 
+                
+                window.hasCanvasChanged = false;
+                if (window.memoCanvas && window.memoCtx) {
+                    const wrapper = document.getElementById('memo-canvas-wrapper');
+                    if (wrapper) {
+                        window.memoCanvas.width = wrapper.offsetWidth;
+                        window.memoCanvas.height = wrapper.offsetHeight;
+                        if(window.overlayCanvas) {
+                            window.overlayCanvas.width = wrapper.offsetWidth;
+                            window.overlayCanvas.height = wrapper.offsetHeight;
+                        }
+                    }
+                    window.memoCtx.clearRect(0, 0, window.memoCanvas.width, window.memoCanvas.height);
+                    if(window.overlayCtx) window.overlayCtx.clearRect(0, 0, window.overlayCanvas.width, window.overlayCanvas.height);
+                    
+                    if (memoId) {
+                        const memo = allMemos.find(m => m.id === memoId);
+                        if (memo && memo.canvasData) {
+                            const img = new Image();
+                            img.onload = () => {
+                                window.memoCtx.drawImage(img, 0, 0);
+                            };
+                            img.src = memo.canvasData;
+                        }
+                    }
+                }
             }, 100);
         };
 
@@ -2262,12 +2317,11 @@
                 memo.folderId = folderId;
                 memo.isFavorite = isFavorite; 
                 memo.createdAt = createTimeVal; 
-                memo.updatedAt = Date.now(); // ★ 更新日時を更新
+                memo.updatedAt = Date.now(); 
 
-                // Canvasデータ保存
                 if (window.hasCanvasChanged && window.memoCanvas) {
                     memo.canvasData = window.memoCanvas.toDataURL('image/png');
-                    window.hasCanvasChanged = false; // 保存したらフラグを下ろす
+                    window.hasCanvasChanged = false; 
                 }
             }
 
@@ -2284,7 +2338,6 @@
             
             const memo = allMemos.find(m => m.id === editingMemoId);
             if (memo && !memo.title.trim() && !memo.content.trim() && !memo.canvasData && !memo.isDeleted) {
-                // 完全な空のメモ（新規で何も書かずに閉じた場合）は物理削除でも良いが、Tombstone化しておく
                 const mIdx = allMemos.findIndex(m => m.id === editingMemoId);
                 if (mIdx > -1) {
                     allMemos[mIdx] = { id: editingMemoId, isDeleted: true, updatedAt: Date.now() };
@@ -2297,6 +2350,7 @@
             document.getElementById('memo-edit-modal').classList.add('hidden');
             document.getElementById('memo-edit-modal').classList.remove('flex');
             editingMemoId = null;
+            window.updateUndoRedoButtons(); // モーダルを閉じたのでカレンダー側の履歴に切り替え
         };
 
         window.saveMemo = () => { window.saveMemoLocally(); };
@@ -2309,7 +2363,6 @@
 
             if (memo.categoryId === 'trash') {
                 if (confirm("このメモを完全に削除してもよろしいですか？（復元できません）")) {
-                    // ★ 完全に削除せず Tombstone を残す
                     const mIdx = allMemos.findIndex(m => m.id === editingMemoId);
                     if (mIdx > -1) {
                         allMemos[mIdx] = { id: editingMemoId, isDeleted: true, updatedAt: Date.now() };
@@ -2321,13 +2374,14 @@
                     document.getElementById('memo-edit-modal').classList.add('hidden');
                     document.getElementById('memo-edit-modal').classList.remove('flex');
                     editingMemoId = null;
+                    window.updateUndoRedoButtons();
                 }
             } else {
                 if (confirm("このメモをごみ箱に移動しますか？（1ヶ月後に完全に削除されます）")) {
                     memo.categoryId = 'trash';
                     memo.folderId = null; 
                     memo.deletedAt = Date.now();
-                    memo.updatedAt = Date.now(); // ★
+                    memo.updatedAt = Date.now(); 
                     memo.isFavorite = false;
                     safeSetItem('teacher_planner_memos', JSON.stringify(allMemos));
                     window.saveToFirebase(); window.renderMemoList();
@@ -2336,6 +2390,7 @@
                     document.getElementById('memo-edit-modal').classList.add('hidden');
                     document.getElementById('memo-edit-modal').classList.remove('flex');
                     editingMemoId = null;
+                    window.updateUndoRedoButtons();
                 }
             }
         };
@@ -2378,19 +2433,26 @@
         // ==========================================
         window.memoCanvas = null;
         window.memoCtx = null;
+        window.overlayCanvas = null;
+        window.overlayCtx = null;
         window.canvasResizeObserver = null;
         window.isDrawing = false;
         window.drawModeActive = false;
-        window.currentTool = 'pen'; // 'pen', 'marker', 'eraser'
+        window.currentTool = 'pen'; 
+        window.currentShape = 'freehand'; // 'freehand', 'line', 'rect'
         window.currentWeight = 3;
         window.currentDrawColor = '#000000';
         window.hasCanvasChanged = false;
+        window.currentStrokePath = [];
         let lastDrawX = 0, lastDrawY = 0;
 
         window.initMemoCanvas = () => {
             window.memoCanvas = document.getElementById('memo-canvas');
-            if (!window.memoCanvas) return;
-            window.memoCtx = window.memoCanvas.getContext('2d');
+            window.overlayCanvas = document.getElementById('memo-overlay-canvas');
+            if (!window.memoCanvas || !window.overlayCanvas) return;
+            
+            window.memoCtx = window.memoCanvas.getContext('2d', { willReadFrequently: true });
+            window.overlayCtx = window.overlayCanvas.getContext('2d');
             
             const wrapper = document.getElementById('memo-canvas-wrapper');
             if (wrapper) {
@@ -2405,12 +2467,11 @@
                 window.canvasResizeObserver.observe(wrapper);
             }
 
-            window.memoCanvas.addEventListener('pointerdown', handlePointerDown);
-            window.memoCanvas.addEventListener('pointermove', handlePointerMove);
+            window.overlayCanvas.addEventListener('pointerdown', handlePointerDown);
+            window.overlayCanvas.addEventListener('pointermove', handlePointerMove);
             window.addEventListener('pointerup', handlePointerUp);
             
-            // パームリジェクション: iPad等のペン入力時はスクロールやデフォルト動作をキャンセルする
-            window.memoCanvas.addEventListener('touchstart', (e) => {
+            window.overlayCanvas.addEventListener('touchstart', (e) => {
                 if (!window.drawModeActive) return;
                 if (e.touches[0].touchType === 'stylus' || e.touches[0].touchType === 'pen') {
                     e.preventDefault(); 
@@ -2419,7 +2480,7 @@
         };
 
         const resizeCanvas = (width, height) => {
-            if (!window.memoCanvas || !window.memoCtx) return;
+            if (!window.memoCanvas || !window.memoCtx || !window.overlayCanvas || !window.overlayCtx) return;
             if (window.memoCanvas.width === width && window.memoCanvas.height === height) return;
 
             let tempCanvas = document.createElement('canvas');
@@ -2429,60 +2490,117 @@
 
             window.memoCanvas.width = width;
             window.memoCanvas.height = height;
+            window.overlayCanvas.width = width;
+            window.overlayCanvas.height = height;
 
             window.memoCtx.drawImage(tempCanvas, 0, 0);
         };
 
         const handlePointerDown = (e) => {
             if (!window.drawModeActive) return;
-            // 指でのタッチイベントはブラウザのスクロールに任せるため無視する
-            if (e.pointerType === 'touch') return; 
-
+            
+            window.saveMemoCanvasState(); 
             window.isDrawing = true;
-            const rect = window.memoCanvas.getBoundingClientRect();
+
+            const rect = window.overlayCanvas.getBoundingClientRect();
             lastDrawX = e.clientX - rect.left;
             lastDrawY = e.clientY - rect.top;
             
-            window.memoCtx.beginPath();
-            window.memoCtx.moveTo(lastDrawX, lastDrawY);
+            window.startX = lastDrawX; 
+            window.startY = lastDrawY;
+            window.currentStrokePath = [{x: lastDrawX, y: lastDrawY}];
+
+            // マーカー時のオーバーレイキャンバス設定を削除し、
+            // 全ての描画は一度オーバーレイに行い、PointerUp時に合成するように変更。
+            window.overlayCanvas.style.opacity = '1';
+            window.overlayCanvas.style.mixBlendMode = 'normal';
+
+            if (window.currentTool === 'eraser') {
+                window.memoCtx.beginPath();
+                window.memoCtx.moveTo(lastDrawX, lastDrawY);
+            } else {
+                window.overlayCtx.clearRect(0, 0, window.overlayCanvas.width, window.overlayCanvas.height);
+                window.overlayCtx.beginPath();
+                window.overlayCtx.moveTo(lastDrawX, lastDrawY);
+            }
         };
 
         const handlePointerMove = (e) => {
             if (!window.isDrawing) return;
-            if (e.pointerType === 'touch') return;
 
-            const rect = window.memoCanvas.getBoundingClientRect();
+            const rect = window.overlayCanvas.getBoundingClientRect();
             const currentX = e.clientX - rect.left;
             const currentY = e.clientY - rect.top;
 
+            window.currentStrokePath.push({x: currentX, y: currentY});
+
             if (window.currentTool === 'eraser') {
                 window.memoCtx.globalCompositeOperation = 'destination-out';
-                window.memoCtx.lineWidth = window.currentWeight * 5;
+                window.memoCtx.lineWidth = window.currentWeight * 8; 
+                window.memoCtx.lineCap = 'round';
+                window.memoCtx.lineJoin = 'round';
                 window.memoCtx.strokeStyle = 'rgba(0,0,0,1)';
-            } else if (window.currentTool === 'marker') {
-                window.memoCtx.globalCompositeOperation = 'source-over';
-                window.memoCtx.lineWidth = window.currentWeight * 4;
-                window.memoCtx.strokeStyle = hexToRgbaForDraw(window.currentDrawColor, 0.4);
+                
+                window.memoCtx.beginPath();
+                window.memoCtx.moveTo(lastDrawX, lastDrawY);
+                window.memoCtx.lineTo(currentX, currentY);
+                window.memoCtx.stroke();
+                
+                lastDrawX = currentX;
+                lastDrawY = currentY;
             } else {
-                window.memoCtx.globalCompositeOperation = 'source-over';
-                window.memoCtx.lineWidth = window.currentWeight;
-                window.memoCtx.strokeStyle = window.currentDrawColor;
-            }
-            window.memoCtx.lineCap = 'round';
-            window.memoCtx.lineJoin = 'round';
+                window.overlayCtx.clearRect(0, 0, window.overlayCanvas.width, window.overlayCanvas.height);
+                window.overlayCtx.beginPath();
 
-            window.memoCtx.lineTo(currentX, currentY);
-            window.memoCtx.stroke();
+                if (window.currentShape === 'freehand') {
+                    window.overlayCtx.moveTo(window.currentStrokePath[0].x, window.currentStrokePath[0].y);
+                    for (let i = 1; i < window.currentStrokePath.length; i++) {
+                        window.overlayCtx.lineTo(window.currentStrokePath[i].x, window.currentStrokePath[i].y);
+                    }
+                } else if (window.currentShape === 'line') {
+                    window.overlayCtx.moveTo(window.startX, window.startY);
+                    window.overlayCtx.lineTo(currentX, currentY);
+                } else if (window.currentShape === 'rect') {
+                    window.overlayCtx.rect(window.startX, window.startY, currentX - window.startX, currentY - window.startY);
+                }
+                
+                if (window.currentTool === 'marker') {
+                    window.overlayCtx.globalCompositeOperation = 'source-over';
+                    window.overlayCtx.lineWidth = window.currentWeight * 6; 
+                    window.overlayCtx.strokeStyle = hexToRgbaForDraw(window.currentDrawColor, 0.3);
+                } else {
+                    window.overlayCtx.globalCompositeOperation = 'source-over';
+                    window.overlayCtx.lineWidth = window.currentWeight * 1.5; 
+                    window.overlayCtx.strokeStyle = window.currentDrawColor;
+                }
+                
+                window.overlayCtx.lineCap = window.currentShape === 'rect' ? 'square' : 'round';
+                window.overlayCtx.lineJoin = window.currentShape === 'rect' ? 'miter' : 'round';
+                window.overlayCtx.stroke();
+            }
             
-            lastDrawX = currentX;
-            lastDrawY = currentY;
             window.hasCanvasChanged = true;
         };
 
         const handlePointerUp = (e) => {
             if (window.isDrawing) {
                 window.isDrawing = false;
-                window.memoCtx.closePath();
+                
+                if (window.currentTool !== 'eraser') {
+                    if (window.currentTool === 'marker') {
+                        // マーカーの場合は重なりを描画時にmultiplyで合成する
+                        window.memoCtx.globalCompositeOperation = 'multiply';
+                    } else {
+                        window.memoCtx.globalCompositeOperation = 'source-over';
+                    }
+                    window.memoCtx.drawImage(window.overlayCanvas, 0, 0);
+                    window.overlayCtx.clearRect(0, 0, window.overlayCanvas.width, window.overlayCanvas.height);
+                    
+                    window.memoCtx.globalAlpha = 1.0;
+                } else {
+                    window.memoCtx.closePath();
+                }
+
                 window.triggerAutoSaveMemo();
             }
         };
@@ -2502,7 +2620,7 @@
 
         window.toggleDrawMode = (btn) => {
             window.drawModeActive = !window.drawModeActive;
-            const canvas = document.getElementById('memo-canvas');
+            const overlayCanvas = document.getElementById('memo-overlay-canvas');
             const content = document.getElementById('memo-edit-content');
             const textTools = document.getElementById('memo-text-tools');
             const drawTools = document.getElementById('memo-draw-tools');
@@ -2510,32 +2628,44 @@
             if (window.drawModeActive) {
                 btn.classList.add('bg-blue-100', 'text-blue-600');
                 btn.classList.remove('bg-gray-50');
-                canvas.classList.remove('pointer-events-none');
-                canvas.classList.add('pointer-events-auto');
+                overlayCanvas.classList.remove('pointer-events-none');
+                overlayCanvas.classList.add('pointer-events-auto');
                 content.contentEditable = "false";
                 
                 textTools.classList.add('hidden');
                 textTools.classList.remove('flex');
+                
                 drawTools.classList.remove('hidden');
                 drawTools.classList.add('flex');
                 
-                // ツール状態の復元処理を呼ぶ
                 const activeToolBtn = document.querySelector(`.draw-tool-btn[onclick*="${window.currentTool}"]`);
                 if (activeToolBtn) window.setDrawTool(window.currentTool, activeToolBtn);
             } else {
                 btn.classList.remove('bg-blue-100', 'text-blue-600');
                 btn.classList.add('bg-gray-50');
-                canvas.classList.add('pointer-events-none');
-                canvas.classList.remove('pointer-events-auto');
+                overlayCanvas.classList.add('pointer-events-none');
+                overlayCanvas.classList.remove('pointer-events-auto');
                 content.contentEditable = "true";
                 
                 textTools.classList.remove('hidden');
                 textTools.classList.add('flex');
+                
                 drawTools.classList.add('hidden');
                 drawTools.classList.remove('flex');
                 
                 window.triggerAutoSaveMemo(); 
             }
+            window.updateUndoRedoButtons();
+        };
+
+        window.setDrawShape = (shape, btn) => {
+            window.currentShape = shape;
+            document.querySelectorAll('.draw-shape-btn').forEach(b => {
+                b.classList.remove('bg-white', 'shadow-sm', 'border-gray-200', 'text-gray-700');
+                b.classList.add('bg-transparent', 'text-gray-500', 'border-transparent');
+            });
+            btn.classList.add('bg-white', 'shadow-sm', 'border-gray-200', 'text-gray-700');
+            btn.classList.remove('bg-transparent', 'text-gray-500', 'border-transparent');
         };
 
         window.setDrawTool = (tool, btn) => {
@@ -2550,12 +2680,17 @@
             const colorPen = document.getElementById('draw-color-pen');
             const colorMarker = document.getElementById('draw-color-marker');
             const divider = document.getElementById('draw-color-divider');
+            const shapeTools = document.getElementById('draw-shape-tools');
+            const shapeDivider = document.getElementById('draw-shape-divider');
 
             if (tool === 'pen') {
                 colorPen.classList.remove('hidden'); colorPen.classList.add('flex');
                 colorMarker.classList.add('hidden'); colorMarker.classList.remove('flex');
                 divider.classList.remove('hidden');
-                // ペンの色を選択状態にする
+                
+                if(shapeTools) { shapeTools.classList.remove('hidden'); shapeTools.classList.add('flex'); }
+                if(shapeDivider) shapeDivider.classList.remove('hidden');
+                
                 const penBtn = document.querySelector('#draw-color-pen .ring-2') || document.querySelector('#draw-color-pen button');
                 if (penBtn) {
                     const match = penBtn.getAttribute('onclick').match(/'([^']+)'/);
@@ -2565,7 +2700,10 @@
                 colorPen.classList.add('hidden'); colorPen.classList.remove('flex');
                 colorMarker.classList.remove('hidden'); colorMarker.classList.add('flex');
                 divider.classList.remove('hidden');
-                // マーカーの色を選択状態にする (デフォルトは中央の黄色)
+                
+                if(shapeTools) { shapeTools.classList.remove('hidden'); shapeTools.classList.add('flex'); }
+                if(shapeDivider) shapeDivider.classList.remove('hidden');
+                
                 const markerBtn = document.querySelector('#draw-color-marker .ring-2') || document.querySelector('#draw-color-marker button:nth-child(2)');
                 if (markerBtn) {
                     const match = markerBtn.getAttribute('onclick').match(/'([^']+)'/);
@@ -2575,36 +2713,37 @@
                 colorPen.classList.add('hidden'); colorPen.classList.remove('flex');
                 colorMarker.classList.add('hidden'); colorMarker.classList.remove('flex');
                 divider.classList.add('hidden');
+                
+                if(shapeTools) { shapeTools.classList.add('hidden'); shapeTools.classList.remove('flex'); }
+                if(shapeDivider) shapeDivider.classList.add('hidden');
             }
         };
 
         window.setDrawWeight = (weight, btn) => {
             window.currentWeight = weight;
             document.querySelectorAll('.draw-weight-btn').forEach(b => {
-                b.classList.remove('bg-gray-200');
-                b.classList.add('hover:bg-gray-100');
+                b.classList.remove('bg-gray-300');
+                b.classList.add('bg-transparent', 'hover:bg-gray-200');
             });
-            btn.classList.add('bg-gray-200');
-            btn.classList.remove('hover:bg-gray-100');
+            btn.classList.add('bg-gray-300');
+            btn.classList.remove('bg-transparent', 'hover:bg-gray-200');
         };
 
         window.setDrawColor = (color, btn) => {
             window.currentDrawColor = color;
-            // 選択状態のリセット
             document.querySelectorAll('.draw-color-btn').forEach(b => {
                 b.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-500');
                 if (!b.classList.contains('bg-black')) {
                      b.classList.add('border', 'border-gray-300');
                 }
             });
-            // アクティブ化
             btn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-500');
             btn.classList.remove('border', 'border-gray-300');
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             window.initColorPalette();
-            window.initMemoCanvas(); // キャンバス初期化
+            window.initMemoCanvas(); 
 
             const memoEditor = document.getElementById('memo-edit-content');
             if (memoEditor) {
@@ -3253,7 +3392,7 @@
                     for (let i = sIdx; i <= eIdx; i++) {
                         const weekStart = Math.floor(i / 7) * 7; const weekEnd = weekStart + 6;
                         const evWeekStart = Math.max(sIdx, weekStart); const evWeekEnd = Math.min(eIdx, weekEnd);
-                        allDaySlots[i][row] = { type: 'multi', event: ev, isSegmentStart: i === evWeekStart, segmentLength: evWeekEnd - evWeekStart + 1 };
+                        allDaySlots[i][row] = { type:'multi', event: ev, isSegmentStart: i === evWeekStart, segmentLength: evWeekEnd - evWeekStart + 1 };
                     }
                 }
             });
@@ -3265,7 +3404,7 @@
                 (singleDayTimeEvents[dStr] || []).forEach(ev => dayItems.push({ type: 'time', event: ev }));
 
                 if (!isHoliday(dObj)) {
-                    const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                    const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods : [];
                     const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                     ttPeriods.slice(0, lessonCount).forEach(p => {
                         if (p.id === 'p_allday' || p.isAllDay) return;
@@ -3456,19 +3595,7 @@
                 const isHoliOrWknd = weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6 || !!getHolidayName(weekDateObjs[i]);
                 allDayHtml += `<div class="border-r border-gray-200 ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; 
             }
-            all以下のコードの続きを出力して
-
-            for(let i=0; i<7; i++){ 
-                const isHoliOrWknd = weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6 || !!getHolidayName(weekDateObjs[i]);
-                allDayHtml += `<div class="border-r border-gray-200 ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; 
-            }
-            all以下のコードの続きを出力して
-
-            for(let i=0; i<7; i++){ 
-                const isHoliOrWknd = weekDateObjs[i].getDay() === 0 || weekDateObjs[i].getDay() === 6 || !!getHolidayName(weekDateObjs[i]);
-                allDayHtml += `<div class="border-r border-gray-200 ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}"></div>`; 
-            }
-            allDayHtml += `</div>`;
+            allDayHtml += `</div>`;
             
             let maxRow = -1;
             for(let i=0; i<7; i++){ allDaySlots[i].forEach((slot, r) => { if(slot) maxRow = Math.max(maxRow, r); }); }
@@ -3536,7 +3663,7 @@
                 colContent += `</div>`;
 
                 let combinedEvents = [];
-                const data = allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                const data = allPlanners[curStr] || {}; const ttType = getTtType(curStr); const ttPeriods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods : [];
 
                 if (!isHoliday(cur) && ttType !== 'none') {
                     const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
@@ -3609,7 +3736,7 @@
 
             dates.forEach(dStr => {
                 const data = allPlanners[dStr] || {}; const dObj = new Date(dStr);
-                const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods : [];
+                const isHoli = isHoliday(dObj); const ttType = getTtType(dStr); const ttPeriods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods : [];
                 let schedHtml = '', taskHtml = '';
                 
                 if (!isHoli && ttType !== 'none') {
@@ -3736,7 +3863,7 @@
                 if (!isHoliday(curDate)) {
                     const data = allPlanners[dStr] || {}; 
                     const ttType = getTtType(dStr);
-                    if (ttType !== 'none') {
+                    if (ttType !== 'none' && globalSettings.timetables[ttType]) {
                         const ttPeriods = globalSettings.timetables[ttType].periods;
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                         ttPeriods.slice(0, lessonCount).forEach(p => {
@@ -3773,7 +3900,7 @@
                 const dStr = getFormatDateStr(curDate);
                 if (!isHoliday(curDate)) {
                     const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                    if (ttType !== 'none') {
+                    if (ttType !== 'none' && globalSettings.timetables[ttType]) {
                         const ttPeriods = globalSettings.timetables[ttType].periods;
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                         ttPeriods.slice(0, lessonCount).forEach(p => {
@@ -3805,7 +3932,7 @@
                 const dObj = new Date(dStr);
                 const ttType = getTtType(dStr);
                 
-                if (ttType === 'none' || isHoliday(dObj)) continue;
+                if (ttType === 'none' || isHoliday(dObj) || !globalSettings.timetables[ttType]) continue;
 
                 if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
                 if (!allPlanners[dStr].classes) allPlanners[dStr].classes = {};
@@ -3899,7 +4026,7 @@
             
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                let maxLessons = 0; if (ttType !== 'none') maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
+                let maxLessons = 0; if (ttType !== 'none' && globalSettings.timetables[ttType]) maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
                 html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
                     <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
@@ -3911,7 +4038,7 @@
             let maxPeriodsInWeek = 0; const weekPeriodsMap = []; 
             for (let i = 0; i < 5; i++) {
                 const cur = workDays[i]; const dStr = getFormatDateStr(cur); const ttType = getTtType(dStr);
-                const periods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
+                const periods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods.filter(p => p.id !== 'p_allday' && !p.isAllDay) : [];
                 weekPeriodsMap.push(periods); if (periods.length > maxPeriodsInWeek) maxPeriodsInWeek = periods.length;
             }
             if (maxPeriodsInWeek === 0) maxPeriodsInWeek = 6; 
@@ -3947,7 +4074,6 @@
                             btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
                             borderClass = "border border-dashed border-gray-300";
                         } else if (title || memo) {
-                            // ★ 朝・昼・夕の特記事項欄でも、題名とメモを両方表示するように変更
                             bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
                             borderClass = "border border-yellow-200 shadow-sm";
                             
@@ -4018,7 +4144,6 @@
 
                         const isChanged = (sourceDay !== day.getDay()) || (sourcePeriod !== (pIdx + 1));
                         const labelColorClass = isChanged ? "bg-orange-100 text-orange-800 border-orange-300" : "bg-white text-[#4a5f73] border-gray-200";
-                        // ★ 左上の曜日＋時限のラベルサイズを右上の授業数カウントと統一
                         const labelHtml = `<div class="absolute top-0 left-0 px-1 py-0.5 text-[8px] sm:text-[10px] font-bold rounded-br border-r border-b ${labelColorClass} z-10 leading-none">${DAYS_STR[sourceDay]}${sourcePeriod}</div>`;
 
                         if (isExcluded) {
@@ -4033,23 +4158,19 @@
                             if (isSelfStudy) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-book-reader mr-0.5"></i>自習</div>`;
                             } else if (unitPlanTask) {
-                                // ★ 単元計画テキストのフォントサイズを縮小・太字解除
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
                             }
                             if (displayMemo) {
-                                // ★ 授業メモのフォントサイズを縮小・太字解除
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-1 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>メモ: ${displayMemo}</div>`;
                             }
 
                             let mainContent = '', techCountHtml = '';
 
                             if (displayCls || displaySub) {
-                                // クラスと教科を横並びに変更、文字サイズ調整
                                 mainContent = `<div class="flex flex-row items-baseline justify-center gap-1 w-full px-0.5 leading-tight"><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displayCls}</div><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displaySub}</div></div>${memoAndTaskHtml}`;
                                 if (displaySub.trim() === '技術') {
                                     const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                                     let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
-                                    // ★ スマホ版・PC版ともに右上に配置し、テキストサイズを揃える
                                     techCountHtml = `<div class="absolute top-0 right-0 px-1 py-0.5 text-[8px] sm:text-[10px] font-bold text-blue-600 bg-blue-50/90 rounded-bl border-b border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                                 }
                             } else if (displayMemo) {
@@ -4078,7 +4199,7 @@
             if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
             allPlanners[dStr].timetableType = select.value;
             if (select.value === 'none') { allPlanners[dStr].lessonCount = 0; } 
-            else { allPlanners[dStr].lessonCount = globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
+            else if (globalSettings.timetables[select.value]) { allPlanners[dStr].lessonCount = globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
             window.setPlannerUpdated(dStr); // ★ 更新日時付与
             window.saveWeeklyPlan(false); 
         };
@@ -4092,7 +4213,8 @@
                 const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); 
                 const dStr = getFormatDateStr(cur); const ttSelect = document.getElementById(`wp-tt-${dStr}`);
                 if (!ttSelect) continue;
-                const lessonCount = parseInt(document.getElementById(`wp-lc-${dStr}`).value);
+                const lcInput = document.getElementById(`wp-lc-${dStr}`);
+                const lessonCount = lcInput ? parseInt(lcInput.value) : 0;
                 if (!allPlanners[dStr]) allPlanners[dStr] = { classes: {}, reminders: [], events: [] };
                 
                 if (allPlanners[dStr].timetableType !== ttSelect.value || allPlanners[dStr].lessonCount !== lessonCount) {
@@ -4240,7 +4362,7 @@
             daysContainer.innerHTML = daysHtml;
 
             const ttType = getTtType(wpModalTarget.targetDateStr);
-            const ttPeriods = ttType !== 'none' ? globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay) : [];
+            const ttPeriods = ttType !== 'none' && globalSettings.timetables[ttType] ? globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay) : [];
             const maxPeriods = ttPeriods.length > 0 ? ttPeriods.length : 6;
 
             let periodsHtml = '';
@@ -5535,7 +5657,7 @@
                 if (!isHoliday(curDate)) {
                     const data = allPlanners[dStr] || {};
                     const ttType = getTtType(dStr);
-                    if (ttType !== 'none') {
+                    if (ttType !== 'none' && globalSettings.timetables[ttType]) {
                         const ttPeriods = globalSettings.timetables[ttType].periods;
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : ttPeriods.length;
                         ttPeriods.slice(0, lessonCount).forEach(p => {
