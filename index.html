@@ -573,11 +573,11 @@
                 </button>
             </div>
             <div class="flex-1 flex flex-col sm:flex-row overflow-hidden p-2 gap-2">
-                <div class="flex-1 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
+                <div class="flex-1 flex flex-col bg-white rounded overflow-hidden">
                     <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 font-bold text-[#4a5f73] text-sm"><i class="far fa-calendar-alt"></i> 今後のスケジュール</div>
                     <div id="agenda-view-list" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
                 </div>
-                <div class="w-full sm:w-1/3 flex flex-col bg-white rounded border border-gray-200 overflow-hidden shadow-sm h-64 sm:h-auto shrink-0">
+                <div class="w-full sm:w-1/3 flex flex-col bg-white rounded overflow-hidden h-64 sm:h-auto shrink-0">
                     <div class="bg-red-50 px-3 py-2 border-b border-red-100 font-bold text-red-600 text-sm"><i class="fas fa-exclamation-circle"></i> 未完了タスク (本日迄)</div>
                     <div id="agenda-incomplete-tasks" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-gray-50/50"></div>
                 </div>
@@ -782,8 +782,8 @@
                         <div id="memo-toolbar-container" class="flex items-center mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto custom-scrollbar flex-nowrap relative" style="touch-action: pan-x;">
                             
                             <!-- 手描きモード切替ボタン -->
-                            <button type="button" id="memo-draw-toggle-btn" onclick="window.toggleDrawMode(this)" class="p-1.5 text-gray-600 hover:bg-blue-100 hover:text-blue-600 rounded text-sm transition shrink-0 border border-transparent shadow-sm bg-gray-50 mr-1" title="手書きモード">
-                                <i class="fas fa-pen-fancy"></i>
+                            <button type="button" id="memo-draw-toggle-btn" onclick="window.toggleDrawMode(this)" class="px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-sm font-bold transition shrink-0 border-2 border-gray-300 shadow-sm bg-white mr-3 flex items-center justify-center gap-2 min-w-[130px]" title="手書きモード切替">
+                                <i class="fas fa-pen-fancy text-blue-500 text-base"></i> <span>手書き入力</span>
                             </button>
 
                             <!-- 共通の戻る・進む -->
@@ -1693,7 +1693,6 @@
         };
 
         window.undo = () => {
-            // ★ メモ編集中ならメモ用のUndoを呼ぶ
             if (editingMemoId) {
                 window.handleMemoUndo();
                 return;
@@ -1713,7 +1712,6 @@
         };
 
         window.redo = () => {
-            // ★ メモ編集中ならメモ用のRedoを呼ぶ
             if (editingMemoId) {
                 window.handleMemoRedo();
                 return;
@@ -1739,7 +1737,6 @@
                     if (undoBtn) { undoBtn.style.opacity = window.memoUndoStack.length > 0 ? '1' : '0.3'; undoBtn.style.pointerEvents = window.memoUndoStack.length > 0 ? 'auto' : 'none'; }
                     if (redoBtn) { redoBtn.style.opacity = window.memoRedoStack.length > 0 ? '1' : '0.3'; redoBtn.style.pointerEvents = window.memoRedoStack.length > 0 ? 'auto' : 'none'; }
                 } else {
-                    // テキストモード時は常に押せる状態にするか、document.queryCommandEnabled を使う
                     if (undoBtn) { undoBtn.style.opacity = '1'; undoBtn.style.pointerEvents = 'auto'; }
                     if (redoBtn) { redoBtn.style.opacity = '1'; redoBtn.style.pointerEvents = 'auto'; }
                 }
@@ -1794,8 +1791,15 @@
             document.querySelectorAll('.today-btn-date').forEach(el => el.textContent = dateStr);
             document.querySelectorAll('.today-btn-day').forEach(el => el.textContent = dayStr);
         };
+
         window.goToToday = () => {
-            const today = new Date(); currentDateObj = new Date(today); calendarDisplayDate = new Date(today);
+            const today = new Date();
+            if (currentView === 'weekly-plan' && (today.getDay() === 0 || today.getDay() === 6)) {
+                today.setDate(today.getDate() + (today.getDay() === 0 ? 1 : 2));
+            }
+            
+            currentDateObj = new Date(today); 
+            calendarDisplayDate = new Date(today);
             window.renderCurrentView();
             if (currentView === 'agenda') {
                 const todayStr = getFormatDateStr(today);
@@ -2123,7 +2127,6 @@
             if (btnIcon) btnIcon.className = 'fas fa-trash-alt';
         };
 
-        // ★ Undo/Redo用のスタックと関数
         window.memoUndoStack = [];
         window.memoRedoStack = [];
 
@@ -2350,7 +2353,7 @@
             document.getElementById('memo-edit-modal').classList.add('hidden');
             document.getElementById('memo-edit-modal').classList.remove('flex');
             editingMemoId = null;
-            window.updateUndoRedoButtons(); // モーダルを閉じたのでカレンダー側の履歴に切り替え
+            window.updateUndoRedoButtons(); 
         };
 
         window.saveMemo = () => { window.saveMemoLocally(); };
@@ -2439,7 +2442,7 @@
         window.isDrawing = false;
         window.drawModeActive = false;
         window.currentTool = 'pen'; 
-        window.currentShape = 'freehand'; // 'freehand', 'line', 'rect'
+        window.currentShape = 'freehand'; 
         window.currentWeight = 3;
         window.currentDrawColor = '#000000';
         window.hasCanvasChanged = false;
@@ -2510,8 +2513,6 @@
             window.startY = lastDrawY;
             window.currentStrokePath = [{x: lastDrawX, y: lastDrawY}];
 
-            // マーカー時のオーバーレイキャンバス設定を削除し、
-            // 全ての描画は一度オーバーレイに行い、PointerUp時に合成するように変更。
             window.overlayCanvas.style.opacity = '1';
             window.overlayCanvas.style.mixBlendMode = 'normal';
 
@@ -2588,7 +2589,6 @@
                 
                 if (window.currentTool !== 'eraser') {
                     if (window.currentTool === 'marker') {
-                        // マーカーの場合は重なりを描画時にmultiplyで合成する
                         window.memoCtx.globalCompositeOperation = 'multiply';
                     } else {
                         window.memoCtx.globalCompositeOperation = 'source-over';
@@ -2626,8 +2626,8 @@
             const drawTools = document.getElementById('memo-draw-tools');
             
             if (window.drawModeActive) {
-                btn.classList.add('bg-blue-100', 'text-blue-600');
-                btn.classList.remove('bg-gray-50');
+                btn.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-400');
+                btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-blue-50');
                 overlayCanvas.classList.remove('pointer-events-none');
                 overlayCanvas.classList.add('pointer-events-auto');
                 content.contentEditable = "false";
@@ -2641,8 +2641,8 @@
                 const activeToolBtn = document.querySelector(`.draw-tool-btn[onclick*="${window.currentTool}"]`);
                 if (activeToolBtn) window.setDrawTool(window.currentTool, activeToolBtn);
             } else {
-                btn.classList.remove('bg-blue-100', 'text-blue-600');
-                btn.classList.add('bg-gray-50');
+                btn.classList.remove('bg-blue-100', 'text-blue-700', 'border-blue-400');
+                btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-blue-50');
                 overlayCanvas.classList.add('pointer-events-none');
                 overlayCanvas.classList.remove('pointer-events-auto');
                 content.contentEditable = "true";
@@ -2764,6 +2764,23 @@
 
         window.switchView = (viewName) => {
             currentView = viewName; window.clearCellSelection();
+            
+            // ★ 週案簿に切り替えたとき、今日が土日なら次週を表示する
+            if (viewName === 'weekly-plan') {
+                const today = new Date();
+                const d = new Date(calendarDisplayDate);
+                const todayStart = new Date(today);
+                todayStart.setDate(today.getDate() - (today.getDay() === 0 ? 7 : today.getDay()) + 1);
+                const dStart = new Date(d);
+                dStart.setDate(d.getDate() - (d.getDay() === 0 ? 7 : d.getDay()) + 1);
+                
+                if (todayStart.toDateString() === dStart.toDateString()) {
+                    if (today.getDay() === 0 || today.getDay() === 6) {
+                        calendarDisplayDate.setDate(todayStart.getDate() + 7);
+                    }
+                }
+            }
+
             document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + viewName).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -3116,8 +3133,8 @@
                 document.getElementById('wp-modal-class-area').classList.remove('hidden');
                 document.getElementById('wp-modal-special-area').classList.add('hidden');
                 document.getElementById('wp-modal-time-config').classList.remove('hidden');
-                document.getElementById('wp-modal-base-status').classList.remove('hidden');
-                document.getElementById('wp-modal-self-study-btn').classList.remove('hidden');
+                document.getElementById('wp-modal-base-status').remove('hidden');
+                document.getElementById('wp-modal-self-study-btn').remove('hidden');
                 document.getElementById('wp-modal-title').innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
 
                 const dObj = new Date(dateStr);
@@ -3220,7 +3237,7 @@
                 const task = allPlanners[dateStr].reminders.find(t => t.id === taskId);
                 if (task) {
                     task.completed = completed;
-                    window.setPlannerUpdated(dateStr); // ★ 更新日時付与
+                    window.setPlannerUpdated(dateStr); 
                     safeSetItem(LS_KEY, JSON.stringify(allPlanners));
                     window.saveToFirebase();
                     window.renderCurrentView();
@@ -3280,7 +3297,7 @@
             } else if (currentModalMode === 'class') {
                 if (allPlanners[dateStr] && allPlanners[dateStr].classes) delete allPlanners[dateStr].classes[idOrIndex];
             }
-            window.setPlannerUpdated(dateStr); // ★ 更新日時付与
+            window.setPlannerUpdated(dateStr); 
             safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView();
         };
 
@@ -3381,7 +3398,6 @@
                 let sIdx = -1, eIdx = -1;
                 for (let i = 0; i < 42; i++) { if (cellDates[i].dateStr === ev.sDate) sIdx = i; if (cellDates[i].dateStr === ev.eDate) eIdx = i; }
                 if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = 41;
-                
                 if (sIdx !== -1 && eIdx !== -1 && sIdx <= eIdx) {
                     let row = 0;
                     while (true) {
@@ -3650,12 +3666,19 @@
                 const isSat = cur.getDay() === 6;
                 const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
                 const headerBg = isToday ? 'bg-blue-50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white');
+                const headerBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : '';
 
-                const holiHtml = holiName ? `<div class="text-[8px] sm:text-[9px] text-red-500 font-bold truncate w-full text-center px-0.5 leading-none mt-0.5" title="${holiName}">${holiName}</div>` : '';
+                const holiHtml = holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal w-full text-center">${holiName}</div>` : '';
 
-                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}"><span class="text-[9px] pointer-events-none ${color}">${DAYS_STR[cur.getDay()]}</span><span class="text-xs font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':color}">${cur.getDate()}</span>${holiHtml}</div>`;
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg} ${headerBorderClass}">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs sm:text-sm font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':color}">${cur.getDate()}</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold ${color}">(${DAYS_STR[cur.getDay()]})</span>
+                    </div>
+                    ${holiHtml}
+                </div>`;
 
-                let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
+                let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0 ${headerBorderClass}">`;
                 for (let h = 5; h < 24; h++) {
                     const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
                     colContent += `<div class="timeline-cell w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" style="height: calc(100% / 19);" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
@@ -3818,7 +3841,7 @@
                 const isSunOrHoli = dObj.getDay() === 0 || !!holiName;
                 const isSat = dObj.getDay() === 6;
                 const textColor = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-gray-700');
-                html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 rounded-lg shadow-sm border border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+                html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 border-b border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
             document.getElementById('agenda-view-list').innerHTML = html;
@@ -3988,7 +4011,7 @@
             for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
             const techCountsMap = calculateTechCountsForWeek(startOfWeek);
 
-            let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white rounded shadow-sm border border-gray-300 table-fixed">';
+            let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white table-fixed">';
             html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
             workDays.forEach(day => {
                 const holiName = getHolidayName(day);
@@ -3997,7 +4020,13 @@
                 const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
                 const bgHoli = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50';
 
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}"><div class="text-[8px] sm:text-[9px] ${color}">${day.getMonth()+1}/${day.getDate()}</div><div class="text-[10px] sm:text-xs ${color}">${DAYS_STR[day.getDay()]}</div>${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}</th>`;
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}">
+                    <div class="flex items-center justify-center gap-1">
+                        <span class="text-xs sm:text-sm font-bold ${color}">${day.getDate()}</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold ${color}">(${DAYS_STR[day.getDay()]})</span>
+                    </div>
+                    ${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}
+                </th>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
             
@@ -4381,11 +4410,9 @@
             window.renderWpModalButtons();
             
             const dObj = new Date(wpModalTarget.targetDateStr);
-            // ★ ここで「変更した曜日」に基づいてBaseTimetableを取得するように修正
             const baseTt = getBaseTimetableForDate(dObj);
             let newCls = "", newSub = "";
             const periodKey = `${wpSelectedPeriod}限`;
-            // wpSelectedDay をそのまま使って、その曜日のデータを引っ張ってくる
             if (baseTt[wpSelectedDay] && baseTt[wpSelectedDay][periodKey]) {
                 newCls = baseTt[wpSelectedDay][periodKey].cls || "";
                 newSub = baseTt[wpSelectedDay][periodKey].sub || "";
@@ -5699,6 +5726,21 @@
                 });
             });
 
+            // 本日以降の授業日をクラスごとに抽出し、近い順の番号を振るための準備
+            const todayStrForCompare = getFormatDateStr(new Date());
+            const circleNumbers = ["①", "②", "③"];
+            
+            // ★ クラス別ではなく、学年全体での日付リストを作成
+            let allFutureDatesSet = new Set();
+            Object.keys(classProgress).forEach(cls => {
+                classProgress[cls].forEach(record => {
+                    if (record.date >= todayStrForCompare) {
+                        allFutureDatesSet.add(record.date);
+                    }
+                });
+            });
+            let allFutureDatesList = Array.from(allFutureDatesSet).sort();
+
             const progressByHour = {};
             Object.keys(classProgress).forEach(cls => {
                 classProgress[cls].forEach(record => {
@@ -5707,9 +5749,18 @@
                     const displayDate = `${parseInt(dParts[1])}/${parseInt(dParts[2])}`;
                     const dayOfWeekStr = DAYS_STR[new Date(record.date).getDay()];
                     
+                    let badgeNumStr = "";
+                    if (record.date >= todayStrForCompare) {
+                        // ★ 学年全体での日付リストからインデックスを取得して番号を割り当て
+                        const idx = allFutureDatesList.indexOf(record.date);
+                        if (idx !== -1 && idx < circleNumbers.length) {
+                            badgeNumStr = `<br><span class="text-[12px] text-red-600 font-bold leading-tight">${circleNumbers[idx]}</span>`;
+                        }
+                    }
+
                     progressByHour[record.idx].push({
                         cls: cls,
-                        dateStr: `<span class="text-[14px]">${displayDate}</span><br><span class="text-[9px]">(${dayOfWeekStr})</span>`,
+                        dateStr: `<span class="text-[12px]">${displayDate}</span><br><span class="text-[9px]">(${dayOfWeekStr})</span>${badgeNumStr}`,
                         rawDate: record.date
                     });
                 });
@@ -5740,9 +5791,6 @@
                     </thead>
                     <tbody>
             `;
-
-            // 今日の日付文字列（比較用）
-            const todayStrForCompare = getFormatDateStr(new Date());
 
             plans.forEach((plan, idx) => {
                 const progressList = progressByHour[idx] || [];
@@ -5823,7 +5871,7 @@
                         <li>セルを一度クリックして選択し、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Delete</span> または <span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Backspace</span>キーを押すと内容を消去できます。</li>
                         <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
                         <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
-                        <li><span class="font-bold text-blue-600">NEW:</span> 過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示されます。</li>
+                        <li><span class="font-bold text-blue-600">NEW:</span> 過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示され、近い順に番号（①,②,③）が振られます。</li>
                     </ul>
                 </div>
             `;
