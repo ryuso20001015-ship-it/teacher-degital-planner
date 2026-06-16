@@ -741,8 +741,9 @@
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-1 sm:p-4 bg-gray-100 flex justify-center custom-scrollbar" id="memo-outer-scroll">
-                <div class="bg-white w-full max-w-4xl min-h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
+            <!-- ★ スクロール構造の修正箇所 -->
+            <div class="flex-1 overflow-hidden p-1 sm:p-4 bg-gray-100 flex justify-center" id="memo-outer-scroll">
+                <div class="bg-white w-full max-w-4xl h-full sm:rounded-lg shadow-sm sm:border border-gray-200 flex flex-col relative" id="memo-print-area">
                     <div class="p-3 sm:p-5 pb-1.5 flex flex-col border-b border-gray-100 shrink-0 relative z-20 bg-white/80 backdrop-blur-sm sm:rounded-t-lg">
                         <div class="flex justify-between items-start w-full">
                             <div class="flex-1 min-w-0">
@@ -781,9 +782,9 @@
                         <!-- ★ ツールバーコンテナ -->
                         <div id="memo-toolbar-container" class="flex items-center mt-3 pt-2 border-t border-gray-100 no-print overflow-x-auto custom-scrollbar flex-nowrap relative" style="touch-action: pan-x;">
                             
-                            <!-- 手描きモード切替ボタン -->
-                            <button type="button" id="memo-draw-toggle-btn" onclick="window.toggleDrawMode(this)" class="px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-sm font-bold transition shrink-0 border-2 border-gray-300 shadow-sm bg-white mr-3 flex items-center justify-center gap-2 min-w-[130px]" title="手書きモード切替">
-                                <i class="fas fa-pen-fancy text-blue-500 text-base"></i> <span>手書き入力</span>
+                            <!-- 手描きモード切替ボタン（テキスト削除済み） -->
+                            <button type="button" id="memo-draw-toggle-btn" onclick="window.toggleDrawMode(this)" class="w-8 h-8 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded transition shrink-0 border border-gray-300 shadow-sm bg-white mr-2 flex items-center justify-center" title="手書きモード切替">
+                                <i class="fas fa-pen-fancy text-blue-500 text-sm pointer-events-none"></i>
                             </button>
 
                             <!-- 共通の戻る・進む -->
@@ -890,10 +891,10 @@
                         </div>
                     </div>
                     
-                    <!-- ★ Canvasとテキスト編集エリアを重ねる構造 -->
-                    <div class="flex-1 relative w-full h-full min-h-[300px] overflow-hidden" id="memo-scroll-area">
+                    <!-- ★ スクロール領域。入力欄を十分長くできるように pb-32 を追加し、自身に scrollbar を付与 -->
+                    <div class="flex-1 relative w-full h-full min-h-0 overflow-y-auto custom-scrollbar" id="memo-scroll-area">
                         <div class="relative w-full min-h-full h-max" id="memo-canvas-wrapper">
-                            <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="w-full min-h-full outline-none text-gray-700 leading-relaxed bg-transparent custom-scrollbar sm:text-base text-sm p-4 sm:p-5 z-0 break-words"></div>
+                            <div id="memo-edit-content" contenteditable="true" oninput="window.triggerAutoSaveMemo()" placeholder="メモの内容を入力..." class="w-full min-h-full outline-none text-gray-700 leading-relaxed bg-transparent sm:text-base text-sm p-4 sm:p-5 z-0 break-words pb-32"></div>
                             <canvas id="memo-canvas" class="absolute top-0 left-0 w-full h-full z-10 pointer-events-none" style="touch-action: auto;"></canvas>
                             <!-- ★ 描画中の一時レイヤー（重なり描画の問題を解消） -->
                             <canvas id="memo-overlay-canvas" class="absolute top-0 left-0 w-full h-full z-20 pointer-events-none" style="touch-action: none;"></canvas>
@@ -3133,8 +3134,9 @@
                 document.getElementById('wp-modal-class-area').classList.remove('hidden');
                 document.getElementById('wp-modal-special-area').classList.add('hidden');
                 document.getElementById('wp-modal-time-config').classList.remove('hidden');
-                document.getElementById('wp-modal-base-status').remove('hidden');
-                document.getElementById('wp-modal-self-study-btn').remove('hidden');
+                // ★ 修正箇所: remove() メソッドが無くエラーとなっていた部分を修正
+                document.getElementById('wp-modal-base-status').classList.remove('hidden');
+                document.getElementById('wp-modal-self-study-btn').classList.remove('hidden');
                 document.getElementById('wp-modal-title').innerHTML = `<i class="fas fa-chalkboard-teacher mr-1"></i>授業予定`;
 
                 const dObj = new Date(dateStr);
@@ -3344,7 +3346,7 @@
                     } else { allPlanners[dateStr].reminders.push(tsk); }
                 }
             }
-            window.setPlannerUpdated(dateStr); // ★ 更新日時付与
+            window.setPlannerUpdated(dateStr);
             safeSetItem(LS_KEY, JSON.stringify(allPlanners)); window.saveToFirebase(); window.closeAddMenu(); window.renderCurrentView(); 
         };
 
@@ -3367,7 +3369,7 @@
             for (let i = 0; i < 42; i++) {
                 let dObj;
                 if (i < startOffset) { dObj = new Date(year, month, -(startOffset - i - 1)); } 
-                else if (dayCountForCalc <= daysInMonth) { dObj = new Date(year, month, dayCountForCalc++); }
+                else if (dayCountForCalc <=daysInMonth) { dObj = new Date(year, month, dayCountForCalc++); }
                 else { dObj = new Date(year, month + 1, nextDayCountForCalc++); }
                 cellDates.push({ dateStr: getFormatDateStr(dObj), dateObj: dObj });
             }
@@ -3398,6 +3400,7 @@
                 let sIdx = -1, eIdx = -1;
                 for (let i = 0; i < 42; i++) { if (cellDates[i].dateStr === ev.sDate) sIdx = i; if (cellDates[i].dateStr === ev.eDate) eIdx = i; }
                 if (sIdx === -1 && ev.sDate < viewStartDateStr) sIdx = 0; if (eIdx === -1 && ev.eDate > viewEndDateStr) eIdx = 41;
+                
                 if (sIdx !== -1 && eIdx !== -1 && sIdx <= eIdx) {
                     let row = 0;
                     while (true) {
