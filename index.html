@@ -557,7 +557,7 @@
                 </div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
-                <div id="unit-plan-container" class="min-w-[650px] sm:min-w-[800px] w-full pb-20 h-full">
+                <div id="unit-plan-container" class="min-w-[450px] sm:min-w-[800px] w-full pb-20 h-full">
                     </div>
             </div>
         </div>
@@ -690,7 +690,6 @@
                     <div id="settings-basetimetable-container"></div>
                 </div>
 
-                <!-- ★ カレンダーカテゴリー名設定の追加 -->
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
                     <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-tags text-orange-500 mr-1.5"></i> カレンダーカテゴリー名の設定</h3>
                     <p class="text-[10px] sm:text-xs text-gray-500 mb-3">予定やタスクの分類に使うカテゴリー名を変更できます。</p>
@@ -1493,7 +1492,6 @@
 
         window.currentCalendarFilters = ['work', 'jugyo', 'club', 'student_council', 'private'];
 
-        // ★ 修正：「全て」ボタンのトグル切り替え対応
         window.setCalendarFilter = (filter) => {
             const ids = ['work', 'jugyo', 'club', 'student_council', 'private'];
             if (filter === 'all') {
@@ -1534,8 +1532,6 @@
                 ids.forEach(id => {
                     const btn = document.getElementById(`${prefix}${id}`);
                     if (btn) {
-                        // setCalendarFilter への連携はそのまま onclick="window.setCalendarFilter('xxx')" とHTMLに記載されている
-                        
                         if (window.currentCalendarFilters.includes(id)) {
                             let activeClass = 'bg-white shadow-sm border ';
                             if (id === 'work') activeClass += 'border-red-300 text-red-600';
@@ -2956,7 +2952,6 @@
                 if (cData.isSelfStudy) isSelfStudy = true; 
                 hasCustom = true;
                 
-                // ★修正箇所: カスタムデータが空で時間割変更もなく、自習・カットもない場合はMy時間割に戻す(フォールバック)
                 if (!cls && !sub && !memo && sourceDay === dObj.getDay() && sourcePeriod === pNum && !isSelfStudy && !cData.isCut) {
                     hasCustom = false;
                 }
@@ -3343,7 +3338,7 @@
         window.saveAddMenu = () => {
             window.saveStateToHistory(); 
             const dateStr = addModalTargetDate;
-            if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
+            if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events:[] };
 
             if (currentModalMode === 'class') {
                 const cls = document.getElementById('class-edit-cls').value.trim(), sub = document.getElementById('class-edit-sub').value.trim();
@@ -4069,17 +4064,22 @@
             const workDays = [];
             for(let i=0; i<5; i++) { const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i); workDays.push(cur); }
             const techCountsMap = calculateTechCountsForWeek(startOfWeek);
+            const todayStrForWp = getFormatDateStr(new Date());
 
             let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white table-fixed">';
             html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
             workDays.forEach(day => {
+                const dStr = getFormatDateStr(day);
+                const isToday = dStr === todayStrForWp;
+                const todayThClass = isToday ? 'outline outline-2 outline-blue-500 z-20 relative bg-blue-50/30 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.2)]' : '';
+
                 const holiName = getHolidayName(day);
                 const isSunOrHoli = day.getDay() === 0 || !!holiName;
                 const isSat = day.getDay() === 6;
-                const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
-                const bgHoli = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50';
+                const color = isToday ? 'text-blue-600' : (isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]'));
+                const bgHoli = isToday ? 'bg-blue-50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50');
 
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}">
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli} ${todayThClass}">
                     <div class="flex items-center justify-center gap-1">
                         <span class="text-xs sm:text-sm font-bold ${color}">${day.getDate()}</span>
                         <span class="text-[9px] sm:text-[10px] font-bold ${color}">(${DAYS_STR[day.getDay()]})</span>
@@ -4093,6 +4093,8 @@
 
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                const isToday = dStr === todayStrForWp;
+                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
                 const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
                 
                 let optionsHtml = '';
@@ -4108,15 +4110,17 @@
                 });
                 optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
 
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center ${todayTdClass}"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
             
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
+                const isToday = dStr === todayStrForWp;
+                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
                 let maxLessons = 0; if (ttType !== 'none' && globalSettings.timetables[ttType]) maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center ${todayTdClass}"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
                     <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
                     ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
                 </select></td>`;
@@ -4149,6 +4153,8 @@
                     
                     for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                        const isToday = dStr === todayStrForWp;
+                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
                         const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
                         const isCut = cData.isCut;
                         const title = cData.title || "";
@@ -4174,7 +4180,7 @@
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
                         
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px] ${todayTdClass}">
                                     <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button>
                                  </td>`;
                     }
@@ -4184,10 +4190,12 @@
                     
                     for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
+                        const isToday = dStr === todayStrForWp;
+                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
                         const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
-                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px]"></td>`; continue; }
+                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px] ${todayTdClass}"></td>`; continue; }
 
                         const baseTt = getBaseTimetableForDate(day);
                         let baseCls = "", baseSub = "", baseMemo = "";
@@ -4271,7 +4279,7 @@
                             borderClass = "border border-[#4a5f73]/50 shadow-sm";
                         } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
+                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px] ${todayTdClass}">
                                     <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button>
                                  </td>`;
                     }
@@ -4288,7 +4296,7 @@
             allPlanners[dStr].timetableType = select.value;
             if (select.value === 'none') { allPlanners[dStr].lessonCount = 0; } 
             else if (globalSettings.timetables[select.value]) { allPlanners[dStr].lessonCount = globalSettings.timetables[select.value].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length; }
-            window.setPlannerUpdated(dStr); // ★ 更新日時付与
+            window.setPlannerUpdated(dStr);
             window.saveWeeklyPlan(false); 
         };
 
@@ -4564,7 +4572,7 @@
                                                  const shiftedIdx = currentIdx + shiftAmount;
                                                  if (shiftedIdx >= 0) {
                                                      cData.unitPlanIdx = shiftedIdx.toString();
-                                                     window.setPlannerUpdated(dStr); // ★ 連鎖更新にもタイムスタンプ
+                                                     window.setPlannerUpdated(dStr);
                                                  } else {
                                                      cData.unitPlanIdx = ""; 
                                                      window.setPlannerUpdated(dStr);
@@ -4580,7 +4588,7 @@
                 }
             }
             
-            window.setPlannerUpdated(targetDateStr); // ★ 更新日時付与
+            window.setPlannerUpdated(targetDateStr);
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -4611,7 +4619,7 @@
                 isSelfStudy: !currentIsSelfStudy
             };
 
-            window.setPlannerUpdated(targetDateStr); // ★
+            window.setPlannerUpdated(targetDateStr);
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -4634,7 +4642,7 @@
                 isCut: !currentData.isCut
             };
             
-            window.setPlannerUpdated(targetDateStr); // ★
+            window.setPlannerUpdated(targetDateStr);
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -4649,7 +4657,7 @@
             
             allPlanners[targetDateStr].classes[targetPeriodId] = { disabled: true };
             
-            window.setPlannerUpdated(targetDateStr); // ★
+            window.setPlannerUpdated(targetDateStr);
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
             window.saveToFirebase();
             window.renderCurrentView();
@@ -4661,7 +4669,7 @@
             const { targetDateStr, targetPeriodId } = wpModalTarget;
             if (allPlanners[targetDateStr] && allPlanners[targetDateStr].classes) {
                 delete allPlanners[targetDateStr].classes[targetPeriodId];
-                window.setPlannerUpdated(targetDateStr); // ★
+                window.setPlannerUpdated(targetDateStr);
             }
             
             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
@@ -4688,7 +4696,6 @@
                 });
             });
 
-            // ★ カテゴリー設定の取得処理追加
             if (!tempSettings.categories) tempSettings.categories = {};
             const cats = tempSettings.categories;
             const catWork = document.getElementById('set-cat-work'); if(catWork) cats.work = catWork.value;
@@ -4770,7 +4777,6 @@
             });
             document.getElementById('settings-timetables-container').innerHTML = html;
 
-            // ★ カテゴリー設定UIの構築
             const cats = tempSettings.categories || DEFAULT_CATEGORIES;
             let catHtml = `
                 <div class="flex items-center gap-2 bg-white p-2 border border-gray-200 rounded shadow-sm">
@@ -4958,11 +4964,10 @@
         window.saveSettings = () => {
             window.syncTempSettingsFromDOM();
             globalSettings = JSON.parse(JSON.stringify(tempSettings));
-            globalSettings.updatedAt = Date.now(); // ★ 設定全体の更新日時
+            globalSettings.updatedAt = Date.now();
             safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
             window.saveToFirebase();
             
-            // ★ 保存時にラベルUIに反映
             window.updateCategoryLabels();
             window.updateDisplayMode();
             window.renderCurrentView();
@@ -5000,8 +5005,6 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         if (data.planners && data.settings) {
-                            // ★ インポートしたデータがクラウドのデータに負けないように
-                            // すべてのデータの updatedAt を現在時刻に強制上書きする
                             const now = Date.now();
                             
                             for (const dateKey in data.planners) {
@@ -5046,7 +5049,7 @@
                 };
                 reader.readAsText(file);
             }
-            event.target.value = ''; // Reset
+            event.target.value = '';
         };
 
         let swipeStartX = 0;
@@ -5071,12 +5074,10 @@
                 return;
             }
             
-            // ボトムシート内でのスワイプ開始ならカレンダーのスワイプをキャンセル
             if (e.target.closest('#month-bottom-sheet')) {
                 return;
             }
 
-            // カテゴリーフィルター領域でのスワイプ開始ならカレンダーのスワイプをキャンセル
             if (e.target.closest('.filter-container')) {
                 return;
             }
@@ -5112,12 +5113,10 @@
         document.addEventListener('touchmove', (e) => {
             if (!swipeStartX || !activeViewElem) return;
             
-            // ボトムシートが表示中かつシート内での操作ならカレンダーのスワイプをキャンセル
             if (e.target.closest('#month-bottom-sheet')) {
                 return;
             }
 
-            // カテゴリーフィルター領域での操作ならカレンダーのスワイプをキャンセル
             if (e.target.closest('.filter-container')) {
                 return;
             }
@@ -5212,7 +5211,6 @@
             isSwiping = false;
         });
 
-        // 月・週カレンダーボトムシートの下スワイプで閉じる処理 + 左右スワイプで日付移動
         const bottomSheet = document.getElementById('month-bottom-sheet');
         let sheetStartY = 0;
         let sheetStartX = 0;
@@ -5265,7 +5263,6 @@
                         bottomSheet.style.transform = `translateY(${diffY}px)`;
                     }
                 } else if (isSheetSwipingX && sheetContentElem) {
-                    // X軸スワイプ時は中のコンテンツだけを動かす
                     const translateX = diffX * 0.5;
                     sheetContentElem.style.transform = `translateX(${translateX}px)`;
                     sheetContentElem.style.opacity = Math.max(0.2, 1 - Math.abs(translateX) / 200);
@@ -5289,9 +5286,8 @@
                     const diffX = sheetCurrentX - sheetStartX;
                     
                     if (Math.abs(diffX) > 50 && window.mbsTargetDate) {
-                        // 左右スワイプで日付を切り替える
                         const targetDateObj = new Date(window.mbsTargetDate);
-                        const offset = diffX > 0 ? -1 : 1; // 右スワイプ(>0)は前日、左スワイプ(<0)は翌日
+                        const offset = diffX > 0 ? -1 : 1; 
                         targetDateObj.setDate(targetDateObj.getDate() + offset);
                         const newDateStr = getFormatDateStr(targetDateObj);
                         
@@ -5301,13 +5297,11 @@
                         sheetContentElem.style.opacity = '0';
 
                         setTimeout(() => {
-                            // セル選択状態も更新
                             if (selectedCellId) {
                                 selectedCellId = `month-cell-${newDateStr}`;
                                 if(currentView === 'month') window.renderCurrentView();
                             }
                             
-                            // 新しい日付でボトムシートを開き直す（アニメーションリセットを無効化）
                             window.openMonthBottomSheet(newDateStr, window.mbsDefaultHour, true);
                             
                             const newContentElem = document.getElementById('mbs-content');
@@ -5347,7 +5341,6 @@
             const tapLength = currentTime - (cell.lastTapTime || 0);
             
             if (tapLength < 400 && tapLength > 0) {
-                // ダブルタップ（またはダブルクリック）検知
                 window.editUnitPlanCell(cell);
                 cell.lastTapTime = 0;
                 return;
@@ -5374,7 +5367,6 @@
             sel.addRange(range);
         };
 
-        // 複数選択用の変数とロジック
         let _isSelectingUnitPlan = false;
         let _selectionStart = null;
         let _selectionEnd = null;
@@ -5406,11 +5398,10 @@
                     const r = parseInt(cell.getAttribute('data-row-idx'));
                     const c = parseInt(cell.getAttribute('data-col-idx'));
 
-                    // Shiftキーを押しながらのクリック対応
                     if (e.shiftKey && _selectionStart) {
                         _selectionEnd = { r, c };
                         window.applyUnitPlanSelection();
-                        e.preventDefault(); // 不要なテキスト選択を防止
+                        e.preventDefault(); 
                         return;
                     }
 
@@ -5445,7 +5436,6 @@
             _isSelectingUnitPlan = false;
         });
 
-        // 削除（Delete / Backspace）
         document.addEventListener('keydown', (e) => {
             if (currentView === 'unit-plan') {
                 const activeEl = document.activeElement;
@@ -5457,7 +5447,7 @@
                     const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
                     if (selectedCells.length > 0) {
                         e.preventDefault();
-                        window.saveStateToHistory(); // ★ 履歴を保存
+                        window.saveStateToHistory(); 
                         
                         let isChanged = false;
                         const cls = window.currentUnitPlanGrade;
@@ -5477,7 +5467,7 @@
                             }
                         });
                         if (isChanged) {
-                            allUnitPlans[planKey].updatedAt = Date.now(); // ★
+                            allUnitPlans[planKey].updatedAt = Date.now();
                             window.saveUnitPlan(false);
                         }
                     }
@@ -5485,12 +5475,11 @@
             }
         });
 
-        // コピー対応（選択範囲のセルをTSVテキストとしてクリップボードへ）
         document.addEventListener('copy', (e) => {
             if (currentView !== 'unit-plan') return;
             const activeEl = document.activeElement;
             if (activeEl && activeEl.getAttribute('contenteditable') === 'true') {
-                return; // セル編集中はブラウザのデフォルトコピーに任せる
+                return; 
             }
 
             const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
@@ -5528,19 +5517,17 @@
             const clipboardData = e.clipboardData || window.clipboardData;
             clipboardData.setData('text/plain', tsv);
             
-            // コピーしたことを少し視覚的にフィードバック
             selectedCells.forEach(cell => {
                 cell.style.opacity = '0.5';
                 setTimeout(() => cell.style.opacity = '1', 150);
             });
         });
 
-        // ペースト対応（TSVをパースして選択範囲の左上を起点に貼り付け）
         document.addEventListener('paste', (e) => {
             if (currentView !== 'unit-plan') return;
             const activeEl = document.activeElement;
             if (activeEl && activeEl.getAttribute('contenteditable') === 'true') {
-                return; // 編集中はデフォルト
+                return; 
             }
 
             const selectedCells = document.querySelectorAll('.unit-plan-cell-selected');
@@ -5587,7 +5574,6 @@
 
                 const parsedRows = parseTSV(pastedText);
 
-                // 選択範囲の左上を取得
                 let minR = Infinity, minC = Infinity;
                 selectedCells.forEach(cell => {
                     const r = parseInt(cell.getAttribute('data-row-idx'));
@@ -5607,13 +5593,12 @@
                     return;
                 }
                 
-                window.saveStateToHistory(); // ★ 変更前に履歴を保存
+                window.saveStateToHistory(); 
 
                 const plans = allUnitPlans[planKey].plans;
                 let isChanged = false;
 
                 if (parsedRows.length === 1 && parsedRows[0].length === 1) {
-                    // 単一セルのコピペ時は、選択されているすべてのセルに貼り付け
                     selectedCells.forEach(cell => {
                         cell.innerText = parsedRows[0][0];
                         const r = parseInt(cell.getAttribute('data-row-idx'));
@@ -5640,7 +5625,6 @@
                             const cellText = rowCells[c];
                             const targetColIdx = startColIdx + c;
                             
-                            // セルテキストが存在する場合、または既存データがない場合に更新
                             if (cellText !== "") {
                                 if (targetColIdx === 0) { p.task = cellText; isChanged = true; }
                                 else if (targetColIdx === 1) { p.activity = cellText; isChanged = true; }
@@ -5651,7 +5635,7 @@
                 }
                 
                 if (isChanged) {
-                    allUnitPlans[planKey].updatedAt = Date.now(); // ★
+                    allUnitPlans[planKey].updatedAt = Date.now();
                     window.saveUnitPlan(false);
                     window.renderUnitPlanView();
                 }
@@ -5667,9 +5651,9 @@
             const plans = allUnitPlans[planKey].plans;
             if (plans[rowIdx]) {
                 if (plans[rowIdx][field] !== cellElem.innerText) {
-                    window.saveStateToHistory(); // 変更された場合のみ履歴保存
+                    window.saveStateToHistory();
                     plans[rowIdx][field] = cellElem.innerText;
-                    allUnitPlans[planKey].updatedAt = Date.now(); // ★
+                    allUnitPlans[planKey].updatedAt = Date.now();
                     window.saveUnitPlan(false);
                 }
             }
@@ -5679,7 +5663,7 @@
         window.addUnitPlanRow = (planKey) => {
             if (!allUnitPlans[planKey]) return;
             
-            window.saveStateToHistory(); // 履歴保存
+            window.saveStateToHistory();
             
             if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
                 document.activeElement.blur();
@@ -5687,7 +5671,7 @@
 
             const plans = allUnitPlans[planKey].plans;
             plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
-            allUnitPlans[planKey].updatedAt = Date.now(); // ★
+            allUnitPlans[planKey].updatedAt = Date.now();
             window.saveUnitPlan(false);
             window.renderUnitPlanView();
             setTimeout(() => {
@@ -5699,7 +5683,7 @@
         window.removeUnitPlanRow = (planKey, idx) => {
             if (!allUnitPlans[planKey]) return;
             if (confirm(`第${idx + 1}時の行を削除しますか？`)) {
-                window.saveStateToHistory(); // 履歴保存
+                window.saveStateToHistory();
                 
                 if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
                     document.activeElement.blur();
@@ -5708,7 +5692,7 @@
                 const plans = allUnitPlans[planKey].plans;
                 plans.splice(idx, 1);
                 plans.forEach((p, i) => { p.hour = i + 1; });
-                allUnitPlans[planKey].updatedAt = Date.now(); // ★
+                allUnitPlans[planKey].updatedAt = Date.now();
                 window.saveUnitPlan(false);
                 window.renderUnitPlanView();
             }
@@ -5731,7 +5715,6 @@
             }
         };
 
-        // テーブル全体のフォーカス制御補助
         window.focusNextCell = (rowIdx, colIdx) => {
             const nextTd = document.querySelector(`td[data-row-idx="${rowIdx}"][data-col-idx="${colIdx}"]`);
             if (nextTd) nextTd.focus();
@@ -5753,14 +5736,14 @@
         window.renderUnitPlanView = () => {
             const container = document.getElementById('unit-plan-container');
             const grade = window.currentUnitPlanGrade;
-            const sub = "技術"; // 現在は技術固定
+            const sub = "技術"; 
             const planKey = `${grade}_${sub}`;
 
             if (!allUnitPlans[planKey]) {
                 allUnitPlans[planKey] = {
                     grade: grade,
                     subject: sub,
-                    updatedAt: Date.now(), // ★
+                    updatedAt: Date.now(),
                     plans: [
                         { hour: 1, task: "新しい単元の学習課題", activity: "主な学習活動・内容", note: "評価規準や準備物など" }
                     ]
@@ -5769,12 +5752,11 @@
 
             const plans = allUnitPlans[planKey].plans;
 
-            // クラスごとの進捗状況を計算
             const classProgress = {};
             const today = new Date();
             const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
             const startDate = new Date(year, 3, 1);
-            const endDate = new Date(year + 1, 2, 31); // ★年度末まで対象とする
+            const endDate = new Date(year + 1, 2, 31); 
             
             let curDate = new Date(startDate);
             while (curDate <= endDate) {
@@ -5824,23 +5806,18 @@
                 });
             });
 
-            // 本日以降の授業日をクラスごとに抽出し、近い順の番号を振るための準備
             const todayStrForCompare = getFormatDateStr(new Date());
             const circleNumbers = ["①", "②", "③"];
             
-            // ★ 学年全体での日付リストを作成
             let allFutureDatesSet = new Set();
             Object.keys(classProgress).forEach(cls => {
                 classProgress[cls].forEach(record => {
-                    // ★ 今日ではなく、現在時刻も加味した判定 (授業時間を過ぎたら済にするため)
-                    // 本日の授業である場合、すでに終了しているかをチェック
                     let isFutureOrCurrent = false;
                     if (record.date > todayStrForCompare) {
                          isFutureOrCurrent = true;
                     } else if (record.date === todayStrForCompare) {
-                         // 当日の場合、該当の時限の終了時刻を過ぎているかチェック
                          const targetDateObj = new Date(record.date);
-                         let endTimeStr = "23:59"; // デフォルト
+                         let endTimeStr = "23:59";
                          
                          const data = allPlanners[record.date] || {};
                          const ttType = getTtType(record.date);
@@ -5855,7 +5832,7 @@
                                      const subStr = String(cData.sub).trim();
                                      if (clsStr === cls && subStr === sub) {
                                          if ((cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && parseInt(cData.unitPlanIdx) === record.idx) || 
-                                             (cData.unitPlanIdx === undefined && record.idx !== -1)) { // ちょっと乱暴だが概ね合致するコマを探す
+                                             (cData.unitPlanIdx === undefined && record.idx !== -1)) { 
                                              endTimeStr = p.e;
                                          }
                                      }
@@ -5869,7 +5846,7 @@
                          const currentTimeStr = `${currentHour}:${currentMin}`;
                          
                          if (currentTimeStr < endTimeStr) {
-                             isFutureOrCurrent = true; // まだ終わっていない
+                             isFutureOrCurrent = true;
                          }
                     }
 
@@ -5880,6 +5857,16 @@
             });
             let allFutureDatesList = Array.from(allFutureDatesSet).sort();
 
+            const idxCounts = {};
+            Object.keys(classProgress).forEach(cls => {
+                idxCounts[cls] = {};
+                classProgress[cls].forEach(record => {
+                    if (record.idx !== -1) {
+                        idxCounts[cls][record.idx] = (idxCounts[cls][record.idx] || 0) + 1;
+                    }
+                });
+            });
+
             const progressByHour = {};
             Object.keys(classProgress).forEach(cls => {
                 classProgress[cls].forEach(record => {
@@ -5889,9 +5876,9 @@
                     const dayOfWeekStr = DAYS_STR[new Date(record.date).getDay()];
                     
                     let badgeNumStr = "";
-                    
                     let isFutureOrCurrent = false;
                     let isTodayPast = false;
+
                     if (record.date > todayStrForCompare) {
                          isFutureOrCurrent = true;
                     } else if (record.date === todayStrForCompare) {
@@ -5923,21 +5910,25 @@
                          if (currentTimeStr < endTimeStr) {
                              isFutureOrCurrent = true; 
                          } else {
-                             isTodayPast = true; // 今日だがすでに終わった
+                             isTodayPast = true;
                          }
                     }
 
                     if (isFutureOrCurrent) {
-                        // ★ 学年全体での日付リストからインデックスを取得して番号を割り当て
                         const idx = allFutureDatesList.indexOf(record.date);
                         if (idx !== -1 && idx < circleNumbers.length) {
                             badgeNumStr = `<br><span class="text-[12px] text-red-600 font-bold leading-tight">${circleNumbers[idx]}</span>`;
                         }
                     }
 
+                    let warnMark = "";
+                    if (record.idx !== -1 && idxCounts[cls][record.idx] > 1) {
+                        warnMark = `<span class="text-orange-500 ml-0.5" title="同じ授業が複数回設定されています">⚠️</span>`;
+                    }
+
                     progressByHour[record.idx].push({
                         cls: cls,
-                        dateStr: `<span class="text-[12px]">${displayDate}</span><br><span class="text-[9px]">(${dayOfWeekStr})</span>${badgeNumStr}`,
+                        dateStr: `<span class="text-[12px] sm:text-[10px]">${displayDate}</span><br><span class="text-[9px]">(${dayOfWeekStr})</span>${warnMark}${badgeNumStr}`,
                         rawDate: record.date,
                         isFutureOrCurrent: isFutureOrCurrent,
                         isTodayPast: isTodayPast
@@ -5947,25 +5938,23 @@
 
             document.getElementById('unit-plan-progress').innerHTML = '';
 
-            // 1組から6組までの固定列を作成
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
 
             let html = `
-                <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed">
+                <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs">
                     <thead class="sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-10 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/4 text-center">学習課題（本時の目標）</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/3 text-center">学習活動・内容</th>
-                            <th class="bg-gray-100 border border-gray-300 p-2 text-[#4a5f73] font-bold text-xs w-1/5 text-center">備考・評価・準備物</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[28%] sm:w-1/4 text-center">学習課題（本時の目標）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[35%] sm:w-1/3 text-center">学習活動・内容</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[20%] sm:w-1/5 text-center">備考・評価・準備物</th>
             `;
-            // クラスヘッダを追加
             classCols.forEach(clsName => {
-                html += `<th class="bg-gray-100 border border-gray-300 p-1 text-[#4a5f73] font-bold text-[10px] w-14 text-center">${clsName.split('-')[1]}組</th>`;
+                html += `<th class="bg-gray-100 border border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
             });
             
             html += `
-                            <th class="bg-gray-100 border border-gray-300 p-2 w-8 text-center shrink-0"></th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 w-6 sm:w-8 text-center shrink-0"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -5984,7 +5973,7 @@
                 classCols.forEach(clsName => {
                     const p = latestProgressByCls[clsName];
                     if (p) {
-                        const isPast = !p.isFutureOrCurrent; // 時間を過ぎているか、前日以前なら past
+                        const isPast = !p.isFutureOrCurrent;
                         const cellBgColor = isPast ? 'bg-blue-50' : 'bg-red-50';
                         const textColor = isPast ? 'text-blue-800' : 'text-red-800';
 
@@ -6004,23 +5993,23 @@
 
                 html += `
                     <tr class="hover:bg-blue-50/30 transition-colors group">
-                        <td class="border border-gray-300 p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
+                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="0"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="1"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${plan.activity || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[60px] p-2 text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="2"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
@@ -6051,6 +6040,7 @@
                         <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
                         <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
                         <li><span class="font-bold text-blue-600">NEW:</span> 過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示され、近い順に番号（①,②,③）が振られます。</li>
+                        <li><span class="font-bold text-orange-600">NEW:</span> 同じ単元計画が週案簿で複数回（重複して）設定されていると⚠️が表示されます。</li>
                     </ul>
                 </div>
             `;
@@ -6058,7 +6048,6 @@
             container.innerHTML = html;
         };
 
-        // 初期化処理の呼び出し
         initDataSync();
         window.updateDisplayMode();
 
