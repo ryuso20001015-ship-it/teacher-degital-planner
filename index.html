@@ -3338,7 +3338,7 @@
         window.saveAddMenu = () => {
             window.saveStateToHistory(); 
             const dateStr = addModalTargetDate;
-            if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events:[] };
+            if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
 
             if (currentModalMode === 'class') {
                 const cls = document.getElementById('class-edit-cls').value.trim(), sub = document.getElementById('class-edit-sub').value.trim();
@@ -5945,9 +5945,9 @@
                     <thead class="sticky top-0 z-20 shadow-sm">
                         <tr>
                             <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[28%] sm:w-1/4 text-center">学習課題（本時の目標）</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[35%] sm:w-1/3 text-center">学習活動・内容</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[20%] sm:w-1/5 text-center">備考・評価・準備物</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">学習課題（本時の目標）</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">学習活動・内容</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">備考・評価・準備物</th>
             `;
             classCols.forEach(clsName => {
                 html += `<th class="bg-gray-100 border border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
