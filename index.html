@@ -414,6 +414,12 @@
             </div>
 
             <div id="wp-modal-special-area" class="hidden mb-2 bg-gray-50 p-2 rounded border border-gray-200">
+                <div class="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
+                    <label class="text-[9px] font-bold text-gray-500">カテゴリー</label>
+                    <select id="wp-modal-sp-category" class="bg-white rounded px-1.5 py-1 outline-none text-gray-700 font-medium text-xs border border-gray-300">
+                        <!-- jsで動的に追加されます -->
+                    </select>
+                </div>
                 <div class="flex-1">
                     <label class="text-[9px] font-bold text-gray-500 block mb-0.5">予定</label>
                     <input type="text" id="wp-modal-sp-title" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" placeholder="朝礼、学年集会など...">
@@ -698,7 +704,7 @@
 
                 <div class="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-sm mb-5">
                     <h3 class="font-bold text-sm text-[#4a5f73] mb-3 border-b pb-2"><i class="fas fa-clock text-blue-500 mr-1.5"></i> 授業時間（日課）の設定</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">週カレンダーなどに表示されるコマ（行）を追加・削除・編集できます。</p>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-3">週カレンダーなどに表示されるコマ（行）を追加・削除・編集できます。また、新しい日課パターンの追加・削除も可能です。</p>
                     <div class="space-y-4" id="settings-timetables-container"></div>
                 </div>
 
@@ -985,7 +991,6 @@
         
         window.currentUser = null;
 
-        // ★ 追加：カテゴリーラベルの動的更新
         window.updateCategoryLabels = () => {
             const cats = globalSettings.categories || DEFAULT_CATEGORIES;
             
@@ -1013,6 +1018,20 @@
                     sel.value = currentVal;
                 }
             });
+
+            // 週案簿特殊コマ用のセレクトボックス
+            const spCat = document.getElementById('wp-modal-sp-category');
+            if(spCat) {
+                const currentVal = spCat.value;
+                spCat.innerHTML = `
+                    <option value="work">${cats.work}</option>
+                    <option value="jugyo">${cats.jugyo}</option>
+                    <option value="club">${cats.club}</option>
+                    <option value="student_council">${cats.student_council}</option>
+                    <option value="private">${cats.private}</option>
+                `;
+                spCat.value = currentVal || 'work';
+            }
         };
 
         window.setPlannerUpdated = (dateStr) => {
@@ -1618,7 +1637,7 @@
                     evs.push({
                         id: `wp_special_${id}_${dateStr}`,
                         title: `【${name}】${evTitle}`,
-                        category: 'work',
+                        category: cData.category || 'work',
                         start: `${dateStr}T${sTime}`,
                         end: `${dateStr}T${eTime}`,
                         isAllDay: false,
@@ -2971,7 +2990,7 @@
                 unitPlanIdx = data.classes[period.id].unitPlanIdx;
             }
 
-            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx, isSelfStudy }; 
+            return { cls, sub, memo, isBase, sourceDay, sourcePeriod, isCut: (data.classes && data.classes[period.id] && data.classes[period.id].isCut), unitPlanIdx, isSelfStudy, category: (data.classes && data.classes[period.id] ? data.classes[period.id].category : undefined) }; 
         };
 
         window.openMonthBottomSheet = (dStr, defaultHour = null, disableTransformReset = false) => {
@@ -3161,6 +3180,7 @@
                 
                 document.getElementById('wp-modal-sp-title').value = cData.title || "";
                 document.getElementById('wp-modal-memo').value = cData.memo || "";
+                document.getElementById('wp-modal-sp-category').value = cData.category || 'work';
                 document.getElementById('wp-modal-title').innerHTML = `<i class="fas fa-clock mr-1"></i>${periodName}の予定`;
             } else {
                 wpModalTarget.isSpecial = false;
@@ -3730,10 +3750,10 @@
                         const cData = getPeriodClass(curStr, p, cur);
                         if (cData && !cData.disabled && !cData.isCut) {
                             let unitPlanLabel = "";
-                            let taskStr = ""; // ★ タスク(学習内容)文字列を保存する変数
+                            let taskStr = ""; 
                             if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
                                 unitPlanLabel = `<span class="text-[7px] bg-blue-100 text-blue-700 px-0.5 rounded ml-1 leading-none shrink-0 border border-blue-200">第${parseInt(cData.unitPlanIdx)+1}時</span>`;
-                                // ★ 単元計画からタスク内容を取得
+                                
                                 let tempGrade = null;
                                 if (cData.cls.startsWith('1') || cData.cls.includes('1年')) tempGrade = '1';
                                 else if (cData.cls.startsWith('2') || cData.cls.includes('2年')) tempGrade = '2';
@@ -3746,7 +3766,7 @@
                                     }
                                 }
                             }
-                            // ★ cDataにtaskStrを追加
+                            
                             const modifiedCData = {...cData, unitPlanTask: taskStr};
                             combinedEvents.push({ isClass: true, drawStart: p.s || "09:00", drawEnd: p.e || "10:00", period: p, cData: modifiedCData, badge: unitPlanLabel });
                         }
@@ -3767,7 +3787,7 @@
                         const p = item.period; const cData = item.cData; const blockClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy); 
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
                         if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`;
-                        // ★ 週ページで単元計画の内容(学習課題)を表示
+                        
                         if (cData.unitPlanTask) {
                             titleHtml += `<br><span class="text-[8px] font-normal opacity-80 mt-0.5 truncate inline-block w-full">${cData.unitPlanTask}</span>`;
                         }
@@ -4159,6 +4179,7 @@
                         const isCut = cData.isCut;
                         const title = cData.title || "";
                         const memo = cData.memo || "";
+                        const cat = cData.category || "";
                         
                         let btnContent = "";
                         let borderClass = "border border-gray-200", bgClass = "bg-white hover:bg-gray-50";
@@ -4168,14 +4189,27 @@
                             btnContent = `<div class="font-bold text-[10px] w-full text-center tracking-widest"><i class="fas fa-ban mr-1"></i>カット</div>`;
                             borderClass = "border border-dashed border-gray-300";
                         } else if (title || memo) {
-                            bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
-                            borderClass = "border border-yellow-200 shadow-sm";
-                            
-                            let contentHtml = "";
-                            if (title) contentHtml += `<div class="font-bold truncate w-full px-1 leading-tight">${title}</div>`;
-                            if (memo) contentHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-0.5 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>${memo}</div>`;
-                            
-                            btnContent = `<div class="text-[9px] sm:text-[10px] flex flex-col justify-center items-center w-full h-full p-0.5 whitespace-normal">${contentHtml}</div>`;
+                            if (cat) {
+                                const customClass = getEventColorClass(cat);
+                                bgClass = customClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('hover:bg-')).join(' ');
+                                const textColor = customClass.split(' ').find(c => c.startsWith('text-')) || "text-gray-800";
+                                borderClass = customClass.split(' ').find(c => c.startsWith('border-')) || "border-gray-200 shadow-sm";
+                                
+                                let contentHtml = "";
+                                if (title) contentHtml += `<div class="font-bold truncate w-full px-1 leading-tight ${textColor}">${title}</div>`;
+                                if (memo) contentHtml += `<div class="text-[7px] sm:text-[10px] font-normal opacity-80 truncate px-0.5 w-full mt-0.5 leading-tight ${textColor}"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>${memo}</div>`;
+                                
+                                btnContent = `<div class="text-[9px] sm:text-[10px] flex flex-col justify-center items-center w-full h-full p-0.5 whitespace-normal">${contentHtml}</div>`;
+                            } else {
+                                bgClass = "bg-yellow-50 text-yellow-800 hover:bg-yellow-100";
+                                borderClass = "border border-yellow-200 shadow-sm";
+                                
+                                let contentHtml = "";
+                                if (title) contentHtml += `<div class="font-bold truncate w-full px-1 leading-tight">${title}</div>`;
+                                if (memo) contentHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-0.5 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>${memo}</div>`;
+                                
+                                btnContent = `<div class="text-[9px] sm:text-[10px] flex flex-col justify-center items-center w-full h-full p-0.5 whitespace-normal">${contentHtml}</div>`;
+                            }
                         } else {
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
@@ -4521,9 +4555,11 @@
 
             if (isSpecial) {
                 const currentData = allPlanners[targetDateStr].classes[targetPeriodId] || {};
+                const cat = document.getElementById('wp-modal-sp-category').value;
                 allPlanners[targetDateStr].classes[targetPeriodId] = {
                     title: document.getElementById('wp-modal-sp-title').value.trim(),
                     memo: memo,
+                    category: cat,
                     isCut: currentData.isCut || false
                 };
             } else {
@@ -4751,10 +4787,12 @@
             let html = '';
             Object.keys(tempSettings.timetables).forEach(key => {
                 const tt = tempSettings.timetables[key];
-                html += `<div class="border border-gray-200 rounded bg-gray-50 p-3 mb-3">
+                html += `<div class="border border-gray-200 rounded bg-gray-50 p-3 mb-3 relative">
                     <div class="flex justify-between items-center mb-2">
                         <input type="text" id="set-tt-${key}-name" class="font-bold text-sm text-gray-700 bg-transparent border-b border-dashed border-gray-400 outline-none w-1/2 focus:border-[#4a5f73]" value="${tt.name}">
-                        <button onclick="window.addTtPeriod('${key}')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 shadow-sm transition flex items-center gap-1"><i class="fas fa-plus text-[#4a5f73]"></i> 行を追加</button>
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.addTtPeriod('${key}')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 shadow-sm transition flex items-center gap-1"><i class="fas fa-plus text-[#4a5f73]"></i> 行を追加</button>
+                        </div>
                     </div>
                     <div class="space-y-1">
                         <div class="flex text-[9px] font-bold text-gray-400 px-1 gap-1.5">
@@ -4773,8 +4811,18 @@
                         <button onclick="window.removeTtPeriod('${key}', ${idx})" class="ml-auto text-gray-300 hover:text-red-500 p-1 transition"><i class="fas fa-trash-alt text-[10px]"></i></button>
                     </div>`;
                 });
+                
+                // 日課パターン自体の削除ボタン（通常日課は削除不可とする）
+                if (key !== 'normal') {
+                    html += `<button onclick="window.removeTimetable('${key}')" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition" title="この日課を削除"><i class="fas fa-times"></i></button>`;
+                }
+
                 html += `</div></div>`;
             });
+            
+            // 新しい日課パターンを追加するボタン
+            html += `<button onclick="window.addTimetable()" class="w-full py-2 bg-white border border-dashed border-gray-300 rounded text-gray-500 font-bold text-xs hover:bg-gray-50 transition flex justify-center items-center gap-1"><i class="fas fa-plus"></i> 新しい日課を追加</button>`;
+            
             document.getElementById('settings-timetables-container').innerHTML = html;
 
             const cats = tempSettings.categories || DEFAULT_CATEGORIES;
@@ -4940,6 +4988,31 @@
                 const activeIdx = tempSettings.activePatternIndex || 0;
                 tempSettings.baseTimetablePatterns.splice(activeIdx, 1);
                 tempSettings.activePatternIndex = 0;
+                renderSettingsView();
+            }
+        };
+
+        window.addTimetable = () => {
+            window.syncTempSettingsFromDOM();
+            const newKey = 'custom_' + Date.now();
+            tempSettings.timetables[newKey] = {
+                name: "新しい日課",
+                periods: [
+                    {id: "p_1", name: "1限", s: "08:40", e: "09:30"},
+                    {id: "p_2", name: "2限", s: "09:40", e: "10:30"}
+                ]
+            };
+            renderSettingsView();
+        };
+
+        window.removeTimetable = (key) => {
+            if (key === 'normal') {
+                alert("通常日課は削除できません。");
+                return;
+            }
+            if (confirm("この日課パターンを削除しますか？")) {
+                window.syncTempSettingsFromDOM();
+                delete tempSettings.timetables[key];
                 renderSettingsView();
             }
         };
@@ -5923,7 +5996,7 @@
 
                     let warnMark = "";
                     if (record.idx !== -1 && idxCounts[cls][record.idx] > 1) {
-                        warnMark = `<span class="text-orange-500 ml-0.5" title="同じ授業が複数回設定されています">⚠️</span>`;
+                        warnMark = `<br><span class="text-xs text-orange-500 mt-1 inline-block" title="同じ授業が複数回設定されています">⚠️</span>`;
                     }
 
                     progressByHour[record.idx].push({
@@ -5941,13 +6014,14 @@
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
 
             let html = `
+                <div class="overflow-x-auto w-full">
                 <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs">
                     <thead class="sticky top-0 z-20 shadow-sm">
                         <tr>
                             <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">学習課題（本時の目標）</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">学習活動・内容</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[26%] text-center">備考・評価・準備物</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習課題</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習内容</th>
+                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">備考</th>
             `;
             classCols.forEach(clsName => {
                 html += `<th class="bg-gray-100 border border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
@@ -5979,7 +6053,7 @@
 
                         progressColsHtml += `
                             <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
-                                <div class="${textColor} font-bold whitespace-nowrap leading-tight">${p.dateStr}</div>
+                                <div class="${textColor} font-bold whitespace-nowrap leading-tight text-[8px] sm:text-[10px]">${p.dateStr}</div>
                             </td>
                         `;
                     } else {
@@ -5993,7 +6067,7 @@
 
                 html += `
                     <tr class="hover:bg-blue-50/30 transition-colors group">
-                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
+                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
                         <td class="border border-gray-300 p-0 align-top relative">
                             <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
                                  data-row-idx="${idx}" data-col-idx="0"
@@ -6026,6 +6100,7 @@
             html += `
                     </tbody>
                 </table>
+                </div>
                 <div class="mt-4 flex justify-center">
                     <button onclick="window.addUnitPlanRow('${planKey}')" class="flex items-center gap-2 bg-white border border-gray-300 text-[#4a5f73] px-6 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 shadow-sm transition group">
                         <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition"><i class="fas fa-plus"></i></div>
