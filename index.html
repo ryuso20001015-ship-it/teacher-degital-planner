@@ -543,7 +543,7 @@
             </div>
             
             <div id="weekly-plan-animation-area" class="flex-1 flex flex-col min-h-0 w-full bg-gray-50 relative">
-                <div class="flex-1 overflow-auto p-1.5 sm:p-3 custom-scrollbar flex flex-col w-full h-full" id="weekly-plan-container"></div>
+                <div class="flex-1 overflow-auto custom-scrollbar flex flex-col w-full h-full relative" id="weekly-plan-container"></div>
             </div>
         </div>
         
@@ -562,21 +562,24 @@
                     <div id="unit-plan-progress" class="text-[10px] sm:text-xs font-bold text-gray-600 flex flex-wrap gap-2 sm:gap-4"></div>
                 </div>
             </div>
-            <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative">
+            <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative" style="touch-action: auto;">
                 <div id="unit-plan-container" class="min-w-[450px] sm:min-w-[800px] w-full pb-20 h-full">
                     </div>
             </div>
         </div>
 
         <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col bg-gray-100 shadow-2xl overflow-hidden relative">
-            <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex items-center">
-                <h2 class="text-sm sm:text-base font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> 予定・タスクの一覧</h2>
-                <button onclick="window.goToToday()" class="ml-4 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100" title="今日に戻る">
-                    <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
-                    <div class="flex items-baseline leading-none">
-                        <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
-                    </div>
-                </button>
+            <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex justify-between items-center">
+                <div class="flex items-center">
+                    <h2 class="text-sm sm:text-base font-bold text-[#4a5f73]"><i class="fas fa-list-ul mr-1.5 text-[#4a5f73]"></i> 予定・タスクの一覧</h2>
+                    <button onclick="window.goToToday()" class="ml-4 flex flex-col items-center justify-center bg-white text-blue-500 hover:bg-blue-50 px-1.5 py-0.5 rounded transition border border-blue-200 shadow-sm transform scale-90 sm:scale-100" title="今日に戻る">
+                        <span class="text-[8px] font-bold leading-none mb-0.5">本日</span>
+                        <div class="flex items-baseline leading-none">
+                            <span class="today-btn-date text-[10px] sm:text-xs font-bold"></span><span class="today-btn-day text-[8px] font-bold ml-0.5"></span>
+                        </div>
+                    </button>
+                </div>
+                <button onclick="window.openAddMenu(window.getFormatDateStr(new Date()))" class="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-600 transition shadow-sm flex items-center gap-1.5"><i class="fas fa-plus"></i><span class="hidden sm:inline">追加</span></button>
             </div>
             <div class="flex-1 flex flex-col sm:flex-row overflow-hidden p-2 gap-2">
                 <div class="flex-1 flex flex-col bg-white rounded overflow-hidden">
@@ -990,6 +993,9 @@
         window.currentTaskCompleted = false;
         
         window.currentUser = null;
+
+        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        window.getFormatDateStr = getFormatDateStr;
 
         window.updateCategoryLabels = () => {
             const cats = globalSettings.categories || DEFAULT_CATEGORIES;
@@ -1598,8 +1604,6 @@
         let redoStack = [];
         const MAX_HISTORY = 20;
 
-        const getFormatDateStr = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        
         window.holidays = {};
         const fetchHolidays = async () => {
             try {
@@ -3238,8 +3242,7 @@
 
         window.openEditMenu = (dateStr, type, evId) => {
             if (evId && evId.startsWith('wp_special_')) {
-                const parts = evId.split('_'); 
-                const spId = parts[2] + '_' + parts[3];
+                const spId = evId.replace('wp_special_', '').replace(`_${dateStr}`, '');
                 let spName = '朝';
                 if (spId === 'sp_noon') spName = '昼';
                 if (spId === 'sp_after_school') spName = '放';
@@ -3682,7 +3685,6 @@
                     if (window.shouldSkipEvent(slot.type, slot.event.category)) continue;
 
                     const topPx = r * ALLDAY_ROW_HEIGHT + 1;
-                    
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             const ev = slot.event; let multiColorClass = getMultiDayColorClass(ev.category);
@@ -3713,19 +3715,23 @@
 
             let headerHtml = `<div class="bg-gray-50 border-r border-gray-300"></div>`;
             let colsHtml = Array(7).fill('');
+            
+            // 本日が週ビューに含まれるかのチェック。含まれる場合は週ビュー全体に枠線を付与するためのフラグ
+            let hasTodayInWeek = false;
 
             for (let i = 0; i < 7; i++) {
                 const curStr = weekDates[i]; const cur = weekDateObjs[i]; const isToday = curStr === getFormatDateStr(new Date()); 
+                if (isToday) hasTodayInWeek = true;
+
                 const holiName = getHolidayName(cur);
                 const isSunOrHoli = cur.getDay() === 0 || !!holiName;
                 const isSat = cur.getDay() === 6;
                 const color = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]');
-                const headerBg = isToday ? 'bg-blue-50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white');
-                const headerBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : '';
+                const headerBg = isToday ? 'bg-blue-50/50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white');
 
                 const holiHtml = holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal w-full text-center">${holiName}</div>` : '';
 
-                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg} ${headerBorderClass}">
+                headerHtml += `<div class="border-r border-gray-300 flex flex-col justify-center items-center py-0.5 relative ${headerBg}">
                     <div class="flex items-center gap-1">
                         <span class="text-xs sm:text-sm font-bold ${isToday?'bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center':color}">${cur.getDate()}</span>
                         <span class="text-[9px] sm:text-[10px] font-bold ${color}">(${DAYS_STR[cur.getDay()]})</span>
@@ -3733,7 +3739,7 @@
                     ${holiHtml}
                 </div>`;
 
-                let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0 ${headerBorderClass}">`;
+                let colContent = `<div class="absolute inset-0 flex flex-col pointer-events-auto border-r border-gray-200 z-0">`;
                 for (let h = 5; h < 24; h++) {
                     const isSel = selectedSlot && selectedSlot.view === 'timeline' && selectedSlot.date === curStr && selectedSlot.hour === h;
                     colContent += `<div class="timeline-cell w-full cursor-pointer transition-colors box-border border-b border-transparent ${isSel ? 'slot-selected z-10 border-t border-b border-blue-500' : 'hover:bg-blue-50/50 border-t border-transparent z-0'}" style="height: calc(100% / 19);" onclick="event.stopPropagation(); window.handleCellClick('timeline', '${curStr}', ${h})"></div>`;
@@ -3823,6 +3829,31 @@
                 gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
             }
             document.getElementById('week-view-grid').innerHTML = gridHtml;
+
+            // 週全体を囲む本日の枠線を追加（ヘッダーからタイムラインまで通して囲む）
+            const weekArea = document.getElementById('week-animation-area');
+            let todayHighlight = document.getElementById('week-today-highlight');
+            
+            if (hasTodayInWeek) {
+                if (!todayHighlight) {
+                    todayHighlight = document.createElement('div');
+                    todayHighlight.id = 'week-today-highlight';
+                    todayHighlight.className = 'absolute pointer-events-none border-2 border-blue-500 z-50';
+                    weekArea.appendChild(todayHighlight);
+                }
+                const today = new Date();
+                const todayIdx = (today.getDay() === 0 ? 7 : today.getDay()) - 1; // 月曜始まりでのインデックス(0~6)
+                
+                // 左マージン(時間ラベル部分 2.5rem)と各列の幅(1fr = (100% - 2.5rem)/7)を計算して枠を配置
+                todayHighlight.style.top = '0';
+                todayHighlight.style.bottom = '0';
+                todayHighlight.style.left = `calc(2.5rem + (100% - 2.5rem) / 7 * ${todayIdx})`;
+                todayHighlight.style.width = `calc((100% - 2.5rem) / 7)`;
+            } else {
+                if (todayHighlight) {
+                    todayHighlight.remove();
+                }
+            }
         };
 
         const renderAgendaView = () => {
@@ -3915,7 +3946,12 @@
                 const isSunOrHoli = dObj.getDay() === 0 || !!holiName;
                 const isSat = dObj.getDay() === 6;
                 const textColor = isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-gray-700');
-                html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 border-b border-gray-200"><div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-1.5"><div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div></div><div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
+                html += `<div id="agenda-date-${dStr}" class="${(isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white'} p-2.5 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-2 border-b border-gray-100 pb-1.5">
+                        <div class="text-sm font-bold ${textColor}">${dObj.getFullYear()}年 ${dObj.getMonth()+1}月${dObj.getDate()}日 <span class="text-[10px] font-normal">(${DAYS_STR[dObj.getDay()]})</span>${holiName ? `<span class="ml-2 text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">${holiName}</span>` : ''}</div>
+                        <button onclick="window.openAddMenu('${dStr}')" class="text-blue-500 p-1 hover:bg-blue-50 rounded transition flex items-center justify-center"><i class="fas fa-plus text-sm"></i></button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2.5"><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="far fa-calendar-alt"></i> 予定・授業</div>${schedHtml || '<div class="text-[9px] text-gray-400 p-0.5">予定なし</div>'}</div><div class="w-px bg-gray-100 hidden sm:block"></div><div class="flex-1 space-y-1"><div class="text-[9px] font-bold text-gray-400 mb-0.5 flex items-center gap-1 border-b border-gray-100 pb-0.5"><i class="fas fa-check-square"></i> タスク</div>${taskHtml || '<div class="text-[9px] text-gray-400 p-0.5">タスクなし</div>'}</div></div></div>`;
             });
             if (count === 0) html = '<div class="text-center py-6 text-gray-400"><i class="fas fa-mug-hot text-2xl mb-2"></i><p class="text-xs">登録されている今後の予定やタスクはありません。</p></div>';
             document.getElementById('agenda-view-list').innerHTML = html;
@@ -4063,7 +4099,7 @@
                 });
                 
                 if (isChanged) {
-                    window.setPlannerUpdated(dStr); // ★ 更新日時付与
+                    window.setPlannerUpdated(dStr);
                 }
             }
 
@@ -4087,7 +4123,8 @@
             const todayStrForWp = getFormatDateStr(new Date());
 
             let html = '<table class="w-full h-full border-collapse sm:min-w-[600px] min-w-full bg-white table-fixed">';
-            html += '<thead><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-10"></th>';
+            // 日付ヘッダー部分に sticky top-0 z-30 を追加
+            html += '<thead class="sticky top-0 z-30 bg-gray-50 shadow-sm"><tr class="h-6"><th class="border-b border-r border-gray-300 p-0.5 w-6 sm:w-10 bg-gray-50 sticky-col z-40"></th>';
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day);
                 const isToday = dStr === todayStrForWp;
@@ -4107,14 +4144,15 @@
                     ${holiName ? `<div class="text-[7px] text-red-500 truncate mt-0.5 font-normal">${holiName}</div>` : ''}
                 </th>`;
             });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">日課</th>';
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-40">日課</th>';
             
             const ttOrder = ['normal', 'short', 'special', 'test'];
 
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
                 const isToday = dStr === todayStrForWp;
-                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
+                // ここで背景色の追加クラスを外し、外枠(青線)のみを描画するよう変更
+                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                 const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
                 
                 let optionsHtml = '';
@@ -4130,17 +4168,20 @@
                 });
                 optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
 
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center ${todayTdClass}"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+                // セルの背景も不透明にする（スクロール時に透けないようにするため）
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50 ${todayTdClass}"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
             });
-            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-10">授業数</th>';
+            html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-40">授業数</th>';
             
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
                 const isToday = dStr === todayStrForWp;
-                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
+                // ここも外枠のみ
+                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                 let maxLessons = 0; if (ttType !== 'none' && globalSettings.timetables[ttType]) maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center ${todayTdClass}"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
+                // セルの背景も不透明にする
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50 ${todayTdClass}"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
                     <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
                     ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
                 </select></td>`;
@@ -4174,7 +4215,8 @@
                     for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
                         const isToday = dStr === todayStrForWp;
-                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
+                        // ここも外枠のみ
+                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                         const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
                         const isCut = cData.isCut;
                         const title = cData.title || "";
@@ -4225,7 +4267,8 @@
                     for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
                         const isToday = dStr === todayStrForWp;
-                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative bg-blue-50/10' : '';
+                        // ここも外枠のみ
+                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                         const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
@@ -4321,7 +4364,45 @@
                 html += `</tr>`;
             }
             html += '</tbody></table>';
+            
+            // 本日を囲む週案簿全体への青枠（ヘッダーから下まで通して囲む）処理
             document.getElementById('weekly-plan-container').innerHTML = html;
+            
+            const wpContainer = document.getElementById('weekly-plan-container');
+            let todayHighlight = document.getElementById('wp-today-highlight');
+            
+            if (workDays.some(d => getFormatDateStr(d) === todayStrForWp)) {
+                if (!todayHighlight) {
+                    todayHighlight = document.createElement('div');
+                    todayHighlight.id = 'wp-today-highlight';
+                    todayHighlight.className = 'absolute pointer-events-none border-2 border-blue-500 z-50';
+                    wpContainer.appendChild(todayHighlight);
+                }
+                const today = new Date();
+                const todayIdx = (today.getDay() === 0 ? 7 : today.getDay()) - 1; // 月曜始まりでのインデックス(0~4)
+                
+                if (todayIdx >= 0 && todayIdx <= 4) {
+                    const isMobile = window.innerWidth <= 768;
+                    const colWidth = isMobile ? 'calc((100% - 2.5rem) / 5)' : 'calc((100% - 2.5rem) / 5)'; // sticky列の幅は要調整だが簡易的に
+                    const stickyWidth = isMobile ? '1.5rem' : '2.5rem';
+                    
+                    // テーブル内の実際のthの位置から計算
+                    setTimeout(() => {
+                        const ths = wpContainer.querySelectorAll('thead tr:first-child th');
+                        if (ths && ths.length > todayIdx + 1) {
+                            const targetTh = ths[todayIdx + 1];
+                            todayHighlight.style.top = '0';
+                            todayHighlight.style.bottom = '0';
+                            todayHighlight.style.left = `${targetTh.offsetLeft}px`;
+                            todayHighlight.style.width = `${targetTh.offsetWidth}px`;
+                        }
+                    }, 50);
+                }
+            } else {
+                if (todayHighlight) {
+                    todayHighlight.remove();
+                }
+            }
         };
 
         window.updateWeeklyPlanPeriods = (dStr) => {
@@ -4419,7 +4500,7 @@
             }
 
             const plans = allUnitPlans[planKey].plans;
-            let html = '<option value="">(連携しない)</option>';
+            let html = '<option value="" selected>(連携しない)</option>';
             
             const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub, wpModalTarget.targetDateStr);
             let targetIdx = null;
@@ -4427,8 +4508,6 @@
             const existingData = allPlanners[wpModalTarget.targetDateStr]?.classes?.[wpModalTarget.targetPeriodId];
             if (existingData && existingData.unitPlanIdx !== undefined && existingData.unitPlanIdx !== "") {
                 targetIdx = parseInt(existingData.unitPlanIdx);
-            } else if (currentCount < plans.length) {
-                targetIdx = currentCount; 
             }
 
             plans.forEach((p, idx) => {
@@ -4812,7 +4891,6 @@
                     </div>`;
                 });
                 
-                // 日課パターン自体の削除ボタン（通常日課は削除不可とする）
                 if (key !== 'normal') {
                     html += `<button onclick="window.removeTimetable('${key}')" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition" title="この日課を削除"><i class="fas fa-times"></i></button>`;
                 }
@@ -4820,7 +4898,6 @@
                 html += `</div></div>`;
             });
             
-            // 新しい日課パターンを追加するボタン
             html += `<button onclick="window.addTimetable()" class="w-full py-2 bg-white border border-dashed border-gray-300 rounded text-gray-500 font-bold text-xs hover:bg-gray-50 transition flex justify-center items-center gap-1"><i class="fas fa-plus"></i> 新しい日課を追加</button>`;
             
             document.getElementById('settings-timetables-container').innerHTML = html;
