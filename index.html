@@ -3549,7 +3549,7 @@
                     if (slot.type === 'multi') {
                         if (slot.isSegmentStart) {
                             let multiColorClass = getMultiDayColorClass(ev.category); const days = slot.segmentLength;
-                            cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} transition cursor-pointer hover:brightness-95 pointer-events-auto" style="z-index: 25; top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% + ${days - 1}px - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-left truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
+cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transparent border-b-2 ${multiColorClass} transition cursor-pointer hover:brightness-95 pointer-events-auto" style="z-index: 25; top: ${topPx}px; height: ${itemHeight}px; width: calc(${days * 100}% + ${days - 1}px - 4px);" onclick="event.stopPropagation(); window.openEditMenu('${ev.originalDateKey}', 'schedule', '${ev.id}')"><span class="font-bold text-[9px] w-full text-left truncate px-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">${ev.title}</span></div>`;
                         }
                     } else if (slot.type === 'allday') {
                         let bgColorClass = getEventColorClass(ev.category);
