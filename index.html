@@ -373,10 +373,11 @@
                 </div>
             </div>
 
-            <div id="add-modal-delete-container" class="shrink-0 pt-2 border-t border-gray-200 hidden">
-                <button onclick="window.deleteFromMenu()" class="w-full py-1.5 bg-white text-red-500 rounded-lg text-xs font-bold hover:bg-red-50 transition border border-red-100 shadow-sm"><i class="fas fa-trash-alt mr-1"></i> 削除</button>
+<div id="add-modal-delete-container" class="shrink-0 pt-2 border-t border-gray-200 hidden flex gap-2">
+                <button onclick="window.startCopyMode()" class="flex-1 py-1.5 bg-white text-blue-500 rounded-lg text-xs font-bold hover:bg-blue-50 transition border border-blue-100 shadow-sm"><i class="far fa-copy mr-1"></i> コピー</button>
+                <button onclick="window.deleteFromMenu()" class="flex-1 py-1.5 bg-white text-red-500 rounded-lg text-xs font-bold hover:bg-red-50 transition border border-red-100 shadow-sm"><i class="fas fa-trash-alt mr-1"></i> 削除</button>
             </div>
-        </div>
+    </div>
     </div>
 
     <div id="weekly-plan-modal" class="fixed inset-0 bg-black/40 z-[120] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeWeeklyPlanModal()">
@@ -468,6 +469,10 @@
                     </button>
                 </div>
                 
+<div id="copy-action-container-month" class="hidden items-center gap-1 shrink-0 ml-auto sm:ml-2">
+                    <button onclick="window.executeCopy()" class="bg-blue-500 text-white px-2 py-1 text-xs font-bold rounded shadow-sm hover:bg-blue-600 transition whitespace-nowrap"><i class="fas fa-check mr-1"></i> コピー確定</button>
+                    <button onclick="window.cancelCopyMode()" class="bg-white border border-gray-300 text-gray-600 px-2 py-1 text-xs font-bold rounded shadow-sm hover:bg-gray-50 transition whitespace-nowrap">キャンセル</button>
+                </div>
                 <div class="ml-1 sm:ml-2 flex bg-gray-100 rounded-md p-0.5 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-nowrap filter-container min-w-0" style="max-width: 100%;">
                     <button id="filter-btn-all" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
                     <button id="filter-btn-work" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
@@ -499,8 +504,12 @@
                     </button>
                 </div>
                 
+<div id="copy-action-container-week" class="hidden items-center gap-1 shrink-0 ml-auto sm:ml-2">
+                    <button onclick="window.executeCopy()" class="bg-blue-500 text-white px-2 py-1 text-xs font-bold rounded shadow-sm hover:bg-blue-600 transition whitespace-nowrap"><i class="fas fa-check mr-1"></i> コピー確定</button>
+                    <button onclick="window.cancelCopyMode()" class="bg-white border border-gray-300 text-gray-600 px-2 py-1 text-xs font-bold rounded shadow-sm hover:bg-gray-50 transition whitespace-nowrap">キャンセル</button>
+                </div>
                 <div class="ml-1 sm:ml-2 flex bg-gray-100 rounded-md p-0.5 items-center gap-0.5 shadow-inner overflow-x-auto hide-scrollbar flex-nowrap filter-container min-w-0" style="max-width: 100%;">
-                    <button id="filter-btn-week-all" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>
+                    <button id="filter-btn-week-all" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('all')">全て</button>                    
                     <button id="filter-btn-week-work" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('work')">仕事</button>
                     <button id="filter-btn-week-jugyo" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('jugyo')">授業</button>
                     <button id="filter-btn-week-club" class="px-1 py-0.5 sm:px-2 sm:py-1 text-[8px] sm:text-xs font-bold rounded-sm transition-colors shrink-0" onclick="window.setCalendarFilter('club')">部活</button>
@@ -1600,10 +1609,106 @@
         let selectedCellId = null; 
         let selectedSlot = null; 
         let addModalTargetDate = null;
-        let editTarget = null; 
+let editTarget = null; 
         let currentModalMode = 'schedule';
+
+        let isCopyMode = false;
+        let copyTargetData = null;
+        let copySelectedDates = new Set();
         
         let wpModalTarget = { targetDateStr: null, targetPeriodId: null, targetPeriodName: null, isSpecial: false };
+
+            window.startCopyMode = () => {
+            if (!editTarget) return;
+            const { dateStr, idOrIndex } = editTarget;
+            const data = allPlanners[dateStr] || {};
+            
+            if (currentModalMode === 'schedule' && data.events) {
+                copyTargetData = data.events.find(e => e.id === idOrIndex);
+            } else if (currentModalMode === 'task' && data.reminders) {
+                copyTargetData = data.reminders.find(t => t.id === idOrIndex);
+            } else {
+                return;
+            }
+            
+            if (!copyTargetData) return;
+            
+            isCopyMode = true;
+            copySelectedDates.clear();
+            
+            window.closeAddMenu();
+            window.updateCopyUI();
+            window.renderCurrentView();
+        };
+
+        window.cancelCopyMode = () => {
+            isCopyMode = false;
+            copyTargetData = null;
+            copySelectedDates.clear();
+            window.updateCopyUI();
+            window.renderCurrentView();
+        };
+
+        window.updateCopyUI = () => {
+            const containers = [document.getElementById('copy-action-container-month'), document.getElementById('copy-action-container-week')];
+            containers.forEach(c => {
+                if(c) {
+                    if (isCopyMode) c.classList.replace('hidden', 'flex');
+                    else c.classList.replace('flex', 'hidden');
+                }
+            });
+            const filters = document.querySelectorAll('.filter-container');
+            filters.forEach(f => {
+                if (isCopyMode) f.classList.add('hidden');
+                else f.classList.remove('hidden');
+            });
+        };
+
+window.executeCopy = () => {
+            if (copySelectedDates.size === 0) {
+                alert('複製先の日付が選択されていません。');
+                return;
+            }
+            window.saveStateToHistory();
+            const now = Date.now();
+            let count = 0;
+            
+            copySelectedDates.forEach(dateStr => {
+                if (!allPlanners[dateStr]) allPlanners[dateStr] = { classes: {}, reminders: [], events: [] };
+                const newData = JSON.parse(JSON.stringify(copyTargetData));
+                newData.id = 'copy_' + now + count;
+                count++;
+                
+                if (currentModalMode === 'schedule') {
+                    if (newData.start) {
+                        const time = newData.start.split('T')[1] || '';
+                        newData.start = newData.isAllDay ? dateStr : `${dateStr}T${time}`;
+                    }
+                    if (newData.end) {
+                        const time = newData.end.split('T')[1] || '';
+                        newData.end = newData.isAllDay ? dateStr : `${dateStr}T${time}`;
+                    }
+                    if (!allPlanners[dateStr].events) allPlanners[dateStr].events = [];
+                    allPlanners[dateStr].events.push(newData);
+                } else if (currentModalMode === 'task') {
+                    if (newData.dueDate) newData.dueDate = dateStr;
+                    if (!allPlanners[dateStr].reminders) allPlanners[dateStr].reminders = [];
+                    allPlanners[dateStr].reminders.push(newData);
+                }
+                window.setPlannerUpdated(dateStr);
+            });
+            
+            safeSetItem(LS_KEY, JSON.stringify(allPlanners)); 
+            window.saveToFirebase();
+            
+            window.cancelCopyMode();
+        };
+        
+        window.toggleCopyDateSelection = (dateStr) => {
+            if (copySelectedDates.has(dateStr)) copySelectedDates.delete(dateStr);
+            else copySelectedDates.add(dateStr);
+            window.renderCurrentView();
+        };
         let wpSelectedDay = 1;
         let wpSelectedPeriod = 1;
 
@@ -2941,13 +3046,21 @@
             window.renderCurrentView();
         };
 
-        window.handleCellClick = function(viewType, dateStr, hour) {
+window.handleCellClick = function(viewType, dateStr, hour) {
+            if (isCopyMode) {
+                window.toggleCopyDateSelection(dateStr);
+                return;
+            }
             window.openMonthBottomSheet(dateStr, hour);
             selectedSlot = { view: viewType, date: dateStr, hour: hour }; selectedCellId = null;
             window.renderCurrentView();
         };
 
         window.handleMonthCellClick = (dStr) => {
+            if (isCopyMode) {
+                window.toggleCopyDateSelection(dStr);
+                return;
+            }
             const cellId = `month-cell-${dStr}`;
             if (selectedCellId === cellId) { window.clearCellSelection(); } 
             else { selectedCellId = cellId; selectedSlot = null; window.renderCurrentView(); window.openMonthBottomSheet(dStr); }
@@ -3530,9 +3643,10 @@
                 else if (isSunOrHoli) dateColor = 'text-red-500';
                 else if (isSat) dateColor = 'text-blue-500';
 
-                const cellId = `month-cell-${dStr}`; const isSelectedClass = selectedCellId === cellId ? 'cell-selected' : '';
-                const dateNumClass = isToday ? `bg-blue-500 ${dateColor} rounded-full w-5 h-5 flex items-center justify-center shadow-sm` : dateColor;
-                const cellBgClass = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white';
+                const cellId = `month-cell-${dStr}`; 
+                const isCopySelected = isCopyMode && copySelectedDates.has(dStr);
+                const isSelectedClass = isCopySelected ? 'cell-selected border-2 border-blue-500 ring-2 ring-blue-500 ring-inset' : (selectedCellId === cellId ? 'cell-selected' : '');
+                const dateNumClass = isToday ? `bg-blue-500 ${dateColor} rounded-full w-5 h-5 flex items-center justify-center shadow-sm` : dateColor;                const cellBgClass = (isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-white';
                 const todayBorderClass = isToday ? 'ring-2 ring-blue-500 ring-inset z-10' : ''; 
                 
                 let cellContentHtml = ''; let overCount = 0;
@@ -3850,9 +3964,12 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             document.getElementById('week-view-header').innerHTML = headerHtml;
             let gridHtml = '';
             for(let i=0; i<7; i++) { 
+                const curStr = weekDates[i];
                 const cur = new Date(startOfWeek); cur.setDate(startOfWeek.getDate() + i);
                 const isHoliOrWknd = cur.getDay() === 0 || cur.getDay() === 6 || !!getHolidayName(cur);
-                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'}">${colsHtml[i]}</div>`; 
+                const isCopySelected = isCopyMode && copySelectedDates.has(curStr);
+                const copyHighlightClass = isCopySelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/30' : '';
+                gridHtml += `<div class="relative w-full h-full border-r border-gray-200 border-dashed ${isHoliOrWknd ? 'bg-indigo-50/50' : 'bg-transparent'} ${copyHighlightClass}">${colsHtml[i]}</div>`; 
             }
             document.getElementById('week-view-grid').innerHTML = gridHtml;
 
@@ -4154,16 +4271,14 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day);
                 const isToday = dStr === todayStrForWp;
-                const todayThClass = isToday ? 'outline outline-2 outline-blue-500 z-20 relative bg-blue-50/30 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.2)]' : '';
 
                 const holiName = getHolidayName(day);
                 const isSunOrHoli = day.getDay() === 0 || !!holiName;
                 const isSat = day.getDay() === 6;
                 const color = isToday ? 'text-blue-600' : (isSunOrHoli ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-[#4a5f73]'));
-                const bgHoli = isToday ? 'bg-blue-50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50');
+                const bgHoli = isToday ? 'bg-blue-50/50' : ((isSunOrHoli || isSat) ? 'bg-indigo-50/50' : 'bg-gray-50');
 
-                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli} ${todayThClass}">
-                    <div class="flex items-center justify-center gap-1">
+                html += `<th class="border-b border-r border-gray-300 p-0.5 text-center font-bold ${bgHoli}">                    <div class="flex items-center justify-center gap-1">
                         <span class="text-xs sm:text-sm font-bold ${color}">${day.getDate()}</span>
                         <span class="text-[9px] sm:text-[10px] font-bold ${color}">(${DAYS_STR[day.getDay()]})</span>
                     </div>
@@ -4176,9 +4291,6 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
 
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                const isToday = dStr === todayStrForWp;
-                // ここで背景色の追加クラスを外し、外枠(青線)のみを描画するよう変更
-                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                 const selectBgClass = ttType === 'normal' ? 'bg-white text-[#4a5f73] border-gray-300' : (ttType === 'none' ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-red-100 text-red-800 border-red-300 shadow-inner');
                 
                 let optionsHtml = '';
@@ -4194,21 +4306,17 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                 });
                 optionsHtml += `<option value="none" ${ttType === 'none' ? 'selected' : ''}>休日</option>`;
 
-                // セルの背景も不透明にする（スクロール時に透けないようにするため）
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50 ${todayTdClass}"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
+            // セルの背景も不透明にする（スクロール時に透けないようにするため）
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50"><select id="wp-tt-${dStr}" class="w-full ${selectBgClass} border rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold cursor-pointer focus:border-[#4a5f73] transition-colors" onchange="window.updateWeeklyPlanPeriods('${dStr}')">${optionsHtml}</select></td>`;
             });
             html += '</tr><tr class="h-5"><th class="border-b border-r border-gray-300 p-0.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-50 sticky-col z-40">授業数</th>';
             
             workDays.forEach(day => {
                 const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {}; const ttType = getTtType(dStr);
-                const isToday = dStr === todayStrForWp;
-                // ここも外枠のみ
-                const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                 let maxLessons = 0; if (ttType !== 'none' && globalSettings.timetables[ttType]) maxLessons = globalSettings.timetables[ttType].periods.filter(p=>p.id!=='p_allday'&&!p.isAllDay).length;
                 const lessonCount = data.lessonCount !== undefined ? data.lessonCount : maxLessons;
                 // セルの背景も不透明にする
-                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50 ${todayTdClass}"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">
-                    <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
+                html += `<td class="border-b border-r border-gray-200 p-0.5 text-center bg-gray-50"><select id="wp-lc-${dStr}" class="w-full bg-white border border-gray-300 rounded p-0 text-[8px] sm:text-[10px] outline-none font-bold text-[#4a5f73] cursor-pointer focus:border-[#4a5f73]" onchange="window.saveWeeklyPlan(false)">                    <option value="0" ${lessonCount === 0 ? 'selected' : ''}>0時間</option>
                     ${[1,2,3,4,5,6,7,8].slice(0, maxLessons).map(n => `<option value="${n}" ${lessonCount === n ? 'selected' : ''}>${n}時間</option>`).join('')}
                 </select></td>`;
             });
@@ -4238,11 +4346,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                 if (r.type === 'special') {
                     html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-500 bg-orange-50/50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center pt-1"><span style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; font-size: 8px;">${r.name}</span></div></td>`;
                     
-                    for (let dIdx = 0; dIdx < 5; dIdx++) {
+                for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
-                        const isToday = dStr === todayStrForWp;
-                        // ここも外枠のみ
-                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                         const cData = (data.classes && data.classes[r.id]) ? data.classes[r.id] : {};
                         const isCut = cData.isCut;
                         const title = cData.title || "";
@@ -4282,7 +4387,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             btnContent = `<div class="text-[8px] text-gray-300 w-full text-center"><i class="fas fa-plus mr-0.5"></i></div>`;
                         }
                         
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px] ${todayTdClass}">
+                html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
                                     <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${r.id}', '${r.name}')">${btnContent}</button>
                                  </td>`;
                     }
@@ -4290,16 +4395,12 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                     const pIdx = r.index;
                     html += `<td class="border-b border-r border-gray-300 p-0 text-center font-bold text-gray-600 bg-gray-50 text-[10px] sticky-col z-10 w-6 sm:w-10 relative"><div class="absolute inset-0 flex items-center justify-center">${pIdx + 1}</div></td>`;
                     
-                    for (let dIdx = 0; dIdx < 5; dIdx++) {
+                for (let dIdx = 0; dIdx < 5; dIdx++) {
                         const day = workDays[dIdx]; const dStr = getFormatDateStr(day); const data = allPlanners[dStr] || {};
-                        const isToday = dStr === todayStrForWp;
-                        // ここも外枠のみ
-                        const todayTdClass = isToday ? 'outline outline-2 outline-blue-500 z-10 relative' : '';
                         const periods = weekPeriodsMap[dIdx]; const p = periods[pIdx];
                         const lessonCount = data.lessonCount !== undefined ? data.lessonCount : periods.length;
 
-                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px] ${todayTdClass}"></td>`; continue; }
-
+                        if (!p || pIdx >= lessonCount) { html += `<td class="border-b border-r border-gray-200 p-[1px] bg-gray-100 opacity-50 h-[1px]"></td>`; continue; }
                         const baseTt = getBaseTimetableForDate(day);
                         let baseCls = "", baseSub = "", baseMemo = "";
                         const periodKey = `${pIdx + 1}限`;
@@ -4382,7 +4483,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             borderClass = "border border-[#4a5f73]/50 shadow-sm";
                         } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
-                        html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px] ${todayTdClass}">
+            html += `<td class="border-b border-r border-gray-200 p-[1px] text-center align-middle h-[1px]">
                                     <button class="relative w-full h-full min-h-full rounded-sm transition flex flex-col justify-center items-center overflow-hidden ${borderClass} ${bgClass}" onclick="window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">${btnContent}</button>
                                  </td>`;
                     }
@@ -6228,6 +6329,29 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
 
         initDataSync();
         window.updateDisplayMode();
+
+        // 日曜日の定期バックアップ確認処理
+        const checkWeeklyBackup = () => {
+            const today = new Date();
+            // getDay() は 0 が日曜日
+            if (today.getDay() === 0) {
+                const todayStr = getFormatDateStr(today);
+                const lastPrompt = safeGetItem('last_backup_prompt_date');
+                
+                // 今日の日付でまだ確認していなければ実行
+                if (lastPrompt !== todayStr) {
+                    safeSetItem('last_backup_prompt_date', todayStr);
+                    
+                    // 画面の初期描画が終わった後にダイアログを出すため少し遅延させる
+                    setTimeout(() => {
+                        if (confirm("定期バックアップの確認です。\nデータのバックアップを作成しますか？")) {
+                            window.exportData();
+                        }
+                    }, 500);
+                }
+            }
+        };
+        checkWeeklyBackup();
 
     </script>
 </body>
