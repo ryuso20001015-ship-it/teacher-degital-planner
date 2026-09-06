@@ -3307,7 +3307,8 @@ window.handleCellClick = function(viewType, dateStr, hour) {
             setTimeout(() => document.getElementById('class-edit-cls').focus(), 100);
         };
         
-        window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            window.openWeeklyPlanModal = (dateStr, periodId, periodName) => {
+            window.closeMonthBottomSheet();
             wpModalTarget = { targetDateStr: dateStr, targetPeriodId: periodId, targetPeriodName: periodName, isSpecial: false };
             
             if (periodId === 'sp_morning' || periodId === 'sp_noon' || periodId === 'sp_after_school') {
