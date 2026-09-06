@@ -5976,6 +5976,18 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             }
         };
 
+        window.toggleUnitPlanRowVisibility = (planKey, idx) => {
+            if (!allUnitPlans[planKey] || !allUnitPlans[planKey].plans[idx]) return;
+            window.saveStateToHistory();
+            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
+                document.activeElement.blur();
+            }
+            allUnitPlans[planKey].plans[idx].isHidden = !allUnitPlans[planKey].plans[idx].isHidden;
+            allUnitPlans[planKey].updatedAt = Date.now();
+            window.saveUnitPlan(false);
+            window.renderUnitPlanView();
+        };
+
         window.saveUnitPlan = (showAlert = true) => {
             const cls = window.currentUnitPlanGrade;
             const sub = "技術";
@@ -6219,27 +6231,27 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
 
             let html = `
-                <div class="overflow-x-auto w-full">
-                <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs">
-                    <thead class="sticky top-0 z-20 shadow-sm">
+                <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs relative">
+                    <thead class="sticky top-0 z-30 shadow-sm bg-gray-100 outline outline-1 outline-gray-300">
                         <tr>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習課題</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習内容</th>
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">備考</th>
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習課題</th>
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習内容</th>
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">備考</th>
             `;
             classCols.forEach(clsName => {
-                html += `<th class="bg-gray-100 border border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
+                html += `<th class="bg-gray-100 border-r border-b border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
             });
             
             html += `
-                            <th class="bg-gray-100 border border-gray-300 p-1 sm:p-2 w-6 sm:w-8 text-center shrink-0"></th>
+                            <th class="bg-gray-100 border-b border-gray-300 p-1 sm:p-2 w-8 sm:w-10 text-center shrink-0"></th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            plans.forEach((plan, idx) => {
+plans.forEach((plan, idx) => {
+                const isHidden = !!plan.isHidden;
                 const progressList = progressByHour[idx] || [];
                 const latestProgressByCls = {};
                 progressList.forEach(p => {
@@ -6257,38 +6269,41 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                         const textColor = isPast ? 'text-blue-800' : 'text-red-800';
 
                         progressColsHtml += `
-                            <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
+                            <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor} ${isHidden ? 'py-0' : ''}">
                                 <div class="${textColor} font-bold whitespace-nowrap leading-tight text-[8px] sm:text-[10px]">${p.dateStr}</div>
                             </td>
                         `;
                     } else {
                         progressColsHtml += `
-                            <td class="border border-gray-300 p-0.5 text-center align-middle bg-gray-50/50">
+                            <td class="border border-gray-300 p-0.5 text-center align-middle bg-gray-50/50 ${isHidden ? 'py-0' : ''}">
                                 <div class="text-[8px] text-gray-300">-</div>
                             </td>
                         `;
                     }
                 });
 
+                const minHClass = isHidden ? 'h-6 sm:h-8 min-h-[24px]' : 'min-h-[40px] sm:min-h-[60px]';
+                const cellTextClass = isHidden ? 'truncate block' : 'break-words whitespace-pre-wrap';
+
                 html += `
-                    <tr class="hover:bg-blue-50/30 transition-colors group">
-                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-top bg-gray-50 shrink-0">${plan.hour}</td>
+                    <tr class="hover:bg-blue-50/30 transition-colors group ${isHidden ? 'bg-gray-100/50 opacity-60' : ''}">
+                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-middle bg-gray-50 shrink-0 ${isHidden ? 'py-1' : 'align-top'}">${plan.hour}</td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
                                  data-row-idx="${idx}" data-col-idx="0"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
                                  data-row-idx="${idx}" data-col-idx="1"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${plan.activity || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 break-words whitespace-pre-wrap outline-none" 
+                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
                                  data-row-idx="${idx}" data-col-idx="2"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
@@ -6296,18 +6311,20 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                         </td>
                         ${progressColsHtml}
                         <td class="border border-gray-300 p-1 text-center align-middle shrink-0 bg-gray-50">
-                            <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition p-1 opacity-0 group-hover:opacity-100" title="この行を削除"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                            <div class="flex flex-col items-center gap-1">
+                                <button onclick="window.toggleUnitPlanRowVisibility('${planKey}', ${idx})" class="text-gray-400 hover:text-blue-500 transition p-1 ${isHidden ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-100'}" title="${isHidden ? '表示する' : '折りたたむ'}"><i class="fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'} text-[10px]"></i></button>
+                                <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition p-1 opacity-0 group-hover:opacity-100" title="この行を削除"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
             });
-
+            
             html += `
                     </tbody>
                 </table>
-                </div>
                 <div class="mt-4 flex justify-center">
-                    <button onclick="window.addUnitPlanRow('${planKey}')" class="flex items-center gap-2 bg-white border border-gray-300 text-[#4a5f73] px-6 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 shadow-sm transition group">
+            <button onclick="window.addUnitPlanRow('${planKey}')" class="flex items-center gap-2 bg-white border border-gray-300 text-[#4a5f73] px-6 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 shadow-sm transition group">
                         <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition"><i class="fas fa-plus"></i></div>
                         行を追加
                     </button>
