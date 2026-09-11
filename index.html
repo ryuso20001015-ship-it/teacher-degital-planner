@@ -4517,10 +4517,12 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                     // テーブル内の実際のthの位置から計算
                     setTimeout(() => {
                         const ths = wpContainer.querySelectorAll('thead tr:first-child th');
-                        if (ths && ths.length > todayIdx + 1) {
+                        const table = wpContainer.querySelector('table');
+                        if (ths && ths.length > todayIdx + 1 && table) {
                             const targetTh = ths[todayIdx + 1];
                             todayHighlight.style.top = '0';
-                            todayHighlight.style.bottom = '0';
+                            todayHighlight.style.bottom = 'auto';
+                            todayHighlight.style.height = `${table.offsetHeight}px`;
                             todayHighlight.style.left = `${targetTh.offsetLeft}px`;
                             todayHighlight.style.width = `${targetTh.offsetWidth}px`;
                         }
