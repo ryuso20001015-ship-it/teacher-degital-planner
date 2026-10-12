@@ -6235,12 +6235,10 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             let html = `
                 <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs relative">
                     <thead class="sticky top-0 z-30 shadow-sm bg-gray-100 outline outline-1 outline-gray-300">
-                        <tr>
+<tr>
                             <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
-                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習課題</th>
-                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">学習内容</th>
-                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[160px] sm:w-[26%] text-center">備考</th>
-            `;
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[240px] sm:w-[39%] text-center">学習課題・内容</th>
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[240px] sm:w-[39%] text-center">メモ</th>            `;
             classCols.forEach(clsName => {
                 html += `<th class="bg-gray-100 border-r border-b border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
             });
@@ -6285,27 +6283,20 @@ plans.forEach((plan, idx) => {
                 });
 
                 const minHClass = isHidden ? 'h-6 sm:h-8 min-h-[24px]' : 'min-h-[40px] sm:min-h-[60px]';
-                const cellTextClass = isHidden ? 'truncate block' : 'break-words whitespace-pre-wrap';
+                const cellTextClass = isHidden ? 'line-clamp-1 break-all' : 'break-words whitespace-pre-wrap';
 
                 html += `
                     <tr class="hover:bg-blue-50/30 transition-colors group ${isHidden ? 'bg-gray-100/50 opacity-60' : ''}">
                         <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-middle bg-gray-50 shrink-0 ${isHidden ? 'py-1' : 'align-top'}">${plan.hour}</td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
+                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none${cellTextClass}" 
                                  data-row-idx="${idx}" data-col-idx="0"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
-                                 data-row-idx="${idx}" data-col-idx="1"
-                                 onclick="window.selectUnitPlanCell(this)"
-                                 ondblclick="window.editUnitPlanCell(this)"
-                                 onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'activity', this)">${plan.activity || ''}</div>
-                        </td>
-                        <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none ${cellTextClass}" 
+                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none${cellTextClass}" 
                                  data-row-idx="${idx}" data-col-idx="2"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
