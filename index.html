@@ -381,67 +381,73 @@
     </div>
 
     <div id="weekly-plan-modal" class="fixed inset-0 bg-black/40 z-[120] hidden flex justify-center items-center backdrop-blur-sm" onmousedown="if(event.target === this) window.closeWeeklyPlanModal()">
-        <div class="bg-white rounded-xl shadow-2xl p-4 w-[95%] max-w-sm modal-animate relative border border-gray-200">
-            <h3 id="wp-modal-title" class="font-bold text-[#4a5f73] text-sm mb-3 text-center border-b border-gray-200 pb-1.5"><i class="fas fa-chalkboard-teacher mr-1"></i>授業予定</h3>
-            <div id="wp-modal-time-config" class="mb-4">
-                <div class="flex items-center gap-1 mb-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-6">曜日</span>
-                    <div class="flex gap-1 flex-wrap" id="wp-modal-days"></div>
-                </div>
-                <div class="flex items-center gap-1 mb-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-6">時間</span>
-                    <div class="flex gap-0.5 flex-wrap" id="wp-modal-periods"></div>
-                </div>
+        <div class="bg-white rounded-xl shadow-2xl p-3 sm:p-4 w-[95%] max-w-sm modal-animate relative border border-gray-200 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-3 pb-1.5 border-b border-gray-200 shrink-0 relative">
+                <button onclick="window.closeWeeklyPlanModal()" class="text-gray-400 hover:text-gray-700 w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200 transition z-10"><i class="fas fa-times"></i></button>
+                <h3 id="wp-modal-title" class="font-bold text-[#4a5f73] text-sm absolute inset-0 flex justify-center items-center pointer-events-none"><i class="fas fa-chalkboard-teacher mr-1"></i>授業予定</h3>
+                <button onclick="window.saveWeeklyPlanModal()" class="text-[#4a5f73] hover:text-[#3b4c5c] w-6 h-6 flex justify-center items-center rounded-full hover:bg-gray-200 transition z-10"><i class="fas fa-check"></i></button>
             </div>
-            <div id="wp-modal-base-status" class="bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all mb-4"></div>
-
-            <div id="wp-modal-class-area" class="flex flex-col gap-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200">
-                <div class="flex gap-2">
-                    <div class="flex-1">
-                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">クラス</label>
-                        <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalClsSuggest(this.value); window.updateWpModalUnitPlanOptions();" onchange="window.updateWpModalUnitPlanOptions()">
-                        <div id="wp-modal-cls-suggest" class="flex gap-1 mt-1 flex-wrap hidden"></div>
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-1 pb-1 flex flex-col">
+                <div id="wp-modal-time-config" class="mb-3 flex justify-between gap-1 sm:gap-2">
+                    <div class="flex-1 flex flex-col items-center min-w-0">
+                        <span class="text-[9px] font-bold text-gray-500 mb-1">曜日</span>
+                        <!-- flex-wrapを外し、overflow-x-autoとhide-scrollbarで横1列に収める -->
+                        <div class="flex gap-0.5 sm:gap-1 flex-nowrap justify-center w-full overflow-x-auto hide-scrollbar px-1" id="wp-modal-days"></div>
                     </div>
-                    <div class="flex-1">
-                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">教科・内容</label>
-                        <input type="text" id="wp-modal-sub" list="sub-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalUnitPlanOptions()" onchange="window.updateWpModalUnitPlanOptions()">
+                    <div class="w-px bg-gray-200 shrink-0 mt-2 mb-1"></div>
+                    <div class="flex-1 flex flex-col items-center min-w-0">
+                        <span class="text-[9px] font-bold text-gray-500 mb-1">時間</span>
+                        <div class="flex gap-0.5 sm:gap-1 flex-nowrap justify-center w-full overflow-x-auto hide-scrollbar px-1" id="wp-modal-periods"></div>
                     </div>
                 </div>
-                <div id="wp-modal-unit-plan-area" class="mt-2 border-t border-gray-200 pt-2">
-                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5"><i class="fas fa-link mr-1"></i>単元計画との連携</label>
-                    <select id="wp-modal-unit-plan-select" class="w-full bg-white border border-gray-300 rounded px-1 py-1 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800 shadow-sm" onchange="window.updateWpModalUnitPlanPreview()"></select>
-                    <div id="wp-modal-unit-plan-preview" class="text-[9px] text-gray-600 mt-1.5 hidden bg-white border border-gray-200 rounded p-1.5 whitespace-pre-wrap leading-relaxed shadow-inner"></div>
+                <div id="wp-modal-base-status" class="bg-gray-50 rounded text-center p-1.5 text-xs font-bold text-[#4a5f73] border border-gray-200 shadow-sm transition-all mb-4"></div>
+                <div id="wp-modal-class-area" class="flex flex-col gap-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="text-[9px] font-bold text-gray-500 block mb-0.5">クラス</label>
+                            <input type="text" id="wp-modal-cls" list="class-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalClsSuggest(this.value); window.updateWpModalUnitPlanOptions();" onchange="window.updateWpModalUnitPlanOptions()">
+                            <div id="wp-modal-cls-suggest" class="flex gap-1 mt-1 flex-wrap hidden"></div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[9px] font-bold text-gray-500 block mb-0.5">教科・内容</label>
+                            <input type="text" id="wp-modal-sub" list="sub-list" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" oninput="window.updateWpModalUnitPlanOptions()" onchange="window.updateWpModalUnitPlanOptions()">
+                        </div>
+                    </div>
+                    <div id="wp-modal-unit-plan-area" class="mt-2 border-t border-gray-200 pt-2">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-[9px] font-bold text-gray-500"><i class="fas fa-link mr-1"></i>単元計画との連携</label>
+                            <div id="wp-modal-unit-plan-none-btn-container"></div>
+                        </div>
+                        <div id="wp-modal-unit-plan-buttons" class="grid grid-cols-3 gap-1.5 overflow-y-auto custom-scrollbar max-h-[160px] pr-1"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div id="wp-modal-special-area" class="hidden mb-2 bg-gray-50 p-2 rounded border border-gray-200">
-                <div class="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
-                    <label class="text-[9px] font-bold text-gray-500">カテゴリー</label>
-                    <select id="wp-modal-sp-category" class="bg-white rounded px-1.5 py-1 outline-none text-gray-700 font-medium text-xs border border-gray-300">
-                        <!-- jsで動的に追加されます -->
-                    </select>
+                <div id="wp-modal-special-area" class="hidden mb-2 bg-gray-50 p-2 rounded border border-gray-200">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
+                        <label class="text-[9px] font-bold text-gray-500">カテゴリー</label>
+                        <select id="wp-modal-sp-category" class="bg-white rounded px-1.5 py-1 outline-none text-gray-700 font-medium text-xs border border-gray-300">
+                            <!-- jsで動的に追加されます -->
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">予定</label>
+                        <input type="text" id="wp-modal-sp-title" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" placeholder="朝礼、学年集会など...">
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5">予定</label>
-                    <input type="text" id="wp-modal-sp-title" class="w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs outline-none focus:border-[#4a5f73] font-bold text-gray-800" placeholder="朝礼、学年集会など...">
+                <div class="mb-3 bg-gray-50 p-2 rounded border border-gray-200">
+                    <label class="text-[9px] font-bold text-gray-500 block mb-0.5">授業メモ・予定</label>
+                    <textarea id="wp-modal-memo" rows="2" class="w-full bg-transparent px-0.5 py-0.5 text-xs outline-none resize-none font-bold text-gray-700 placeholder-gray-400" placeholder="単元名や連絡事項など..."></textarea>
+                </div>
+                
+                <div class="flex gap-1.5 mt-auto border-t border-gray-200 pt-3">
+                    <button id="wp-modal-self-study-btn" onclick="window.setSelfStudyWeeklyPlanModal()" class="flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold py-1.5 px-2 rounded hover:bg-yellow-100 transition shadow-sm text-[10px]">スキップ</button>
+                    <button id="wp-modal-delete-btn" onclick="window.deleteWeeklyPlanModal()" class="flex-1 bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-[10px]">空きコマ</button>
+                    <button id="wp-modal-reset-btn" onclick="window.resetWeeklyPlanModal()" class="flex-1 bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-2 rounded hover:bg-gray-50 transition shadow-sm text-[10px]">リセット</button>
                 </div>
             </div>
-            <div class="mb-4 bg-gray-50 p-2 rounded border border-gray-200">
-                <label class="text-[9px] font-bold text-gray-500 block mb-0.5">授業メモ・予定</label>
-                <textarea id="wp-modal-memo" rows="2" class="w-full bg-transparent px-0.5 py-0.5 text-xs outline-none resize-none font-bold text-gray-700 placeholder-gray-400" placeholder="単元名や連絡事項など..."></textarea>
-            </div>
-            <div class="flex gap-1.5 mb-1.5">
-                <button onclick="window.saveWeeklyPlanModal()" class="flex-1 bg-[#4a5f73] text-white font-bold py-1.5 rounded hover:bg-[#3b4c5c] transition shadow-sm text-xs">確定する</button>
-            </div>
-            <div class="flex gap-1.5">
-                <button id="wp-modal-self-study-btn" onclick="window.setSelfStudyWeeklyPlanModal()" class="flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold py-1.5 px-2 rounded hover:bg-yellow-100 transition shadow-sm text-xs">自習</button>
-                <button id="wp-modal-delete-btn" onclick="window.deleteWeeklyPlanModal()" class="flex-1 bg-red-50 border border-red-200 text-red-600 font-bold py-1.5 px-2 rounded hover:bg-red-100 transition shadow-sm text-xs">空きコマ</button>
-                <button id="wp-modal-reset-btn" onclick="window.resetWeeklyPlanModal()" class="flex-1 bg-white border border-gray-300 text-gray-600 font-bold py-1.5 px-2 rounded hover:bg-gray-50 transition shadow-sm text-xs">元に戻す</button>
-            </div>
-            <button onclick="window.closeWeeklyPlanModal()" class="absolute top-2 left-2 w-6 h-6 flex justify-center items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-times text-xs"></i></button>
         </div>
     </div>
-
     <div id="month-bottom-sheet" class="fixed inset-x-0 bottom-0 z-[125] bg-white rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-full transition-transform duration-300 ease-out flex flex-col max-h-[75vh] sm:max-h-[60vh] sm:w-[450px] sm:mx-auto border border-gray-200">
         <div class="flex justify-center pt-2 pb-1.5 shrink-0 cursor-pointer w-full" onclick="window.closeMonthBottomSheet()">
             <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
@@ -565,18 +571,18 @@
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="2" onclick="window.setUnitPlanGrade('2')">2年生</button>
                         <button class="unit-plan-grade-btn px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-sm transition-colors text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent" data-grade="3" onclick="window.setUnitPlanGrade('3')">3年生</button>
                     </div>
-                    <button onclick="window.saveUnitPlan()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a5f73] text-white rounded text-[10px] sm:text-xs font-bold hover:bg-[#3b4c5c] shadow-sm transition whitespace-nowrap">保存</button>
+                    <button onclick="window.addUnitPlanRow()" class="ml-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 text-blue-500 rounded text-[10px] sm:text-xs font-bold hover:bg-blue-100 shadow-sm transition border border-blue-200 whitespace-nowrap"><i class="fas fa-plus mr-1"></i>授業追加</button>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="unit-plan-progress" class="text-[10px] sm:text-xs font-bold text-gray-600 flex flex-wrap gap-2 sm:gap-4"></div>
                 </div>
+                <div id="unit-plan-pagination-container" class="ml-2 flex items-center shrink-0"></div>
             </div>
             <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50 relative" style="touch-action: auto;">
                 <div id="unit-plan-container" class="min-w-[450px] sm:min-w-[800px] w-full pb-20 h-full">
                     </div>
             </div>
         </div>
-
         <div id="view-agenda" class="view-container hidden w-full h-full flex flex-col bg-gray-100 shadow-2xl overflow-hidden relative">
             <div class="bg-white p-3 border-b border-gray-300 shrink-0 flex justify-between items-center gap-2 min-w-0 w-full">
                 <div class="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -977,7 +983,17 @@
 
         let allMemos = [];
         let allFolders = [];
-        let allUnitPlans = safeGetItem('teacher_planner_unit_plans') ? JSON.parse(safeGetItem('teacher_planner_unit_plans')) : {};
+        
+        let _parsedUnitPlans = {};
+        try {
+            const stored = safeGetItem('teacher_planner_unit_plans');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // 過去のバグで配列として保存されたデータをオブジェクトに修復するフォールバック
+                _parsedUnitPlans = Array.isArray(parsed) ? {} : parsed;
+            }
+        } catch(e) {}
+        let allUnitPlans = _parsedUnitPlans;
 
         window.currentUnitPlanGrade = '1';
         window.isUnitPlanPasting = false; 
@@ -1919,7 +1935,12 @@ window.executeCopy = () => {
             const localFolders = safeGetItem('teacher_planner_folders');
             if (localFolders) { try { allFolders = JSON.parse(localFolders); } catch(e){} }
             const localUnitPlans = safeGetItem('teacher_planner_unit_plans');
-            if (localUnitPlans) { try { allUnitPlans = JSON.parse(localUnitPlans); } catch(e){} }
+            if (localUnitPlans) { 
+                try { 
+                    const parsed = JSON.parse(localUnitPlans);
+                    allUnitPlans = Array.isArray(parsed) ? {} : parsed; 
+                } catch(e){} 
+            }
 
             const thirtyDays = 30 * 24 * 60 * 60 * 1000;
             const now = Date.now();
@@ -3163,7 +3184,7 @@ window.handleCellClick = function(viewType, dateStr, hour) {
                         if (window.shouldSkipEvent('class', null)) return;
                         const colorClass = getClassColorClass(cData.cls, cData.sub, cData.isSelfStudy);
                         let titleHtml = cData.cls || cData.sub ? `${cData.cls} ${cData.sub}` : (cData.memo ? cData.memo : `(${DAYS_STR[cData.sourceDay]}${cData.sourcePeriod})`);
-                        if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">自習</span>`; 
+                    if (cData.isSelfStudy) titleHtml += ` <span class="text-[9px] bg-yellow-200 text-yellow-800 px-1 rounded ml-1 font-bold">スキップ</span>`;
                         let memoHtml = (cData.memo && (cData.cls || cData.sub)) ? `<div class="opacity-80 text-[10px] mt-1.5 whitespace-pre-wrap break-words border-t border-gray-200/50 pt-1.5 w-full">${cData.memo}</div>` : '';
                         schedHtml += `<div class="text-xs px-2.5 py-2 rounded border flex flex-col cursor-pointer transition bg-white shadow-sm hover:shadow-md ${colorClass}" onclick="event.stopPropagation(); window.openWeeklyPlanModal('${dStr}', '${p.id}', '${p.name}')">
                             <div class="flex items-start gap-2 w-full">
@@ -4148,7 +4169,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             const cData = getPeriodClass(dStr, p, curDate);
                             if (cData && !cData.disabled) {
                                 const isCut = (data.classes && data.classes[p.id] && data.classes[p.id].isCut);
-                                if (!isCut) {
+                                if (!isCut && !cData.isSelfStudy) {
                                     const cls = String(cData.cls).trim();
                                     const sub = String(cData.sub).trim();
                                     if ((cls.startsWith(targetGrade) || cls.includes(`${targetGrade}年`)) && sub === targetSub) {
@@ -4457,9 +4478,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             let memoAndTaskHtml = '';
                             
                             if (isSelfStudy) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-book-reader mr-0.5"></i>自習</div>`;
-                            } else if (unitPlanTask) {
-                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
+                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-forward mr-0.5"></i>スキップ</div>`;
+                            } else if (unitPlanTask) {                                memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full mt-1 truncate leading-tight box-border"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>`;
                             }
                             if (displayMemo) {
                                 memoAndTaskHtml += `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate px-0.5 w-full mt-1 leading-tight"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>メモ: ${displayMemo}</div>`;
@@ -4468,19 +4488,34 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             let mainContent = '', techCountHtml = '';
 
                             if (displayCls || displaySub) {
-                                mainContent = `<div class="flex flex-row items-baseline justify-center gap-1 w-full px-0.5 leading-tight"><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displayCls}</div><div class="font-bold text-[9px] sm:text-sm ${textColor} truncate">${displaySub}</div></div>${memoAndTaskHtml}`;
+                                mainContent = `
+                                    <div class="flex flex-row w-full h-full p-1">
+                                        <div class="flex flex-col w-[40%] shrink-0 items-center justify-center pr-1 border-r border-gray-200/50">
+                                            <div class="font-bold text-[9px] sm:text-sm ${textColor} w-full text-center truncate leading-tight">${displayCls}</div>
+                                            <div class="font-bold text-[9px] sm:text-sm ${textColor} w-full text-center truncate leading-tight">${displaySub}</div>
+                                        </div>
+                                        <div class="flex flex-col w-[60%] pl-1 min-w-0 justify-between">
+                                            <div class="w-full">
+                                                ${isSelfStudy ? `<div class="text-[7px] sm:text-[8px] font-bold text-yellow-800 bg-yellow-100 border border-yellow-300 rounded px-1 w-full truncate leading-tight box-border text-left"><i class="fas fa-forward mr-0.5"></i>スキップ</div>` : ''}
+                                                ${unitPlanTask && !isSelfStudy ? `<div class="text-[7px] sm:text-[10px] font-normal text-blue-800 bg-blue-50 border border-blue-200 rounded px-1 w-full truncate leading-tight box-border text-left" title="第${uIdxForTask}時: ${unitPlanTask}"><i class="fas fa-bullseye mr-0.5"></i>第${uIdxForTask}時: ${unitPlanTask}</div>` : ''}
+                                            </div>
+                                            <div class="w-full mt-auto">
+                                                ${displayMemo ? `<div class="text-[7px] sm:text-[10px] font-normal text-gray-600 truncate w-full leading-tight text-left"><i class="fas fa-sticky-note mr-0.5 opacity-50"></i>${displayMemo}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>`;
                                 if (displaySub.trim() === '技術') {
                                     const currentCount = techCountsMap[`${dStr}_${p.id}`] || 0;
                                     let denominator = (displayCls.startsWith('3') || displayCls.includes('3年')) ? 17.5 : 35;
                                     techCountHtml = `<div class="absolute top-0 right-0 px-1 py-0.5 text-[8px] sm:text-[10px] font-bold text-blue-600 bg-blue-50/90 rounded-bl border-b border-l border-blue-100 shadow-sm z-10 leading-none">${currentCount}/${denominator}</div>`;
                                 }
                             } else if (displayMemo) {
-                                mainContent = `<div class="font-bold text-[9px] sm:text-sm ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal">${displayMemo}</div>`;
+                                mainContent = `<div class="font-bold text-[9px] sm:text-sm ${textColor} truncate px-0.5 w-full leading-tight whitespace-normal text-left">${displayMemo}</div>`;
                             } else { 
-                                mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70">未設定</div>`; 
+                                mainContent = `<div class="text-[9px] text-gray-400 font-bold opacity-70 flex items-center justify-center w-full h-full">未設定</div>`; 
                             }
 
-                            btnContent = `${labelHtml}<div class="w-full h-full flex flex-col justify-center items-center pt-2 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
+                            btnContent = `${labelHtml}<div class="w-full h-full flex flex-col pt-3 pb-0.5 overflow-hidden relative z-0">${mainContent}</div>${techCountHtml}`;
                             borderClass = "border border-[#4a5f73]/50 shadow-sm";
                         } else { btnContent = labelHtml; borderClass = "border border-gray-200"; }
 
@@ -4602,10 +4637,24 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             window.updateWpModalClsSuggest(c);
             input.focus();
         };
+
+        window.insertWpModalCls = (str) => {
+            const input = document.getElementById('wp-modal-cls');
+            input.value += str;
+            window.updateWpModalClsSuggest(input.value);
+            window.updateWpModalUnitPlanOptions();
+            input.focus();
+        };
+
+        window.insertWpModalSub = (str) => {
+            const input = document.getElementById('wp-modal-sub');
+            input.value = str;
+            window.updateWpModalUnitPlanOptions();
+            input.focus();
+        };
         
         window.updateWpModalUnitPlanOptions = () => {
-            const select = document.getElementById('wp-modal-unit-plan-select');
-            const preview = document.getElementById('wp-modal-unit-plan-preview');
+            const buttonContainer = document.getElementById('wp-modal-unit-plan-buttons');
             const cls = document.getElementById('wp-modal-cls').value.trim();
             const sub = document.getElementById('wp-modal-sub').value.trim();
             
@@ -4615,78 +4664,117 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             else if (cls.startsWith('3') || cls.includes('3年')) grade = '3';
 
             if (!grade || !sub) {
-                select.innerHTML = '<option value="">(クラス・教科を選択してください)</option>';
-                select.disabled = true;
-                preview.classList.add('hidden');
+                buttonContainer.innerHTML = '<div class="col-span-3 text-[9px] text-gray-400 text-center py-1">(クラス・教科を選択してください)</div>';
                 return;
             }
 
             const planKey = `${grade}_${sub}`;
             if (!allUnitPlans[planKey] || !allUnitPlans[planKey].plans || allUnitPlans[planKey].plans.length === 0) {
-                select.innerHTML = '<option value="">(単元計画が登録されていません)</option>';
-                select.disabled = true;
-                preview.classList.add('hidden');
+                buttonContainer.innerHTML = '<div class="col-span-3 text-[9px] text-gray-400 text-center py-1">(単元計画が登録されていません)</div>';
                 return;
             }
 
             const plans = allUnitPlans[planKey].plans;
-            let html = '<option value="" selected>(連携しない)</option>';
-            
             const currentCount = calculateCumulativeHoursForUnitPlan(grade, sub, wpModalTarget.targetDateStr);
-            let targetIdx = null;
             
+            let targetIdx = null;
             const existingData = allPlanners[wpModalTarget.targetDateStr]?.classes?.[wpModalTarget.targetPeriodId];
             if (existingData && existingData.unitPlanIdx !== undefined && existingData.unitPlanIdx !== "") {
                 targetIdx = parseInt(existingData.unitPlanIdx);
             }
 
+            // 重複判定用：既存の予定から各idxの使われている日付を収集
+            const idxUsage = {}; 
+            const todayStrForCompare = getFormatDateStr(new Date());
+            for (const dateKey in allPlanners) {
+                const data = allPlanners[dateKey] || {};
+                if (data.classes) {
+                    for (const pId in data.classes) {
+                        const cData = data.classes[pId];
+                        if (cData && !cData.disabled && !cData.isCut && !cData.isSelfStudy) {
+                            if (String(cData.cls).trim() === cls && String(cData.sub).trim() === sub) {
+                                if (cData.unitPlanIdx !== undefined && cData.unitPlanIdx !== null && cData.unitPlanIdx !== "") {
+                                    const uIdx = parseInt(cData.unitPlanIdx);
+                                    if (!idxUsage[uIdx]) idxUsage[uIdx] = [];
+                                    idxUsage[uIdx].push(dateKey);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let html = '';
+            
+            // "連携しない" ボタンをテキストの右（ヘッダー部分）に移動し、サイズをスキップボタンと同等に
+            const isNoneSelected = targetIdx === null;
+            const noneBaseClass = isNoneSelected ? 'bg-gray-600 text-white border-gray-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+            const noneBtnHtml = `<button onclick="window.selectUnitPlanOption(null)" class="px-2 py-1.5 rounded border transition ${noneBaseClass} text-[10px] font-bold shadow-sm">
+                        連携しない
+                     </button>`;
+            
+            const noneBtnContainer = document.getElementById('wp-modal-unit-plan-none-btn-container');
+            if (noneBtnContainer) noneBtnContainer.innerHTML = noneBtnHtml;
+
             plans.forEach((p, idx) => {
-                let text = `第${p.hour}時`;
-                if (p.task) text += ` : ${p.task.replace(/\n/g, ' ').substring(0, 15)}...`;
-                const isSelected = idx === targetIdx ? 'selected' : '';
-                html += `<option value="${idx}" ${isSelected}>${text}</option>`;
+                const isSelected = idx === targetIdx;
+                const isCompleted = idx < currentCount;
+                
+                // 本日以降で、他の日と重複して設定されているか判定
+                let isDuplicatedAndFuture = false;
+                if (idxUsage[idx] && idxUsage[idx].length > 1) {
+                    const hasFutureDuplication = idxUsage[idx].some(dStr => dStr >= todayStrForCompare && dStr !== wpModalTarget.targetDateStr);
+                    if (hasFutureDuplication) isDuplicatedAndFuture = true;
+                }
+                
+                let btnClass = '';
+                if (isSelected) {
+                    btnClass = 'bg-blue-500 text-white border-blue-500 shadow-sm ring-2 ring-blue-300 ring-offset-1';
+                } else if (isCompleted) {
+                    btnClass = 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200'; // 完了済み（緑）
+                } else if (isDuplicatedAndFuture) {
+                    btnClass = 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200'; // 重複あり（赤）
+                } else {
+                    btnClass = 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'; // これから
+                }
+
+                let taskText = p.task ? p.task.replace(/\n/g, ' ').substring(0, 12) + (p.task.length > 12 ? '...' : '') : '内容未設定';
+                
+                // 選択中のものを再度クリックした場合は解除（null）にする
+                const onClickArg = isSelected ? 'null' : idx;
+                
+                html += `<button onclick="window.selectUnitPlanOption(${onClickArg})" class="flex flex-col items-center justify-center p-1 rounded border transition ${btnClass} h-12 relative group" title="${p.task || ''}">
+                            <span class="text-[9px] font-bold mb-0.5">第${p.hour}回</span>
+                            <span class="text-[8px] leading-tight text-center w-full truncate px-0.5 ${isSelected ? 'text-blue-100' : (isCompleted || isDuplicatedAndFuture ? 'opacity-80' : 'text-gray-600')}">${taskText}</span>
+                         </button>`;
             });
 
-            select.innerHTML = html;
-            select.disabled = false;
-            window.updateWpModalUnitPlanPreview();
+            buttonContainer.innerHTML = html;
         };
 
-        window.updateWpModalUnitPlanPreview = () => {
-            const select = document.getElementById('wp-modal-unit-plan-select');
-            const preview = document.getElementById('wp-modal-unit-plan-preview');
-            const cls = document.getElementById('wp-modal-cls').value.trim();
-            const sub = document.getElementById('wp-modal-sub').value.trim();
-            
-            let grade = null;
-            if (cls.startsWith('1') || cls.includes('1年')) grade = '1';
-            else if (cls.startsWith('2') || cls.includes('2年')) grade = '2';
-            else if (cls.startsWith('3') || cls.includes('3年')) grade = '3';
-
-            if (!grade || !sub || !select.value) {
-                preview.classList.add('hidden');
-                return;
+        window.selectUnitPlanOption = (idx) => {
+            // 選択されたインデックスを一時的に保持するための隠しフィールドを作成/更新
+            let hiddenInput = document.getElementById('wp-modal-unit-plan-selected-idx');
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'wp-modal-unit-plan-selected-idx';
+                document.getElementById('wp-modal-unit-plan-area').appendChild(hiddenInput);
             }
-
-            const planKey = `${grade}_${sub}`;
-            const idx = parseInt(select.value);
-            const plan = allUnitPlans[planKey].plans[idx];
+            hiddenInput.value = idx !== null ? idx : '';
             
-            if (plan) {
-                let html = '';
-                if (plan.task) html += `<div class="font-bold text-gray-700">第${idx + 1}時: ${plan.task}</div>`;
-                
-                if (html) {
-                    preview.innerHTML = html;
-                    preview.classList.remove('hidden');
-                } else {
-                    preview.classList.add('hidden');
-                }
-            } else {
-                preview.classList.add('hidden');
+            // 現在の対象データオブジェクトを更新して再描画
+            if (wpModalTarget && wpModalTarget.targetDateStr && wpModalTarget.targetPeriodId) {
+                 if (!allPlanners[wpModalTarget.targetDateStr]) allPlanners[wpModalTarget.targetDateStr] = { classes: {}, reminders: [], events: [] };
+                 if (!allPlanners[wpModalTarget.targetDateStr].classes) allPlanners[wpModalTarget.targetDateStr].classes = {};
+                 if (!allPlanners[wpModalTarget.targetDateStr].classes[wpModalTarget.targetPeriodId]) {
+                     allPlanners[wpModalTarget.targetDateStr].classes[wpModalTarget.targetPeriodId] = {};
+                 }
+                 allPlanners[wpModalTarget.targetDateStr].classes[wpModalTarget.targetPeriodId].unitPlanIdx = idx !== null ? idx.toString() : "";
             }
+            
+            window.updateWpModalUnitPlanOptions();
         };
-
         window.renderWpModalButtons = () => {
             const daysContainer = document.getElementById('wp-modal-days');
             const periodsContainer = document.getElementById('wp-modal-periods');
@@ -4696,7 +4784,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             for(let i=1; i<=5; i++) {
                 const isSelected = wpSelectedDay === i;
                 const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-                daysHtml += `<button onclick="window.changeWpModalSource('day', ${i})" class="px-2 py-1 rounded text-xs font-bold border transition ${baseClass}">${dayNames[i-1]}</button>`;
+                // さらに小型化して横1列に収まりやすくする（px-1 py-0.5 text-[9px]）
+                daysHtml += `<button onclick="window.changeWpModalSource('day', ${i})" class="px-1 py-0.5 rounded text-[9px] font-bold border transition shrink-0 ${baseClass}">${dayNames[i-1]}</button>`;
             }
             daysContainer.innerHTML = daysHtml;
 
@@ -4708,7 +4797,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             for(let i=1; i<=maxPeriods; i++) {
                 const isSelected = wpSelectedPeriod === i;
                 const baseClass = isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
-                        periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-7 h-7 rounded text-xs font-bold border transition flex items-center justify-center ${baseClass}">${i}</button>`;
+                // さらに小型化して横1列に収まりやすくする（w-5 h-5 text-[9px]）
+                periodsHtml += `<button onclick="window.changeWpModalSource('period', ${i})" class="w-5 h-5 rounded text-[9px] font-bold border transition flex items-center justify-center shrink-0 ${baseClass}">${i}</button>`;
             }
             periodsContainer.innerHTML = periodsHtml;
         };
@@ -4774,7 +4864,10 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             } else {
                 const cls = document.getElementById('wp-modal-cls').value.trim();
                 const sub = document.getElementById('wp-modal-sub').value.trim();
-                const unitPlanIdx = document.getElementById('wp-modal-unit-plan-select').value;
+                
+                // プルダウンではなく、新しく追加した隠しフィールドから値を取得
+                const hiddenInput = document.getElementById('wp-modal-unit-plan-selected-idx');
+                const unitPlanIdx = hiddenInput ? hiddenInput.value : "";
                 
                 const oldClassData = allPlanners[targetDateStr].classes[targetPeriodId];
                 const oldUnitPlanIdx = oldClassData ? oldClassData.unitPlanIdx : null;
@@ -5308,7 +5401,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             globalSettings = data.settings;
                             allMemos = data.memos || [];
                             allFolders = data.folders || [];
-                            allUnitPlans = data.unitPlans || [];
+                            // 配列で復元されるのを防ぎ、必ずオブジェクトとして初期化する
+                            allUnitPlans = (data.unitPlans && !Array.isArray(data.unitPlans)) ? data.unitPlans : {};
                             
                             safeSetItem(LS_KEY, JSON.stringify(allPlanners));
                             safeSetItem('teacher_planner_settings', JSON.stringify(globalSettings));
@@ -5923,6 +6017,20 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             }
         });
 
+        window.currentUnitPlanPage = 0;
+        
+        window.changeUnitPlanPage = (page) => {
+            window.currentUnitPlanPage = page;
+            window.renderUnitPlanView();
+        };
+
+        window.currentUnitPlanPage = 0;
+        
+        window.changeUnitPlanPage = (page) => {
+            window.currentUnitPlanPage = page;
+            window.renderUnitPlanView();
+        };
+
         window.updateUnitPlanCell = (planKey, rowIdx, field, cellElem) => {
             if (window.isUnitPlanPasting) return;
             if (!document.body.contains(cellElem)) return; 
@@ -5930,9 +6038,17 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             
             const plans = allUnitPlans[planKey].plans;
             if (plans[rowIdx]) {
-                if (plans[rowIdx][field] !== cellElem.innerText) {
+                let textVal = cellElem.innerText;
+                // ブラウザ仕様により要素が非表示(display:none)になった直後にblurが発火するとinnerTextが空文字を返す不具合の対策
+                if (textVal === undefined || (textVal === '' && cellElem.innerHTML !== '')) {
+                    // innerHTMLから改行タグを\nに変換し、不要なタグを除去してテキストを安全に復元する
+                    textVal = cellElem.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+                    if (!textVal) textVal = cellElem.textContent || '';
+                }
+
+                if (plans[rowIdx][field] !== textVal) {
                     window.saveStateToHistory();
-                    plans[rowIdx][field] = cellElem.innerText;
+                    plans[rowIdx][field] = textVal;
                     allUnitPlans[planKey].updatedAt = Date.now();
                     window.saveUnitPlan(false);
                 }
@@ -5940,7 +6056,8 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             cellElem.setAttribute('contenteditable', 'false');
         };
 
-        window.addUnitPlanRow = (planKey) => {
+        window.addUnitPlanRow = () => {
+            const planKey = `${window.currentUnitPlanGrade}_技術`;
             if (!allUnitPlans[planKey]) return;
             
             window.saveStateToHistory();
@@ -5952,6 +6069,10 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             const plans = allUnitPlans[planKey].plans;
             plans.push({ hour: plans.length + 1, task: "", activity: "", note: "" });
             allUnitPlans[planKey].updatedAt = Date.now();
+            
+            // 行が追加されたら、追加された行のページをアクティブにする
+            window.currentUnitPlanPage = Math.floor((plans.length - 1) / 10);
+            
             window.saveUnitPlan(false);
             window.renderUnitPlanView();
             setTimeout(() => {
@@ -5973,21 +6094,16 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                 plans.splice(idx, 1);
                 plans.forEach((p, i) => { p.hour = i + 1; });
                 allUnitPlans[planKey].updatedAt = Date.now();
+                
+                // ページ数が減った場合の補正
+                const totalPages = Math.max(1, Math.ceil(plans.length / 10));
+                if (window.currentUnitPlanPage >= totalPages) {
+                    window.currentUnitPlanPage = totalPages - 1;
+                }
+                
                 window.saveUnitPlan(false);
                 window.renderUnitPlanView();
             }
-        };
-
-        window.toggleUnitPlanRowVisibility = (planKey, idx) => {
-            if (!allUnitPlans[planKey] || !allUnitPlans[planKey].plans[idx]) return;
-            window.saveStateToHistory();
-            if (document.activeElement && document.activeElement.getAttribute('contenteditable') === 'true') {
-                document.activeElement.blur();
-            }
-            allUnitPlans[planKey].plans[idx].isHidden = !allUnitPlans[planKey].plans[idx].isHidden;
-            allUnitPlans[planKey].updatedAt = Date.now();
-            window.saveUnitPlan(false);
-            window.renderUnitPlanView();
         };
 
         window.saveUnitPlan = (showAlert = true) => {
@@ -6014,6 +6130,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
 
         window.setUnitPlanGrade = (grade) => {
             window.currentUnitPlanGrade = grade;
+            window.currentUnitPlanPage = 0; // 学年変更時は1ページ目に戻す
             const buttons = document.querySelectorAll('.unit-plan-grade-btn');
             buttons.forEach(btn => {
                 if (btn.dataset.grade === grade) {
@@ -6043,6 +6160,10 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
             }
 
             const plans = allUnitPlans[planKey].plans;
+            const totalPages = Math.max(1, Math.ceil(plans.length / 10));
+            if (window.currentUnitPlanPage >= totalPages) {
+                window.currentUnitPlanPage = totalPages - 1;
+            }
 
             const classProgress = {};
             const today = new Date();
@@ -6064,7 +6185,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                             const cData = getPeriodClass(dStr, p, curDate);
                             if (cData && !cData.disabled) {
                                 const isCut = (data.classes && data.classes[p.id] && data.classes[p.id].isCut);
-                                if (!isCut) {
+                                if (!isCut && !cData.isSelfStudy) {
                                     const clsStr = String(cData.cls).trim();
                                     const subStr = String(cData.sub).trim();
                                     if ((clsStr.startsWith(grade) || clsStr.includes(`${grade}年`)) && subStr === sub) {
@@ -6119,7 +6240,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                              ttPeriods.slice(0, lessonCount).forEach(p => {
                                  if (p.id === 'p_allday' || p.isAllDay) return;
                                  const cData = getPeriodClass(record.date, p, targetDateObj);
-                                 if (cData && !cData.disabled && !cData.isCut) {
+                                 if (cData && !cData.disabled && !cData.isCut && !cData.isSelfStudy) {
                                      const clsStr = String(cData.cls).trim();
                                      const subStr = String(cData.sub).trim();
                                      if (clsStr === cls && subStr === sub) {
@@ -6131,14 +6252,15 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                                  }
                              });
                          }
-                         
                          const now = new Date();
                          const currentHour = String(now.getHours()).padStart(2, '0');
                          const currentMin = String(now.getMinutes()).padStart(2, '0');
                          const currentTimeStr = `${currentHour}:${currentMin}`;
                          
                          if (currentTimeStr < endTimeStr) {
-                             isFutureOrCurrent = true;
+                             isFutureOrCurrent = true; 
+                         } else {
+                             isTodayPast = true;
                          }
                     }
 
@@ -6185,7 +6307,7 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                              ttPeriods.slice(0, lessonCount).forEach(p => {
                                  if (p.id === 'p_allday' || p.isAllDay) return;
                                  const cData = getPeriodClass(record.date, p, targetDateObj);
-                                 if (cData && !cData.disabled && !cData.isCut) {
+                                 if (cData && !cData.disabled && !cData.isCut && !cData.isSelfStudy) {
                                      const clsStr = String(cData.cls).trim();
                                      const subStr = String(cData.sub).trim();
                                      if (clsStr === cls && subStr === sub) {
@@ -6232,13 +6354,30 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
 
             const classCols = [1, 2, 3, 4, 5, 6].map(n => `${grade}-${n}`);
 
+            // ページネーション用HTML生成
+            let paginationHtml = '<div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar" id="unit-plan-pagination">';
+            for (let i = 0; i < totalPages; i++) {
+                const start = i * 10 + 1;
+                const end = Math.min((i + 1) * 10, Math.max((i+1)*10, plans.length)); 
+                const isActive = i === window.currentUnitPlanPage;
+                const btnClass = isActive ? 'bg-blue-500 text-white shadow-sm ring-1 ring-blue-600' : 'bg-white text-[#4a5f73] border border-gray-300 hover:bg-gray-100';
+                paginationHtml += `<button onclick="window.changeUnitPlanPage(${i})" class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold transition whitespace-nowrap ${btnClass}">第${start}〜${(i + 1) * 10}回</button>`;
+            }
+            paginationHtml += '</div>';
+
+            const paginationContainer = document.getElementById('unit-plan-pagination-container');
+            if (paginationContainer) {
+                paginationContainer.innerHTML = paginationHtml;
+            }
+
             let html = `
                 <table id="unit-plan-table" class="w-full border-collapse bg-white table-fixed text-[10px] sm:text-xs relative">
                     <thead class="sticky top-0 z-30 shadow-sm bg-gray-100 outline outline-1 outline-gray-300">
-<tr>
+                        <tr>
                             <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-6 sm:w-10 text-center shrink-0">時</th>
                             <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[240px] sm:w-[39%] text-center">学習課題・内容</th>
-                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[240px] sm:w-[39%] text-center">メモ</th>            `;
+                            <th class="bg-gray-100 border-r border-b border-gray-300 p-1 sm:p-2 text-[#4a5f73] font-bold text-[10px] sm:text-xs w-[240px] sm:w-[39%] text-center">メモ</th>
+            `;
             classCols.forEach(clsName => {
                 html += `<th class="bg-gray-100 border-r border-b border-gray-300 p-0.5 sm:p-1 text-[#4a5f73] font-bold text-[8px] sm:text-[10px] w-8 sm:w-14 text-center">${clsName.split('-')[1]}組</th>`;
             });
@@ -6250,8 +6389,12 @@ cellContentHtml += `<div class="absolute left-[2px] flex items-center bg-transpa
                     <tbody>
             `;
 
-plans.forEach((plan, idx) => {
-                const isHidden = !!plan.isHidden;
+            // ページに応じた10行分のみ表示
+            const startIdx = window.currentUnitPlanPage * 10;
+            const pagePlans = plans.slice(startIdx, startIdx + 10);
+
+            pagePlans.forEach((plan, localIdx) => {
+                const idx = startIdx + localIdx;
                 const progressList = progressByHour[idx] || [];
                 const latestProgressByCls = {};
                 progressList.forEach(p => {
@@ -6269,34 +6412,31 @@ plans.forEach((plan, idx) => {
                         const textColor = isPast ? 'text-blue-800' : 'text-red-800';
 
                         progressColsHtml += `
-                            <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor} ${isHidden ? 'py-0' : ''}">
+                            <td class="border border-gray-300 p-0.5 text-center align-middle ${cellBgColor}">
                                 <div class="${textColor} font-bold whitespace-nowrap leading-tight text-[8px] sm:text-[10px]">${p.dateStr}</div>
                             </td>
                         `;
                     } else {
                         progressColsHtml += `
-                            <td class="border border-gray-300 p-0.5 text-center align-middle bg-gray-50/50 ${isHidden ? 'py-0' : ''}">
+                            <td class="border border-gray-300 p-0.5 text-center align-middle bg-gray-50/50">
                                 <div class="text-[8px] text-gray-300">-</div>
                             </td>
                         `;
                     }
                 });
 
-                const minHClass = isHidden ? 'h-6 sm:h-8 min-h-[24px]' : 'min-h-[40px] sm:min-h-[60px]';
-                const cellTextClass = isHidden ? 'line-clamp-1 break-all' : 'break-words whitespace-pre-wrap';
-
                 html += `
-                    <tr class="hover:bg-blue-50/30 transition-colors group ${isHidden ? 'bg-gray-100/50 opacity-60' : ''}">
-                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-middle bg-gray-50 shrink-0 ${isHidden ? 'py-1' : 'align-top'}">${plan.hour}</td>
+                    <tr class="hover:bg-blue-50/30 transition-colors group">
+                        <td class="border border-gray-300 p-1 sm:p-2 text-center font-bold text-[#4a5f73] text-[10px] sm:text-sm align-middle bg-gray-50 shrink-0 align-top">${plan.hour}</td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none${cellTextClass}" 
+                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none break-words whitespace-pre-wrap" 
                                  data-row-idx="${idx}" data-col-idx="0"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
                                  onblur="window.updateUnitPlanCell('${planKey}', ${idx}, 'task', this)">${plan.task || ''}</div>
                         </td>
                         <td class="border border-gray-300 p-0 align-top relative">
-                            <div class="unit-plan-cell w-full h-full ${minHClass} p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none${cellTextClass}" 
+                            <div class="unit-plan-cell w-full h-full min-h-[40px] sm:min-h-[60px] p-1 sm:p-2 text-[10px] sm:text-xs text-gray-800 outline-none break-words whitespace-pre-wrap" 
                                  data-row-idx="${idx}" data-col-idx="2"
                                  onclick="window.selectUnitPlanCell(this)"
                                  ondblclick="window.editUnitPlanCell(this)"
@@ -6305,7 +6445,6 @@ plans.forEach((plan, idx) => {
                         ${progressColsHtml}
                         <td class="border border-gray-300 p-1 text-center align-middle shrink-0 bg-gray-50">
                             <div class="flex flex-col items-center gap-1">
-                                <button onclick="window.toggleUnitPlanRowVisibility('${planKey}', ${idx})" class="text-gray-400 hover:text-blue-500 transition p-1 ${isHidden ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-100'}" title="${isHidden ? '表示する' : '折りたたむ'}"><i class="fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'} text-[10px]"></i></button>
                                 <button onclick="window.removeUnitPlanRow('${planKey}', ${idx})" class="text-gray-300 hover:text-red-500 transition p-1 opacity-0 group-hover:opacity-100" title="この行を削除"><i class="fas fa-trash-alt text-[10px]"></i></button>
                             </div>
                         </td>
@@ -6316,29 +6455,22 @@ plans.forEach((plan, idx) => {
             html += `
                     </tbody>
                 </table>
-                <div class="mt-4 flex justify-center">
-            <button onclick="window.addUnitPlanRow('${planKey}')" class="flex items-center gap-2 bg-white border border-gray-300 text-[#4a5f73] px-6 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 shadow-sm transition group">
-                        <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition"><i class="fas fa-plus"></i></div>
-                        行を追加
-                    </button>
-                </div>
-                <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-8 mx-2">
                     <h4 class="font-bold text-[#4a5f73] text-xs mb-2 flex items-center gap-1.5"><i class="fas fa-info-circle text-blue-500"></i> 操作のヒント</h4>
                     <ul class="text-[10px] text-gray-600 space-y-1.5 list-disc pl-4">
                         <li>セルを<span class="font-bold">ダブルクリック（またはスマホで2回タップ）</span>すると文字の編集ができます。</li>
                         <li>セルを一度クリックして選択し、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Delete</span> または <span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Backspace</span>キーを押すと内容を消去できます。</li>
                         <li>Excelやスプレッドシートからコピーしたデータを、セルを選択して貼り付け（ペースト）できます。</li>
                         <li>複数セルを選択する場合は、ドラッグするか、<span class="font-bold border border-gray-300 bg-white px-1 rounded mx-0.5">Shift</span>キーを押しながらクリックします。</li>
-                        <li><span class="font-bold text-blue-600">NEW:</span> 過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示され、近い順に番号（①,②,③）が振られます。</li>
-                        <li><span class="font-bold text-orange-600">NEW:</span> 同じ単元計画が週案簿で複数回（重複して）設定されていると⚠️が表示されます。</li>
+                        <li>過去の授業は<span class="text-blue-800 bg-blue-50 px-1 border border-blue-200">薄青色</span>、本日以降の予定は<span class="text-red-800 bg-red-50 px-1 border border-red-200">薄赤色</span>で表示され、近い順に番号（①,②,③）が振られます。</li>
+                        <li>同じ単元計画が週案簿で複数回（重複して）設定されていると⚠️が表示されます。</li>
                     </ul>
                 </div>
             `;
 
             container.innerHTML = html;
         };
-
-        initDataSync();
+                initDataSync();
         window.updateDisplayMode();
 
         // 日曜日の定期バックアップ確認処理
